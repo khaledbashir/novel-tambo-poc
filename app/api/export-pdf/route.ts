@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
-import { WeasyPrint } from "node-weasyprint";
 
 /**
- * PDF Export API Route - WeasyPrint HTML to PDF Conversion
+ * PDF Export API Route - Browser-based PDF Generation
  *
  * POST /api/export-pdf
  *
- * Converts HTML to PDF using WeasyPrint for high-quality output
+ * Returns HTML with print styling for browser-based PDF generation
  */
 
 interface SOWItem {
@@ -210,20 +209,29 @@ export async function POST(request: NextRequest) {
             summaryRowsHtml,
         );
 
-        // Generate PDF using WeasyPrint
-        const wp = new WeasyPrint();
-        const pdfBuffer = await wp.create(htmlTemplate);
+        // Add auto-print script
+        htmlTemplate = htmlTemplate.replace(
+            "</body>",
+            `<script>
+        // Auto-trigger print dialog when page loads
+        window.onload = function() {
+          // Give user a moment to see the content before printing
+          setTimeout(function() {
+            window.print();
+          }, 1000);
+        };
+      </script>
+      </body>`,
+        );
 
-        // Generate filename from project title and current date
-        const filename = `${data.projectTitle.replace(/\s+/g, "-")}-${new Date().toISOString().split("T")[0]}.pdf`;
+        // Return HTML with content-disposition to trigger download
+        const filename = `${data.projectTitle.replace(/\s+/g, "-")}-${new Date().toISOString().split("T")[0]}.html`;
 
-        // Return the PDF as a downloadable file
-        return new NextResponse(pdfBuffer, {
+        return new NextResponse(htmlTemplate, {
             status: 200,
             headers: {
-                "Content-Type": "application/pdf",
-                "Content-Disposition": `attachment; filename="${filename}"`,
-                "Content-Length": pdfBuffer.length.toString(),
+                "Content-Type": "text/html",
+                "Content-Disposition": `inline; filename="${filename}"`,
             },
         });
     } catch (error) {

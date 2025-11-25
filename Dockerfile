@@ -3,22 +3,7 @@ FROM node:18-alpine AS base
 
 # Install dependencies only when needed
 FROM base AS deps
-# Install system dependencies for WeasyPrint
-RUN apk add --no-cache \
-    libc6-compat \
-    python3 \
-    py3-pip \
-    cairo \
-    pango \
-    gdk-pixbuf \
-    libxml2 \
-    libxslt \
-    shared-mime-info \
-    ghostscript
-
-# Install WeasyPrint
-RUN pip3 install weasyprint
-
+RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # Install pnpm
@@ -55,28 +40,13 @@ RUN pnpm build
 FROM base AS runner
 WORKDIR /app
 
-# Install runtime dependencies for WeasyPrint
-RUN apk add --no-cache \
-    python3 \
-    py3-pip \
-    cairo \
-    pango \
-    gdk-pixbuf \
-    libxml2 \
-    libxslt \
-    shared-mime-info \
-    ghostscript
-
-# Install WeasyPrint for runtime
-RUN pip3 install weasyprint
-
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy built application
+# Copy the built application
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
