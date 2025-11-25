@@ -58,9 +58,17 @@ export function Sidebar({
     try {
       const response = await fetch("/api/workspaces");
       const data = await response.json();
-      setWorkspaces(data);
+
+      // Ensure we always set an array, even on error
+      if (Array.isArray(data)) {
+        setWorkspaces(data);
+      } else {
+        console.error("API returned non-array data:", data);
+        setWorkspaces([]);
+      }
     } catch (error) {
       console.error("Failed to fetch workspaces:", error);
+      setWorkspaces([]);
     }
   };
 
@@ -68,9 +76,17 @@ export function Sidebar({
     try {
       const response = await fetch(`/api/documents?workspaceId=${workspaceId}`);
       const data = await response.json();
-      setDocuments(data);
+
+      // Ensure we always set an array, even on error
+      if (Array.isArray(data)) {
+        setDocuments(data);
+      } else {
+        console.error("API returned non-array data:", data);
+        setDocuments([]);
+      }
     } catch (error) {
       console.error("Failed to fetch documents:", error);
+      setDocuments([]);
     }
   };
 
