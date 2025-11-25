@@ -685,46 +685,44 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                             </tr>
                         </thead>
                         <tbody>
-                            {scopes && scopes.length > 0 ? (
-                                <>
-                                    {scopes.map((scope, idx) => {
-                                        const scopeTotal =
-                                            calculateScopeTotal(scope);
-                                        const scopeHours = (
-                                            scope.roles || []
-                                        ).reduce(
-                                            (sum, row) =>
-                                                sum + safeNumber(row.hours),
-                                            0,
-                                        );
-                                        const scopeGST = scopeTotal * 0.1;
-                                        const scopeTotalWithGST =
-                                            scopeTotal + scopeGST;
+                            {scopes && scopes.length > 0 &&
+                                scopes.map((scope, idx) => {
+                                    const scopeTotal =
+                                        calculateScopeTotal(scope);
+                                    const scopeHours = (
+                                        scope.roles || []
+                                    ).reduce(
+                                        (sum, row) =>
+                                            sum + safeNumber(row.hours),
+                                        0,
+                                    );
+                                    const scopeGST = scopeTotal * 0.1;
+                                    const scopeTotalWithGST =
+                                        scopeTotal + scopeGST;
 
-                                        return (
-                                            <tr
-                                                key={scope.id}
-                                                className="border-b border-border"
-                                            >
-                                                <td className="px-4 py-3 font-bold">
-                                                    Scope {idx + 1}: {scope.title}
-                                                </td>
-                                                <td className="px-4 py-3 text-center font-bold">
-                                                    {scopeHours.toFixed(1)}
-                                                </td>
-                                                <td className="px-4 py-3 text-right font-bold">
-                                                    $
-                                                    {isNaN(scopeTotalWithGST)
-                                                        ? "0.00"
-                                                        : scopeTotalWithGST.toFixed(
-                                                            2,
-                                                        )}
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </>
-                            ) : null}
+                                    return (
+                                        <tr
+                                            key={scope.id}
+                                            className="border-b border-border"
+                                        >
+                                            <td className="px-4 py-3 font-bold">
+                                                Scope {idx + 1}: {scope.title}
+                                            </td>
+                                            <td className="px-4 py-3 text-center font-bold">
+                                                {scopeHours.toFixed(1)}
+                                            </td>
+                                            <td className="px-4 py-3 text-right font-bold">
+                                                $
+                                                {isNaN(scopeTotalWithGST)
+                                                    ? "0.00"
+                                                    : scopeTotalWithGST.toFixed(
+                                                        2,
+                                                    )}
+                                            </td>
+                                        </tr>
+                                    );
+                                })
+                            }
                             <tr key="total-project-row" className="bg-muted border-t-2 border-border">
                                 <td className="px-4 py-3 font-bold text-lg">
                                     TOTAL PROJECT

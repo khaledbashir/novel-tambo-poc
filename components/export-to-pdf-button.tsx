@@ -90,37 +90,21 @@ export function ExportToPDFButton({
                 throw new Error(errorData.error || "Failed to generate PDF");
             }
 
-            // Get HTML content from response
-            const htmlContent = await response.text();
+            // Get PDF binary data from response
+            const pdfBlob = await response.blob();
 
-            // Create a new window with the HTML content
-            const printWindow = window.open("", "_blank");
-            if (printWindow) {
-                printWindow.document.write(htmlContent);
-                printWindow.document.close();
+            // Create a download link for the PDF
+            const url = URL.createObjectURL(pdfBlob);
+            const link = document.createElement("a");
+            link.href = url;
+            const filename = `${projectTitle.replace(/\s+/g, "-")}-${new Date().toISOString().split("T")[0]}.pdf`;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            setTimeout(() => URL.revokeObjectURL(url), 100);
 
-                toast.success(
-                    "Document opened in new window. Print dialog will appear shortly.",
-                    { id: toastId },
-                );
-            } else {
-                // If popup is blocked, create a downloadable HTML file
-                const blob = new Blob([htmlContent], { type: "text/html" });
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement("a");
-                link.href = url;
-                const filename = `${projectTitle.replace(/\s+/g, "-")}-${new Date().toISOString().split("T")[0]}.html`;
-                link.download = filename;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                setTimeout(() => URL.revokeObjectURL(url), 100);
-
-                toast.success(
-                    "HTML file downloaded. Open it and use Ctrl+P to save as PDF.",
-                    { id: toastId },
-                );
-            }
+            toast.success("PDF downloaded successfully!", { id: toastId });
         } catch (err) {
             console.error("Export error:", err);
             toast.error(
