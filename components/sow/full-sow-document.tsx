@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { withInteractable } from "@tambo-ai/react";
 import { toast } from "sonner";
+import { useReactToPrint } from "react-to-print";
 import {
     Trash2,
     Plus,
@@ -10,7 +11,6 @@ import {
     FileDown,
     ArrowDownToLine,
 } from "lucide-react";
-import { ExportToPDFButton } from "@/components/export-to-pdf-button";
 import { z } from "zod";
 
 // Types
@@ -70,6 +70,7 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
 }) => {
     const [scopes, setScopes] = useState<Scope[]>(initialScopes || []);
     const [discount, setDiscount] = useState(initialDiscount);
+    const printRef = useRef<HTMLDivElement>(null);
 
     // Sync state with props when they change (critical for streaming/updates)
     React.useEffect(() => {
@@ -399,526 +400,662 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
         window.dispatchEvent(event);
     };
 
+    // PDF Export using react-to-print
+    const handlePrint = useReactToPrint({
+        content: () => printRef.current,
+        documentTitle: `SOW-${projectTitle.replace(/\s+/g, "-")}-${new Date().toISOString().split("T")[0]}`,
+    });
+
     return (
-        <div className="w-full max-w-7xl mx-auto p-6 bg-card rounded-lg border border-border shadow-sm space-y-8">
-            {/* Header */}
-            <div className="border-b border-border pb-4">
-                <h1 className="text-3xl font-bold text-foreground mb-2">
-                    {projectTitle}
-                </h1>
-                <p className="text-muted-foreground">Client: {clientName}</p>
-            </div>
+        <>
+            {/* Print CSS */}
+            <style jsx global>{`
+            @media print {
+                /* Hide everything except print content */
+                body * {
+                    visibility: hidden;
+                }
+                #sow-print-content,
+                #sow-print-content * {
+                    visibility: visible;
+                }
+                #sow-print-content {
+                    position: absolute;
+                    left: 0;
+                    top: 0;
+                    width: 100%;
+                }
 
-            {/* Scopes */}
-            {scopes && scopes.length > 0 ? (
-                scopes.map((scope, scopeIndex) => (
-                    <div key={scope.id} className="space-y-4">
-                        {/* Scope Header */}
-                        <div className="bg-muted p-4 rounded-lg">
-                            <h2 className="text-xl font-bold text-foreground mb-2">
-                                Scope {scopeIndex + 1}: {scope.title}
-                            </h2>
-                            <p className="text-muted-foreground italic">
-                                {scope.description}
-                            </p>
-                        </div>
+                /* Page setup */
+                @page {
+                    size: A4;
+                    margin: 20mm;
+                }
 
-                        {/* Deliverables - Moved to Top per Compliance */}
-                        {scope.deliverables &&
-                            scope.deliverables.length > 0 && (
-                                <div className="bg-muted p-4 rounded-lg">
-                                    <h3 className="font-bold text-foreground mb-2">
-                                        Deliverables:
-                                    </h3>
-                                    <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                                        {scope.deliverables.map((item, idx) => (
-                                            <li
-                                                key={`deliverable-${scope.id}-${idx}`}
-                                            >
-                                                {item}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            )}
+                /* Hide interactive elements */
+                button, input, select, .no-print {
+                    display: none !important;
+                }
 
-                        {/* Pricing Table */}
-                        <div className="overflow-x-auto">
-                            <table className="w-full border-collapse">
-                                <thead>
-                                    <tr className="bg-muted border-b-2 border-border">
-                                        <th className="px-4 py-3 text-left text-sm font-semibold text-foreground w-8"></th>
-                                        <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">
-                                            TASK/DESCRIPTION
-                                        </th>
-                                        <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">
-                                            ROLE
-                                        </th>
-                                        <th className="px-4 py-3 text-center text-sm font-semibold text-foreground w-24">
-                                            HOURS
-                                        </th>
-                                        <th className="px-4 py-3 text-center text-sm font-semibold text-foreground w-24">
-                                            RATE
-                                        </th>
-                                        <th className="px-4 py-3 text-right text-sm font-semibold text-foreground w-32">
-                                            TOTAL COST + GST
-                                        </th>
-                                        <th className="px-4 py-3 text-center text-sm font-semibold text-foreground w-16">
-                                            ACTIONS
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {(scope.roles || []).map((row, rowIdx) => {
-                                        const rowCost =
-                                            safeNumber(row.hours) *
-                                            safeNumber(row.rate);
-                                        const rowGST = rowCost * 0.1;
-                                        const rowTotal = rowCost + rowGST;
+                /* Professional styling */
+                body {
+                    font-family: 'Plus Jakarta Sans', 'Open Sans', Arial, sans-serif;
+                    color: #333;
+                    background: white;
+                }
+
+                /* Logo and header */
+                .print-header {
+                    display: block !important;
+                    margin-bottom: 30px;
+                    padding-bottom: 20px;
+                    border-bottom: 3px solid #00D084;
+                }
+
+                .print-logo {
+                    height: 40px;
+                    margin-bottom: 20px;
+                }
+
+                /* Headings */
+                h1 {
+                    color: #00D084 !important;
+                    font-size: 28px !important;
+                    margin-bottom: 10px !important;
+                }
+
+                h2 {
+                    color: #00D084 !important;
+                    font-size: 20px !important;
+                    margin-top: 20px !important;
+                    margin-bottom: 10px !important;
+                    page-break-after: avoid;
+                }
+
+                h3 {
+                    font-size: 16px !important;
+                    margin-top: 15px !important;
+                    margin-bottom: 8px !important;
+                }
+
+                /* Tables */
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    page-break-inside: avoid;
+                    margin: 15px 0;
+                }
+
+                thead {
+                    background: #00D084 !important;
+                    color: white !important;
+                }
+
+                th {
+                    padding: 12px 8px !important;
+                    text-align: left !important;
+                    font-weight: 700 !important;
+                    font-size: 12px !important;
+                    border: 1px solid #ddd !important;
+                }
+
+                td {
+                    padding: 10px 8px !important;
+                    border: 1px solid #ddd !important;
+                    font-size: 13px !important;
+                }
+
+                tbody tr {
+                    page-break-inside: avoid;
+                }
+
+                tbody tr:nth-child(even) {
+                    background: #f9f9f9 !important;
+                }
+
+                /* Deliverables and Assumptions */
+                .bg-muted {
+                    background: #f5f5f5 !important;
+                    padding: 15px !important;
+                    margin: 10px 0 !important;
+                    border-left: 4px solid #00D084 !important;
+                    page-break-inside: avoid;
+                }
+
+                /* Financial summary */
+                .financial-summary {
+                    page-break-inside: avoid;
+                }
+
+                /* Footer */
+                .print-footer {
+                    display: block !important;
+                    text-align: center;
+                    font-size: 11px;
+                    color: #999;
+                    margin-top: 40px;
+                    padding-top: 20px;
+                    border-top: 1px solid #ddd;
+                }
+            }
+        `}</style>
+
+            <div className="w-full max-w-7xl mx-auto p-6 bg-card rounded-lg border border-border shadow-sm space-y-8" ref={printRef} id="sow-print-content">
+                {/* Print-only header with logo */}
+                <div className="print-header hidden print:block">
+                    <img src="/logo.png" alt="Social Garden" className="print-logo" />
+                    <div style={{ fontSize: '11px', color: '#666' }}>
+                        Statement of Work - Generated {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                    </div>
+                </div>
+                {/* Header */}
+                <div className="border-b border-border pb-4">
+                    <h1 className="text-3xl font-bold text-foreground mb-2">
+                        {projectTitle}
+                    </h1>
+                    <p className="text-muted-foreground">Client: {clientName}</p>
+                </div>
+
+                {/* Scopes */}
+                {scopes && scopes.length > 0 ? (
+                    scopes.map((scope, scopeIndex) => (
+                        <div key={scope.id} className="space-y-4">
+                            {/* Scope Header */}
+                            <div className="bg-muted p-4 rounded-lg">
+                                <h2 className="text-xl font-bold text-foreground mb-2">
+                                    Scope {scopeIndex + 1}: {scope.title}
+                                </h2>
+                                <p className="text-muted-foreground italic">
+                                    {scope.description}
+                                </p>
+                            </div>
+
+                            {/* Deliverables - Moved to Top per Compliance */}
+                            {scope.deliverables &&
+                                scope.deliverables.length > 0 && (
+                                    <div className="bg-muted p-4 rounded-lg">
+                                        <h3 className="font-bold text-foreground mb-2">
+                                            Deliverables:
+                                        </h3>
+                                        <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                                            {scope.deliverables.map((item, idx) => (
+                                                <li
+                                                    key={`deliverable-${scope.id}-${idx}`}
+                                                >
+                                                    {item}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
+
+                            {/* Pricing Table */}
+                            <div className="overflow-x-auto">
+                                <table className="w-full border-collapse">
+                                    <thead>
+                                        <tr className="bg-muted border-b-2 border-border">
+                                            <th className="px-4 py-3 text-left text-sm font-semibold text-foreground w-8"></th>
+                                            <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">
+                                                TASK/DESCRIPTION
+                                            </th>
+                                            <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">
+                                                ROLE
+                                            </th>
+                                            <th className="px-4 py-3 text-center text-sm font-semibold text-foreground w-24">
+                                                HOURS
+                                            </th>
+                                            <th className="px-4 py-3 text-center text-sm font-semibold text-foreground w-24">
+                                                RATE
+                                            </th>
+                                            <th className="px-4 py-3 text-right text-sm font-semibold text-foreground w-32">
+                                                TOTAL COST + GST
+                                            </th>
+                                            <th className="px-4 py-3 text-center text-sm font-semibold text-foreground w-16">
+                                                ACTIONS
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {(scope.roles || []).map((row, rowIdx) => {
+                                            const rowCost =
+                                                safeNumber(row.hours) *
+                                                safeNumber(row.rate);
+                                            const rowGST = rowCost * 0.1;
+                                            const rowTotal = rowCost + rowGST;
+
+                                            return (
+                                                <tr
+                                                    key={row.id || `row-${scope.id}-${rowIdx}`}
+                                                    draggable
+                                                    onDragStart={(e) =>
+                                                        handleDragStart(
+                                                            e,
+                                                            scope.id,
+                                                            row.id,
+                                                        )
+                                                    }
+                                                    onDragOver={handleDragOver}
+                                                    onDrop={(e) =>
+                                                        handleDrop(
+                                                            e,
+                                                            scope.id,
+                                                            row.id,
+                                                        )
+                                                    }
+                                                    className={`border-b border-border hover:bg-muted/50 transition ${draggedRow?.rowId === row.id
+                                                        ? "bg-primary/10 opacity-50"
+                                                        : ""
+                                                        }`}
+                                                >
+                                                    <td className="px-4 py-3">
+                                                        <GripVertical
+                                                            size={16}
+                                                            className="text-muted-foreground cursor-move"
+                                                        />
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        <input
+                                                            type="text"
+                                                            value={row.task || ""}
+                                                            onChange={(e) =>
+                                                                updateRow(
+                                                                    scope.id,
+                                                                    row.id,
+                                                                    "task",
+                                                                    e.target.value,
+                                                                )
+                                                            }
+                                                            placeholder="e.g., Handle HubSpot setup..."
+                                                            className="w-full px-3 py-2 border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                                                        />
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        <select
+                                                            value={row.role || ""}
+                                                            onChange={(e) =>
+                                                                handleRoleSelect(
+                                                                    scope.id,
+                                                                    row.id,
+                                                                    e.target.value,
+                                                                )
+                                                            }
+                                                            className="w-full px-3 py-2 border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                                                        >
+                                                            <option value="">
+                                                                Select role...
+                                                            </option>
+                                                            {availableRoles.map(
+                                                                (role, idx) => (
+                                                                    <option
+                                                                        key={`${role.name}-${idx}`}
+                                                                        value={
+                                                                            role.name
+                                                                        }
+                                                                    >
+                                                                        {role.name}
+                                                                    </option>
+                                                                ),
+                                                            )}
+                                                        </select>
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        <input
+                                                            type="number"
+                                                            value={
+                                                                isNaN(row.hours)
+                                                                    ? 0
+                                                                    : row.hours || 0
+                                                            }
+                                                            onChange={(e) =>
+                                                                updateRow(
+                                                                    scope.id,
+                                                                    row.id,
+                                                                    "hours",
+                                                                    safeNumber(
+                                                                        parseFloat(
+                                                                            e.target
+                                                                                .value,
+                                                                        ),
+                                                                    ),
+                                                                )
+                                                            }
+                                                            min="0"
+                                                            step="0.5"
+                                                            className="w-full px-3 py-2 border border-input rounded-md text-center bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                                                        />
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        <input
+                                                            type="number"
+                                                            value={
+                                                                isNaN(row.rate)
+                                                                    ? 0
+                                                                    : row.rate || 0
+                                                            }
+                                                            onChange={(e) =>
+                                                                updateRow(
+                                                                    scope.id,
+                                                                    row.id,
+                                                                    "rate",
+                                                                    safeNumber(
+                                                                        parseFloat(
+                                                                            e.target
+                                                                                .value,
+                                                                        ),
+                                                                    ),
+                                                                )
+                                                            }
+                                                            min="0"
+                                                            className="w-full px-3 py-2 border border-input rounded-md text-center bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                                                        />
+                                                    </td>
+                                                    <td className="px-4 py-3 text-right font-semibold text-foreground">
+                                                        ${rowTotal.toFixed(2)}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-center">
+                                                        <button
+                                                            onClick={() =>
+                                                                removeRow(
+                                                                    scope.id,
+                                                                    row.id,
+                                                                )
+                                                            }
+                                                            className="text-destructive hover:text-destructive/80 transition"
+                                                            title="Remove row"
+                                                        >
+                                                            <Trash2 size={18} />
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* Add Row Button */}
+                            < button
+                                onClick={() => addRow(scope.id)}
+                                className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition text-sm"
+                            >
+                                <Plus size={16} /> Add Role
+                            </button>
+
+                            {/* Assumptions */}
+                            {
+                                scope.assumptions && scope.assumptions.length > 0 && (
+                                    <div className="bg-muted p-4 rounded-lg">
+                                        <h3 className="font-bold text-foreground mb-2">
+                                            Assumptions:
+                                        </h3>
+                                        <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                                            {scope.assumptions.map((item, idx) => (
+                                                <li
+                                                    key={`assumption-${scope.id}-${idx}`}
+                                                >
+                                                    {item}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )
+                            }
+                        </div >
+                    ))
+                ) : (
+                    <div className="text-center p-8 bg-muted rounded-lg">
+                        <p className="text-muted-foreground">
+                            No scopes defined yet. Tambo will generate SOW scopes
+                            here.
+                        </p>
+                    </div>
+                )}
+
+                {/* Scope & Price Overview */}
+                <div className="border-t border-border pt-6">
+                    <h2 className="text-2xl font-bold text-foreground mb-4 text-center">
+                        Scope & Price Overview
+                    </h2>
+                    <div className="overflow-x-auto">
+                        <table className="w-full border-collapse">
+                            <thead>
+                                <tr className="bg-muted border-b-2 border-border">
+                                    <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">
+                                        SCOPE
+                                    </th>
+                                    <th className="px-4 py-3 text-center text-sm font-semibold text-foreground">
+                                        ESTIMATED TOTAL HOURS
+                                    </th>
+                                    <th className="px-4 py-3 text-right text-sm font-semibold text-foreground">
+                                        TOTAL COST
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {scopes && scopes.length > 0 &&
+                                    scopes.map((scope, idx) => {
+                                        const scopeTotal =
+                                            calculateScopeTotal(scope);
+                                        const scopeHours = (
+                                            scope.roles || []
+                                        ).reduce(
+                                            (sum, row) =>
+                                                sum + safeNumber(row.hours),
+                                            0,
+                                        );
+                                        const scopeGST = scopeTotal * 0.1;
+                                        const scopeTotalWithGST =
+                                            scopeTotal + scopeGST;
 
                                         return (
                                             <tr
-                                                key={row.id || `row-${scope.id}-${rowIdx}`}
-                                                draggable
-                                                onDragStart={(e) =>
-                                                    handleDragStart(
-                                                        e,
-                                                        scope.id,
-                                                        row.id,
-                                                    )
-                                                }
-                                                onDragOver={handleDragOver}
-                                                onDrop={(e) =>
-                                                    handleDrop(
-                                                        e,
-                                                        scope.id,
-                                                        row.id,
-                                                    )
-                                                }
-                                                className={`border-b border-border hover:bg-muted/50 transition ${draggedRow?.rowId === row.id
-                                                    ? "bg-primary/10 opacity-50"
-                                                    : ""
-                                                    }`}
+                                                key={scope.id}
+                                                className="border-b border-border"
                                             >
-                                                <td className="px-4 py-3">
-                                                    <GripVertical
-                                                        size={16}
-                                                        className="text-muted-foreground cursor-move"
-                                                    />
+                                                <td className="px-4 py-3 font-bold">
+                                                    Scope {idx + 1}: {scope.title}
                                                 </td>
-                                                <td className="px-4 py-3">
-                                                    <input
-                                                        type="text"
-                                                        value={row.task || ""}
-                                                        onChange={(e) =>
-                                                            updateRow(
-                                                                scope.id,
-                                                                row.id,
-                                                                "task",
-                                                                e.target.value,
-                                                            )
-                                                        }
-                                                        placeholder="e.g., Handle HubSpot setup..."
-                                                        className="w-full px-3 py-2 border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-                                                    />
+                                                <td className="px-4 py-3 text-center font-bold">
+                                                    {scopeHours.toFixed(1)}
                                                 </td>
-                                                <td className="px-4 py-3">
-                                                    <select
-                                                        value={row.role || ""}
-                                                        onChange={(e) =>
-                                                            handleRoleSelect(
-                                                                scope.id,
-                                                                row.id,
-                                                                e.target.value,
-                                                            )
-                                                        }
-                                                        className="w-full px-3 py-2 border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-                                                    >
-                                                        <option value="">
-                                                            Select role...
-                                                        </option>
-                                                        {availableRoles.map(
-                                                            (role, idx) => (
-                                                                <option
-                                                                    key={`${role.name}-${idx}`}
-                                                                    value={
-                                                                        role.name
-                                                                    }
-                                                                >
-                                                                    {role.name}
-                                                                </option>
-                                                            ),
+                                                <td className="px-4 py-3 text-right font-bold">
+                                                    $
+                                                    {isNaN(scopeTotalWithGST)
+                                                        ? "0.00"
+                                                        : scopeTotalWithGST.toFixed(
+                                                            2,
                                                         )}
-                                                    </select>
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    <input
-                                                        type="number"
-                                                        value={
-                                                            isNaN(row.hours)
-                                                                ? 0
-                                                                : row.hours || 0
-                                                        }
-                                                        onChange={(e) =>
-                                                            updateRow(
-                                                                scope.id,
-                                                                row.id,
-                                                                "hours",
-                                                                safeNumber(
-                                                                    parseFloat(
-                                                                        e.target
-                                                                            .value,
-                                                                    ),
-                                                                ),
-                                                            )
-                                                        }
-                                                        min="0"
-                                                        step="0.5"
-                                                        className="w-full px-3 py-2 border border-input rounded-md text-center bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-                                                    />
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    <input
-                                                        type="number"
-                                                        value={
-                                                            isNaN(row.rate)
-                                                                ? 0
-                                                                : row.rate || 0
-                                                        }
-                                                        onChange={(e) =>
-                                                            updateRow(
-                                                                scope.id,
-                                                                row.id,
-                                                                "rate",
-                                                                safeNumber(
-                                                                    parseFloat(
-                                                                        e.target
-                                                                            .value,
-                                                                    ),
-                                                                ),
-                                                            )
-                                                        }
-                                                        min="0"
-                                                        className="w-full px-3 py-2 border border-input rounded-md text-center bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-                                                    />
-                                                </td>
-                                                <td className="px-4 py-3 text-right font-semibold text-foreground">
-                                                    ${rowTotal.toFixed(2)}
-                                                </td>
-                                                <td className="px-4 py-3 text-center">
-                                                    <button
-                                                        onClick={() =>
-                                                            removeRow(
-                                                                scope.id,
-                                                                row.id,
-                                                            )
-                                                        }
-                                                        className="text-destructive hover:text-destructive/80 transition"
-                                                        title="Remove row"
-                                                    >
-                                                        <Trash2 size={18} />
-                                                    </button>
                                                 </td>
                                             </tr>
                                         );
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        {/* Add Row Button */}
-                        < button
-                            onClick={() => addRow(scope.id)}
-                            className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition text-sm"
-                        >
-                            <Plus size={16} /> Add Role
-                        </button>
-
-                        {/* Assumptions */}
-                        {
-                            scope.assumptions && scope.assumptions.length > 0 && (
-                                <div className="bg-muted p-4 rounded-lg">
-                                    <h3 className="font-bold text-foreground mb-2">
-                                        Assumptions:
-                                    </h3>
-                                    <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                                        {scope.assumptions.map((item, idx) => (
-                                            <li
-                                                key={`assumption-${scope.id}-${idx}`}
-                                            >
-                                                {item}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            )
-                        }
-                    </div >
-                ))
-            ) : (
-                <div className="text-center p-8 bg-muted rounded-lg">
-                    <p className="text-muted-foreground">
-                        No scopes defined yet. Tambo will generate SOW scopes
-                        here.
-                    </p>
+                                    })
+                                }
+                                <tr key="total-project-row" className="bg-muted border-t-2 border-border">
+                                    <td className="px-4 py-3 font-bold text-lg">
+                                        TOTAL PROJECT
+                                    </td>
+                                    <td className="px-4 py-3 text-center font-bold text-lg">
+                                        {scopes && scopes.length > 0
+                                            ? scopes
+                                                .reduce(
+                                                    (sum, scope) =>
+                                                        sum +
+                                                        (
+                                                            scope.roles || []
+                                                        ).reduce(
+                                                            (s, r) =>
+                                                                s +
+                                                                safeNumber(
+                                                                    r.hours,
+                                                                ),
+                                                            0,
+                                                        ),
+                                                    0,
+                                                )
+                                                .toFixed(1)
+                                            : 0}
+                                    </td>
+                                    <td className="px-4 py-3 text-right font-bold text-lg">
+                                        $
+                                        {isNaN(totals.total)
+                                            ? "0.00"
+                                            : totals.total.toFixed(2)}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            )}
 
-            {/* Scope & Price Overview */}
-            <div className="border-t border-border pt-6">
-                <h2 className="text-2xl font-bold text-foreground mb-4 text-center">
-                    Scope & Price Overview
-                </h2>
-                <div className="overflow-x-auto">
-                    <table className="w-full border-collapse">
-                        <thead>
-                            <tr className="bg-muted border-b-2 border-border">
-                                <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">
-                                    SCOPE
-                                </th>
-                                <th className="px-4 py-3 text-center text-sm font-semibold text-foreground">
-                                    ESTIMATED TOTAL HOURS
-                                </th>
-                                <th className="px-4 py-3 text-right text-sm font-semibold text-foreground">
-                                    TOTAL COST
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {scopes && scopes.length > 0 &&
-                                scopes.map((scope, idx) => {
-                                    const scopeTotal =
-                                        calculateScopeTotal(scope);
-                                    const scopeHours = (
-                                        scope.roles || []
-                                    ).reduce(
-                                        (sum, row) =>
-                                            sum + safeNumber(row.hours),
-                                        0,
-                                    );
-                                    const scopeGST = scopeTotal * 0.1;
-                                    const scopeTotalWithGST =
-                                        scopeTotal + scopeGST;
-
-                                    return (
-                                        <tr
-                                            key={scope.id}
-                                            className="border-b border-border"
-                                        >
-                                            <td className="px-4 py-3 font-bold">
-                                                Scope {idx + 1}: {scope.title}
-                                            </td>
-                                            <td className="px-4 py-3 text-center font-bold">
-                                                {scopeHours.toFixed(1)}
-                                            </td>
-                                            <td className="px-4 py-3 text-right font-bold">
-                                                $
-                                                {isNaN(scopeTotalWithGST)
-                                                    ? "0.00"
-                                                    : scopeTotalWithGST.toFixed(
-                                                        2,
-                                                    )}
-                                            </td>
-                                        </tr>
-                                    );
-                                })
-                            }
-                            <tr key="total-project-row" className="bg-muted border-t-2 border-border">
-                                <td className="px-4 py-3 font-bold text-lg">
-                                    TOTAL PROJECT
-                                </td>
-                                <td className="px-4 py-3 text-center font-bold text-lg">
-                                    {scopes && scopes.length > 0
-                                        ? scopes
-                                            .reduce(
-                                                (sum, scope) =>
-                                                    sum +
-                                                    (
-                                                        scope.roles || []
-                                                    ).reduce(
-                                                        (s, r) =>
-                                                            s +
-                                                            safeNumber(
-                                                                r.hours,
-                                                            ),
-                                                        0,
-                                                    ),
+                {/* Financial Summary */}
+                <div className="flex justify-end">
+                    <div className="w-full max-w-sm bg-muted rounded-lg p-6 border border-border">
+                        <div className="space-y-3">
+                            {/* Discount Input */}
+                            <div className="flex justify-between items-center pb-3 border-b border-border">
+                                <label className="text-sm font-medium text-foreground">
+                                    Discount (%):
+                                </label>
+                                <input
+                                    type="number"
+                                    value={isNaN(discount) ? 0 : discount}
+                                    onChange={(e) =>
+                                        setDiscount(
+                                            Math.max(
                                                 0,
-                                            )
-                                            .toFixed(1)
-                                        : 0}
-                                </td>
-                                <td className="px-4 py-3 text-right font-bold text-lg">
+                                                Math.min(
+                                                    100,
+                                                    safeNumber(
+                                                        parseFloat(e.target.value),
+                                                    ),
+                                                ),
+                                            ),
+                                        )
+                                    }
+                                    min="0"
+                                    max="100"
+                                    className="w-20 px-3 py-1 border border-input rounded-md text-right bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                                />
+                            </div>
+
+                            <div className="flex justify-between text-foreground">
+                                <span className="text-sm">Subtotal:</span>
+                                <span className="font-semibold">
+                                    $
+                                    {isNaN(totals.subtotal)
+                                        ? "0.00"
+                                        : totals.subtotal.toFixed(2)}
+                                </span>
+                            </div>
+
+                            {discount > 0 && (
+                                <div className="space-y-3">
+                                    <div className="flex justify-between text-destructive text-sm">
+                                        <span>Discount ({discount}%):</span>
+                                        <span>
+                                            -$
+                                            {isNaN(totals.discountAmount)
+                                                ? "0.00"
+                                                : totals.discountAmount.toFixed(2)}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between text-foreground">
+                                        <span className="text-sm">
+                                            After Discount:
+                                        </span>
+                                        <span className="font-semibold">
+                                            $
+                                            {isNaN(totals.afterDiscount)
+                                                ? "0.00"
+                                                : totals.afterDiscount.toFixed(2)}
+                                        </span>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="flex justify-between text-foreground">
+                                <span className="text-sm">GST (10%):</span>
+                                <span className="font-semibold">
+                                    +$
+                                    {isNaN(totals.gst)
+                                        ? "0.00"
+                                        : totals.gst.toFixed(2)}
+                                </span>
+                            </div>
+
+                            <div className="flex justify-between items-center pt-3 border-t-2 border-border">
+                                <span className="font-bold text-foreground">
+                                    Total (AUD):
+                                </span>
+                                <span className="text-2xl font-bold text-primary">
                                     $
                                     {isNaN(totals.total)
                                         ? "0.00"
                                         : totals.total.toFixed(2)}
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            {/* Financial Summary */}
-            <div className="flex justify-end">
-                <div className="w-full max-w-sm bg-muted rounded-lg p-6 border border-border">
-                    <div className="space-y-3">
-                        {/* Discount Input */}
-                        <div className="flex justify-between items-center pb-3 border-b border-border">
-                            <label className="text-sm font-medium text-foreground">
-                                Discount (%):
-                            </label>
-                            <input
-                                type="number"
-                                value={isNaN(discount) ? 0 : discount}
-                                onChange={(e) =>
-                                    setDiscount(
-                                        Math.max(
-                                            0,
-                                            Math.min(
-                                                100,
-                                                safeNumber(
-                                                    parseFloat(e.target.value),
-                                                ),
-                                            ),
-                                        ),
-                                    )
-                                }
-                                min="0"
-                                max="100"
-                                className="w-20 px-3 py-1 border border-input rounded-md text-right bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-                            />
-                        </div>
-
-                        <div className="flex justify-between text-foreground">
-                            <span className="text-sm">Subtotal:</span>
-                            <span className="font-semibold">
-                                $
-                                {isNaN(totals.subtotal)
-                                    ? "0.00"
-                                    : totals.subtotal.toFixed(2)}
-                            </span>
-                        </div>
-
-                        {discount > 0 && (
-                            <div className="space-y-3">
-                                <div className="flex justify-between text-destructive text-sm">
-                                    <span>Discount ({discount}%):</span>
-                                    <span>
-                                        -$
-                                        {isNaN(totals.discountAmount)
-                                            ? "0.00"
-                                            : totals.discountAmount.toFixed(2)}
-                                    </span>
-                                </div>
-                                <div className="flex justify-between text-foreground">
-                                    <span className="text-sm">
-                                        After Discount:
-                                    </span>
-                                    <span className="font-semibold">
-                                        $
-                                        {isNaN(totals.afterDiscount)
-                                            ? "0.00"
-                                            : totals.afterDiscount.toFixed(2)}
-                                    </span>
-                                </div>
+                                </span>
                             </div>
-                        )}
-
-                        <div className="flex justify-between text-foreground">
-                            <span className="text-sm">GST (10%):</span>
-                            <span className="font-semibold">
-                                +$
-                                {isNaN(totals.gst)
-                                    ? "0.00"
-                                    : totals.gst.toFixed(2)}
-                            </span>
-                        </div>
-
-                        <div className="flex justify-between items-center pt-3 border-t-2 border-border">
-                            <span className="font-bold text-foreground">
-                                Total (AUD):
-                            </span>
-                            <span className="text-2xl font-bold text-primary">
-                                $
-                                {isNaN(totals.total)
-                                    ? "0.00"
-                                    : totals.total.toFixed(2)}
-                            </span>
                         </div>
                     </div>
                 </div>
+
+                {/* Project Overview */}
+                {
+                    projectOverview && (
+                        <div className="border-t border-border pt-6">
+                            <h3 className="text-xl font-bold text-foreground mb-2">
+                                Project Overview:
+                            </h3>
+                            <p className="text-muted-foreground">{projectOverview}</p>
+                        </div>
+                    )
+                }
+
+                {/* Budget Notes */}
+                {
+                    budgetNotes && (
+                        <div className="border-t border-border pt-6">
+                            <h3 className="text-xl font-bold text-foreground mb-2">
+                                Budget Notes:
+                            </h3>
+                            <p className="text-muted-foreground">{budgetNotes}</p>
+                        </div>
+                    )
+                }
+
+                {/* Actions - Prominent at Bottom */}
+                <div className="border-t border-border pt-6 flex flex-col sm:flex-row gap-4 no-print">
+                    <button
+                        onClick={handlePrint}
+                        className="flex-1 flex items-center justify-center gap-3 px-6 py-4 bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-lg transition-all hover:shadow-lg text-lg font-semibold"
+                    >
+                        <FileDown size={22} />
+                        Export PDF
+                    </button>
+
+                    <button
+                        onClick={insertToEditor}
+                        className="flex-1 flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-primary-foreground rounded-lg transition-all hover:shadow-lg text-lg font-semibold"
+                        title="Insert SOW content directly into editor"
+                    >
+                        <ArrowDownToLine size={22} />
+                        Insert to Editor
+                    </button>
+                </div>
+                <p className="text-xs text-muted-foreground text-center mt-2 no-print">
+                    Export as PDF or insert directly into the Novel editor
+                </p>
+
+                {/* Closing Statement - Mandatory Compliance */}
+                <div className="w-full text-center py-8 text-gray-500 italic font-medium">
+                    *** This concludes the Scope of Work document. ***
+                </div>
+
+                {/* Print-only footer */}
+                <div className="print-footer hidden print:block">
+                    Social Garden • Statement of Work • {clientName}
+                </div>
             </div>
-
-            {/* Project Overview */}
-            {
-                projectOverview && (
-                    <div className="border-t border-border pt-6">
-                        <h3 className="text-xl font-bold text-foreground mb-2">
-                            Project Overview:
-                        </h3>
-                        <p className="text-muted-foreground">{projectOverview}</p>
-                    </div>
-                )
-            }
-
-            {/* Budget Notes */}
-            {
-                budgetNotes && (
-                    <div className="border-t border-border pt-6">
-                        <h3 className="text-xl font-bold text-foreground mb-2">
-                            Budget Notes:
-                        </h3>
-                        <p className="text-muted-foreground">{budgetNotes}</p>
-                    </div>
-                )
-            }
-
-            {/* Actions - Prominent at Bottom */}
-            <div className="border-t border-border pt-6 flex flex-col sm:flex-row gap-4">
-                <ExportToPDFButton
-                    projectTitle={projectTitle}
-                    clientName={clientName}
-                    projectDescription={projectOverview || ""}
-                    scopes={(scopes || []).map(s => ({
-                        name: s.title,
-                        description: s.description,
-                        items: (s.roles || []).map(r => ({
-                            description: r.task,
-                            role: r.role,
-                            hours: r.hours,
-                            cost: r.hours * r.rate
-                        })),
-                        deliverables: s.deliverables || [],
-                        assumptions: s.assumptions || []
-                    }))}
-                    grandTotal={totals.total}
-                    budgetNotes={budgetNotes || ""}
-                    className="flex-1 flex items-center justify-center gap-3 px-6 py-4 bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-lg transition-all hover:shadow-lg text-lg font-semibold"
-                >
-                    <FileDown size={22} />
-                    Export PDF
-                </ExportToPDFButton>
-
-                <button
-                    onClick={insertToEditor}
-                    className="flex-1 flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-primary-foreground rounded-lg transition-all hover:shadow-lg text-lg font-semibold"
-                    title="Insert SOW content directly into editor"
-                >
-                    <ArrowDownToLine size={22} />
-                    Insert to Editor
-                </button>
-            </div>
-            <p className="text-xs text-muted-foreground text-center mt-2">
-                Export as PDF or insert directly into the Novel editor
-            </p>
-
-            {/* Closing Statement - Mandatory Compliance */}
-            <div className="w-full text-center py-8 text-gray-500 italic font-medium">
-                *** This concludes the Scope of Work document. ***
-            </div>
-        </div >
+        </>
     );
 };
 
