@@ -210,7 +210,7 @@ export async function POST(request: NextRequest) {
         );
 
         // Call WeasyPrint API with timeout and retry logic
-        const WEASYPRINT_URL = "http://168.231.115.219:5000/generate-pdf";
+        const WEASYPRINT_URL = process.env.WEASYPRINT_URL || "http://168.231.115.219:5000/generate-pdf";
         const MAX_RETRIES = 3;
         const TIMEOUT_MS = 30000; // 30 seconds
 
