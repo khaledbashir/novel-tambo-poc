@@ -402,7 +402,7 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
 
     // PDF Export using react-to-print
     const handlePrint = useReactToPrint({
-        content: () => printRef.current,
+        contentRef: printRef,
         documentTitle: `SOW-${projectTitle.replace(/\s+/g, "-")}-${new Date().toISOString().split("T")[0]}`,
     });
 
