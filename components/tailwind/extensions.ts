@@ -23,6 +23,10 @@ import {
 // import { Table } from "@tiptap/extension-table";
 
 import { MarkdownExtension } from "./markdown-extension";
+import { Table } from "@tiptap/extension-table";
+import TableCell from "@tiptap/extension-table-cell";
+import TableHeader from "@tiptap/extension-table-header";
+import TableRow from "@tiptap/extension-table-row";
 
 import { cx } from "class-variance-authority";
 import { common, createLowlight } from "lowlight";
@@ -53,8 +57,6 @@ const tiptapImage = TiptapImage.extend({
     class: cx("rounded-lg border border-muted"),
   },
 });
-
-
 
 const taskList = TaskList.configure({
   HTMLAttributes: {
@@ -152,11 +154,31 @@ const markdownExtension = MarkdownExtension.configure({
   transformCopiedText: false,
 });
 
-// const table = Table.configure({
-//   HTMLAttributes: {
-//     class: cx("border-collapse table-auto w-full my-4 border border-border"),
-//   },
-// });
+const table = Table.configure({
+  HTMLAttributes: {
+    class: cx(
+      "border-collapse table-auto w-full my-4 border border-border",
+    ),
+  },
+});
+
+const tableHeader = TableHeader.configure({
+  HTMLAttributes: {
+    class: cx("font-medium text-left border border-border bg-muted"),
+  },
+});
+
+const tableCell = TableCell.configure({
+  HTMLAttributes: {
+    class: cx("border border-border p-2"),
+  },
+});
+
+const tableRow = TableRow.configure({
+  HTMLAttributes: {
+    class: cx("border border-border"),
+  },
+});
 
 export const defaultExtensions = [
   starterKit,
@@ -166,7 +188,10 @@ export const defaultExtensions = [
   taskList,
   taskItem,
   horizontalRule,
-  // table,
+  table,
+  tableHeader,
+  tableCell,
+  tableRow,
   aiHighlight,
   codeBlockLowlight,
   youtube,

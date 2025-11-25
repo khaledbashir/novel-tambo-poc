@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statement of Work - PDF Export</title>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ===== GLOBAL STYLES ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-green: #23D38E;
+            --light-grey: #F5F5F5;
+            --dark-grey: #555555;
+            --text-dark: #333333;
+            --white: #FFFFFF;
+        }
+
+        body {
+            font-family: 'Open Sans', 'Roboto', Arial, sans-serif;
+            color: var(--text-dark);
+            background: white;
+            line-height: 1.6;
+        }
+
+        /* ===== PAGE LAYOUT ===== */
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 40px;
+            margin: 0 auto;
+            background: white;
+            position: relative;
+        }
+
+        /* ===== PRINT STYLES ===== */
+        @media print {
+            body {
+                margin: 0;
+                padding: 0;
+            }
+            
+            .page {
+                width: 100%;
+                margin: 0;
+                padding: 40px;
+                page-break-after: always;
+            }
+
+            .no-break {
+                page-break-inside: avoid;
+            }
+
+            table {
+                page-break-inside: avoid;
+            }
+
+            tr {
+                page-break-inside: avoid;
+            }
+        }
+
+        /* ===== HEADER SECTION ===== */
+        .logo {
+            text-align: center;
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: var(--text-dark);
+            margin-bottom: 30px;
+        }
+
+        .title-banner {
+            background: var(--primary-green);
+            color: var(--white);
+            padding: 20px 30px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .title-banner .project-title {
+            font-size: 24px;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .title-banner .project-meta {
+            font-size: 14px;
+            font-weight: 400;
+        }
+
+        .project-info {
+            margin-bottom: 30px;
+            font-size: 14px;
+            color: var(--text-dark);
+            line-height: 1.8;
+        }
+
+        /* ===== TEXT BLOCK COMPONENTS ===== */
+        .text-block {
+            background: var(--light-grey);
+            border-left: 5px solid var(--primary-green);
+            padding: 20px 25px;
+            margin-bottom: 25px;
+            border-radius: 4px;
+        }
+
+        .text-block h3 {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: var(--text-dark);
+        }
+
+        .text-block p {
+            font-size: 14px;
+            line-height: 1.7;
+            color: var(--text-dark);
+        }
+
+        /* ===== MAIN SCOPE TABLE ===== */
+        .scope-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .scope-table thead th {
+            background: var(--primary-green);
+            color: var(--white);
+            padding: 15px 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        .scope-table thead th:first-child {
+            text-align: left;
+        }
+
+        .scope-table thead th:nth-child(2),
+        .scope-table thead th:nth-child(3) {
+            text-align: center;
+        }
+
+        .scope-table thead th:last-child {
+            text-align: right;
+        }
+
+        /* Scope Section Header */
+        .scope-section-header {
+            background: var(--primary-green);
+            color: var(--white);
+            padding: 12px 15px;
+            font-weight: 700;
+            font-size: 15px;
+            text-transform: uppercase;
+        }
+
+        /* Description Row */
+        .description-row {
+            background: var(--light-grey);
+            padding: 12px 15px;
+            font-style: italic;
+            font-size: 13px;
+            color: var(--text-dark);
+        }
+
+        /* Line Items */
+        .scope-table tbody tr {
+            border-bottom: 1px solid #E0E0E0;
+        }
+
+        .scope-table tbody td {
+            padding: 12px;
+            vertical-align: top;
+        }
+
+        .scope-table tbody td:first-child {
+            text-align: left;
+            width: 45%;
+        }
+
+        .scope-table tbody td:nth-child(2),
+        .scope-table tbody td:nth-child(3) {
+            text-align: center;
+            width: 20%;
+        }
+
+        .scope-table tbody td:last-child {
+            text-align: right;
+            width: 15%;
+            font-weight: 600;
+        }
+
+        /* Deliverables & Assumptions Block */
+        .deliverables-block {
+            background: var(--light-grey);
+            padding: 15px 20px;
+        }
+
+        .deliverables-block h4 {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--text-dark);
+        }
+
+        .deliverables-block ul {
+            margin-left: 20px;
+            font-size: 13px;
+            line-height: 1.8;
+        }
+
+        .deliverables-block ul li {
+            margin-bottom: 5px;
+        }
+
+        /* ===== TOTALS SECTION ===== */
+        .grand-total-bar {
+            background: var(--dark-grey);
+            color: var(--white);
+            padding: 18px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 30px;
+            border-radius: 4px;
+        }
+
+        .grand-total-bar .label {
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .grand-total-bar .amount {
+            font-size: 22px;
+        }
+
+        /* ===== SUMMARY TABLE ===== */
+        .summary-table-wrapper {
+            margin-bottom: 30px;
+        }
+
+        .summary-table-header {
+            background: var(--primary-green);
+            color: var(--white);
+            padding: 15px 20px;
+            font-size: 18px;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 0;
+            border-radius: 4px 4px 0 0;
+        }
+
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            border: 1px solid #E0E0E0;
+            border-top: none;
+        }
+
+        .summary-table thead th {
+            background: var(--light-grey);
+            padding: 12px;
+            font-weight: 700;
+            text-align: left;
+            border-bottom: 2px solid var(--primary-green);
+        }
+
+        .summary-table thead th:nth-child(2),
+        .summary-table thead th:nth-child(3) {
+            text-align: center;
+        }
+
+        .summary-table tbody td {
+            padding: 12px;
+            border-bottom: 1px solid #E0E0E0;
+        }
+
+        .summary-table tbody td:nth-child(2),
+        .summary-table tbody td:nth-child(3) {
+            text-align: center;
+        }
+
+        .summary-table tfoot td {
+            background: var(--primary-green);
+            color: var(--white);
+            padding: 15px 12px;
+            font-weight: 700;
+            font-size: 15px;
+        }
+
+        .summary-table tfoot td:nth-child(2),
+        .summary-table tfoot td:nth-child(3) {
+            text-align: center;
+        }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            text-align: center;
+            font-size: 11px;
+            color: #999999;
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid #E0E0E0;
+        }
+
+        /* ===== UTILITY CLASSES ===== */
+        .mb-20 {
+            margin-bottom: 20px;
+        }
+
+        .mb-30 {
+            margin-bottom: 30px;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .bold {
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <!-- ===== HEADER SECTION ===== -->
+        <div class="logo">SOCIALGARDEN</div>
+
+        <div class="title-banner">
+            <div class="project-title">Statement of Work</div>
+            <div class="project-meta">Client Name | Advisory | Services</div>
+        </div>
+
+        <div class="project-info">
+            <strong>Project:</strong> HubSpot Integration & Marketing Automation Setup<br>
+            <strong>Client:</strong> Acme Corporation<br>
+            <strong>Date:</strong> November 25, 2025
+        </div>
+
+        <!-- ===== PROJECT OVERVIEW TEXT BLOCK ===== -->
+        <div class="text-block no-break">
+            <h3>Project Overview:</h3>
+            <p>
+                This Statement of Work outlines the scope, deliverables, and pricing for the HubSpot integration 
+                and marketing automation setup project. Our team will work closely with your organization to 
+                implement a comprehensive solution that streamlines your marketing operations and enhances 
+                customer engagement.
+            </p>
+        </div>
+
+        <!-- ===== MAIN SCOPE TABLE ===== -->
+        <table class="scope-table no-break">
+            <thead>
+                <tr>
+                    <th>ITEMS</th>
+                    <th>ROLE</th>
+                    <th>HOURS</th>
+                    <th>TOTAL COST + GST</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Scope 1 Section -->
+                <tr>
+                    <td colspan="4" class="scope-section-header">
+                        Scope 1: Discovery & Planning
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="4" class="description-row">
+                        Initial consultation and requirements gathering to understand business objectives and technical requirements.
+                    </td>
+                </tr>
+                <tr>
+                    <td>Stakeholder interviews and requirements documentation</td>
+                    <td>Senior Consultant</td>
+                    <td>8</td>
+                    <td>$1,760.00</td>
+                </tr>
+                <tr>
+                    <td>Technical assessment and integration planning</td>
+                    <td>Technical Lead</td>
+                    <td>12</td>
+                    <td>$2,640.00</td>
+                </tr>
+                <tr>
+                    <td>Project roadmap and timeline development</td>
+                    <td>Project Manager</td>
+                    <td>6</td>
+                    <td>$1,188.00</td>
+                </tr>
+                <tr>
+                    <td colspan="4" class="deliverables-block">
+                        <h4>Deliverables:</h4>
+                        <ul>
+                            <li>Requirements documentation</li>
+                            <li>Technical architecture diagram</li>
+                            <li>Project timeline and milestones</li>
+                        </ul>
+                        <h4 style="margin-top: 15px;">Assumptions:</h4>
+                        <ul>
+                            <li>Client provides access to all necessary systems within 2 business days</li>
+                            <li>Key stakeholders are available for scheduled meetings</li>
+                        </ul>
+                    </td>
+                </tr>
+
+                <!-- Scope 2 Section -->
+                <tr>
+                    <td colspan="4" class="scope-section-header">
+                        Scope 2: HubSpot Configuration & Integration
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="4" class="description-row">
+                        Complete setup and configuration of HubSpot platform including CRM, Marketing Hub, and third-party integrations.
+                    </td>
+                </tr>
+                <tr>
+                    <td>HubSpot account setup and configuration</td>
+                    <td>HubSpot Specialist</td>
+                    <td>16</td>
+                    <td>$3,168.00</td>
+                </tr>
+                <tr>
+                    <td>CRM data migration and cleanup</td>
+                    <td>Data Analyst</td>
+                    <td>20</td>
+                    <td>$3,520.00</td>
+                </tr>
+                <tr>
+                    <td>Third-party integrations (Salesforce, Slack, etc.)</td>
+                    <td>Integration Engineer</td>
+                    <td>24</td>
+                    <td>$5,280.00</td>
+                </tr>
+                <tr>
+                    <td>Custom workflow automation development</td>
+                    <td>Marketing Automation Specialist</td>
+                    <td>18</td>
+                    <td>$3,564.00</td>
+                </tr>
+                <tr>
+                    <td colspan="4" class="deliverables-block">
+                        <h4>Deliverables:</h4>
+                        <ul>
+                            <li>Fully configured HubSpot account</li>
+                            <li>Integrated CRM with clean, migrated data</li>
+                            <li>Automated workflows for lead nurturing and scoring</li>
+                            <li>Integration documentation and API credentials</li>
+                        </ul>
+                        <h4 style="margin-top: 15px;">Assumptions:</h4>
+                        <ul>
+                            <li>Client provides clean data export from existing systems</li>
+                            <li>Maximum of 3 third-party integrations included</li>
+                            <li>Standard HubSpot API limits apply</li>
+                        </ul>
+                    </td>
+                </tr>
+
+                <!-- Scope 3 Section -->
+                <tr>
+                    <td colspan="4" class="scope-section-header">
+                        Scope 3: Training & Documentation
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="4" class="description-row">
+                        Comprehensive training for your team and detailed documentation for ongoing management.
+                    </td>
+                </tr>
+                <tr>
+                    <td>Admin training sessions (2 sessions, 3 hours each)</td>
+                    <td>Senior Consultant</td>
+                    <td>6</td>
+                    <td>$1,320.00</td>
+                </tr>
+                <tr>
+                    <td>End-user training and onboarding</td>
+                    <td>Training Specialist</td>
+                    <td>8</td>
+                    <td>$1,408.00</td>
+                </tr>
+                <tr>
+                    <td>Documentation creation and knowledge base setup</td>
+                    <td>Technical Writer</td>
+                    <td>10</td>
+                    <td>$1,760.00</td>
+                </tr>
+                <tr>
+                    <td colspan="4" class="deliverables-block">
+                        <h4>Deliverables:</h4>
+                        <ul>
+                            <li>Recorded training sessions</li>
+                            <li>User guides and quick reference cards</li>
+                            <li>Internal knowledge base with FAQs</li>
+                            <li>Best practices documentation</li>
+                        </ul>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- ===== GRAND TOTAL BAR ===== -->
+        <div class="grand-total-bar no-break">
+            <span class="label">TOTAL</span>
+            <span class="amount">$25,608.00</span>
+        </div>
+
+        <!-- ===== SUMMARY TABLE ===== -->
+        <div class="summary-table-wrapper no-break">
+            <div class="summary-table-header">Scope & Price Overview</div>
+            <table class="summary-table">
+                <thead>
+                    <tr>
+                        <th>Scope Name</th>
+                        <th>Estimated Total Hours</th>
+                        <th>Total Cost</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Scope 1: Discovery & Planning</td>
+                        <td>26</td>
+                        <td>$5,588.00</td>
+                    </tr>
+                    <tr>
+                        <td>Scope 2: HubSpot Configuration & Integration</td>
+                        <td>78</td>
+                        <td>$15,532.00</td>
+                    </tr>
+                    <tr>
+                        <td>Scope 3: Training & Documentation</td>
+                        <td>24</td>
+                        <td>$4,488.00</td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td class="bold">TOTAL</td>
+                        <td class="bold">128</td>
+                        <td class="bold">$25,608.00</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <!-- ===== BUDGET NOTES TEXT BLOCK ===== -->
+        <div class="text-block no-break">
+            <h3>Budget Notes:</h3>
+            <p>
+                All pricing is inclusive of GST. Payment terms are Net 30 from invoice date. 
+                A 50% deposit is required to commence work, with the balance due upon project completion. 
+                Any scope changes or additional work requests will be quoted separately and require written approval 
+                before proceeding.
+            </p>
+        </div>
+
+        <!-- ===== FOOTER ===== -->
+        <div class="footer">
+            Social Garden • Statement of Work • Generated November 25, 2025
+        </div>
+    </div>
+</body>
+</html>

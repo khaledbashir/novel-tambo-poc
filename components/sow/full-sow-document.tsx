@@ -1,9 +1,16 @@
 "use client";
 
-import React, { useState } from 'react';
-import { withInteractable } from '@tambo-ai/react';
-import { Trash2, Plus, GripVertical, FileDown, ArrowDownToLine } from 'lucide-react';
-import { z } from 'zod';
+import React, { useState } from "react";
+import { withInteractable } from "@tambo-ai/react";
+import { toast } from "sonner";
+import {
+    Trash2,
+    Plus,
+    GripVertical,
+    FileDown,
+    ArrowDownToLine,
+} from "lucide-react";
+import { z } from "zod";
 
 // Types
 interface RoleRow {
@@ -39,11 +46,11 @@ export const fullSOWSchema = z.object({
                     role: z.string(),
                     hours: z.number(),
                     rate: z.number(),
-                })
+                }),
             ),
             deliverables: z.array(z.string()),
             assumptions: z.array(z.string()),
-        })
+        }),
     ),
     projectOverview: z.string().optional(),
     budgetNotes: z.string().optional(),
@@ -56,8 +63,8 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
     clientName,
     projectTitle,
     scopes: initialScopes = [],
-    projectOverview = '',
-    budgetNotes = '',
+    projectOverview = "",
+    budgetNotes = "",
     discount: initialDiscount = 0,
 }) => {
     const [scopes, setScopes] = useState<Scope[]>(initialScopes || []);
@@ -66,7 +73,7 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
     // Sync state with props when they change (critical for streaming/updates)
     React.useEffect(() => {
         if (initialScopes) {
-            setScopes(prev => {
+            setScopes((prev) => {
                 // Deep compare to prevent infinite loops from new array references
                 if (JSON.stringify(prev) !== JSON.stringify(initialScopes)) {
                     return initialScopes;
@@ -79,106 +86,151 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
     React.useEffect(() => {
         setDiscount(initialDiscount);
     }, [initialDiscount]);
-    const [draggedRow, setDraggedRow] = useState<{ scopeId: string; rowId: string } | null>(null);
+    const [draggedRow, setDraggedRow] = useState<{
+        scopeId: string;
+        rowId: string;
+    } | null>(null);
 
     // Available roles from rate card
     const availableRoles = [
-        { name: "Account Management - (Senior Account Director)", baseRate: 365.00 },
-        { name: "Account Management - (Account Director)", baseRate: 295.00 },
-        { name: "Account Management - (Account Manager)", baseRate: 180.00 },
-        { name: "Account Management (Off)", baseRate: 120.00 },
-        { name: "Account Management - (Senior Account Manager)", baseRate: 210.00 },
-        { name: "Project Management - (Account Director)", baseRate: 295.00 },
-        { name: "Project Management - (Account Manager)", baseRate: 180.00 },
-        { name: "Project Management - (Senior Account Manager)", baseRate: 210.00 },
-        { name: "Tech - Delivery - Project Coordination", baseRate: 110.00 },
-        { name: "Tech - Delivery - Project Management", baseRate: 150.00 },
-        { name: "Tech - Head Of- Customer Experience Strategy", baseRate: 365.00 },
-        { name: "Tech - Head Of- Program Strategy", baseRate: 365.00 },
-        { name: "Tech - Head Of- Senior Project Management", baseRate: 365.00 },
-        { name: "Tech - Head Of- System Setup", baseRate: 365.00 },
-        { name: "Tech - Integrations", baseRate: 170.00 },
-        { name: "Tech - Integrations (Sm MAP)", baseRate: 295.00 },
-        { name: "Tech - Keyword Research", baseRate: 120.00 },
-        { name: "Tech - Landing Page - (Offshore)", baseRate: 120.00 },
-        { name: "Tech - Landing Page - (Onshore)", baseRate: 210.00 },
-        { name: "Tech - Producer - Admin Configuration", baseRate: 120.00 },
-        { name: "Tech - Producer - Campaign Build", baseRate: 120.00 },
-        { name: "Tech - Producer - Chat Bot / Live Chat", baseRate: 120.00 },
-        { name: "Tech - Producer - Copywriting", baseRate: 120.00 },
-        { name: "Tech - Producer - Deployment", baseRate: 120.00 },
-        { name: "Tech - Producer - Design", baseRate: 120.00 },
-        { name: "Tech - Producer - Development", baseRate: 120.00 },
-        { name: "Tech - Producer - Documentation Setup", baseRate: 120.00 },
-        { name: "Tech - Producer - Email Production", baseRate: 120.00 },
-        { name: "Tech - Producer - Field / Property Setup", baseRate: 120.00 },
-        { name: "Tech - Producer - Integration Assistance", baseRate: 120.00 },
-        { name: "Tech - Producer - Landing Page Production", baseRate: 120.00 },
-        { name: "Tech - Producer - Lead Scoring Setup", baseRate: 120.00 },
-        { name: "Tech - Producer - Reporting", baseRate: 120.00 },
-        { name: "Tech - Producer - Services", baseRate: 120.00 },
-        { name: "Tech - Producer - SMS Setup", baseRate: 120.00 },
-        { name: "Tech - Producer - Support & Monitoring", baseRate: 120.00 },
-        { name: "Tech - Producer - Testing", baseRate: 120.00 },
-        { name: "Tech - Producer - Training", baseRate: 120.00 },
-        { name: "Tech - Producer - Web Development", baseRate: 120.00 },
-        { name: "Tech - Producer - Workflows", baseRate: 120.00 },
-        { name: "Tech - SEO Producer", baseRate: 120.00 },
-        { name: "Tech - SEO Strategy", baseRate: 180.00 },
-        { name: "Tech - Specialist - Admin Configuration", baseRate: 180.00 },
-        { name: "Tech - Specialist - Campaign Optimisation", baseRate: 180.00 },
-        { name: "Tech - Specialist - Campaign Orchestration", baseRate: 180.00 },
-        { name: "Tech - Specialist - Database Management", baseRate: 180.00 },
-        { name: "Tech - Specialist - Email Production", baseRate: 180.00 },
-        { name: "Tech - Specialist - Integration Configuration", baseRate: 180.00 },
-        { name: "Tech - Specialist - Integration Services", baseRate: 190.00 },
-        { name: "Tech - Specialist - Lead Scoring Setup", baseRate: 180.00 },
-        { name: "Tech - Specialist - Program Management", baseRate: 180.00 },
-        { name: "Tech - Specialist - Reporting", baseRate: 180.00 },
-        { name: "Tech - Specialist - Services", baseRate: 180.00 },
-        { name: "Tech - Specialist - Testing", baseRate: 180.00 },
-        { name: "Tech - Specialist - Training", baseRate: 180.00 },
-        { name: "Tech - Specialist - Workflows", baseRate: 180.00 },
-        { name: "Tech - Sr. Architect - Approval & Testing", baseRate: 365.00 },
-        { name: "Tech - Sr. Architect - Consultancy Services", baseRate: 365.00 },
-        { name: "Tech - Sr. Architect - Data Strategy", baseRate: 365.00 },
-        { name: "Tech - Sr. Architect - Integration Strategy", baseRate: 365.00 },
-        { name: "Tech - Sr. Consultant - Admin Configuration", baseRate: 295.00 },
-        { name: "Tech - Sr. Consultant - Advisory & Consultation", baseRate: 295.00 },
-        { name: "Tech - Sr. Consultant - Approval & Testing", baseRate: 295.00 },
-        { name: "Tech - Sr. Consultant - Campaign Optimisation", baseRate: 295.00 },
-        { name: "Tech - Sr. Consultant - Campaign Strategy", baseRate: 295.00 },
-        { name: "Tech - Sr. Consultant - Database Management", baseRate: 295.00 },
-        { name: "Tech - Sr. Consultant - Reporting", baseRate: 295.00 },
-        { name: "Tech - Sr. Consultant - Services", baseRate: 295.00 },
-        { name: "Tech - Sr. Consultant - Strategy", baseRate: 295.00 },
-        { name: "Tech - Sr. Consultant - Training", baseRate: 295.00 },
-        { name: "Tech - Website Optimisation", baseRate: 120.00 },
-        { name: "Content - Campaign Strategy (Onshore)", baseRate: 180.00 },
-        { name: "Content - Keyword Research (Offshore)", baseRate: 120.00 },
-        { name: "Content - Keyword Research (Onshore)", baseRate: 150.00 },
-        { name: "Content - Optimisation (Onshore)", baseRate: 150.00 },
-        { name: "Content - Reporting (Offshore)", baseRate: 120.00 },
-        { name: "Content - Reporting (Onshore)", baseRate: 150.00 },
-        { name: "Content - SEO Copywriting (Onshore)", baseRate: 150.00 },
-        { name: "Content - SEO Strategy (Onshore)", baseRate: 210.00 },
-        { name: "Content - Website Optimisations (Offshore)", baseRate: 120.00 },
-        { name: "Copywriting (Offshore)", baseRate: 120.00 },
-        { name: "Copywriting (Onshore)", baseRate: 180.00 },
-        { name: "Design - Digital Asset (Offshore)", baseRate: 140.00 },
-        { name: "Design - Digital Asset (Onshore)", baseRate: 190.00 },
-        { name: "Design - Email (Offshore)", baseRate: 120.00 },
-        { name: "Design - Email (Onshore)", baseRate: 295.00 },
-        { name: "Design - Landing Page (Offshore)", baseRate: 120.00 },
-        { name: "Design - Landing Page (Onshore)", baseRate: 190.00 },
-        { name: "Dev (orTech) - Landing Page - (Offshore)", baseRate: 120.00 },
-        { name: "Dev (orTech) - Landing Page - (Onshore)", baseRate: 210.00 }
+        {
+            name: "Account Management - (Senior Account Director)",
+            baseRate: 365.0,
+        },
+        { name: "Account Management - (Account Director)", baseRate: 295.0 },
+        { name: "Account Management - (Account Manager)", baseRate: 180.0 },
+        { name: "Account Management (Off)", baseRate: 120.0 },
+        {
+            name: "Account Management - (Senior Account Manager)",
+            baseRate: 210.0,
+        },
+        { name: "Project Management - (Account Director)", baseRate: 295.0 },
+        { name: "Project Management - (Account Manager)", baseRate: 180.0 },
+        {
+            name: "Project Management - (Senior Account Manager)",
+            baseRate: 210.0,
+        },
+        { name: "Tech - Delivery - Project Coordination", baseRate: 110.0 },
+        { name: "Tech - Delivery - Project Management", baseRate: 150.0 },
+        {
+            name: "Tech - Head Of- Customer Experience Strategy",
+            baseRate: 365.0,
+        },
+        { name: "Tech - Head Of- Program Strategy", baseRate: 365.0 },
+        { name: "Tech - Head Of- Senior Project Management", baseRate: 365.0 },
+        { name: "Tech - Head Of- System Setup", baseRate: 365.0 },
+        { name: "Tech - Integrations", baseRate: 170.0 },
+        { name: "Tech - Integrations (Sm MAP)", baseRate: 295.0 },
+        { name: "Tech - Keyword Research", baseRate: 120.0 },
+        { name: "Tech - Landing Page - (Offshore)", baseRate: 120.0 },
+        { name: "Tech - Landing Page - (Onshore)", baseRate: 210.0 },
+        { name: "Tech - Producer - Admin Configuration", baseRate: 120.0 },
+        { name: "Tech - Producer - Campaign Build", baseRate: 120.0 },
+        { name: "Tech - Producer - Chat Bot / Live Chat", baseRate: 120.0 },
+        { name: "Tech - Producer - Copywriting", baseRate: 120.0 },
+        { name: "Tech - Producer - Deployment", baseRate: 120.0 },
+        { name: "Tech - Producer - Design", baseRate: 120.0 },
+        { name: "Tech - Producer - Development", baseRate: 120.0 },
+        { name: "Tech - Producer - Documentation Setup", baseRate: 120.0 },
+        { name: "Tech - Producer - Email Production", baseRate: 120.0 },
+        { name: "Tech - Producer - Field / Property Setup", baseRate: 120.0 },
+        { name: "Tech - Producer - Integration Assistance", baseRate: 120.0 },
+        { name: "Tech - Producer - Landing Page Production", baseRate: 120.0 },
+        { name: "Tech - Producer - Lead Scoring Setup", baseRate: 120.0 },
+        { name: "Tech - Producer - Reporting", baseRate: 120.0 },
+        { name: "Tech - Producer - Services", baseRate: 120.0 },
+        { name: "Tech - Producer - SMS Setup", baseRate: 120.0 },
+        { name: "Tech - Producer - Support & Monitoring", baseRate: 120.0 },
+        { name: "Tech - Producer - Testing", baseRate: 120.0 },
+        { name: "Tech - Producer - Training", baseRate: 120.0 },
+        { name: "Tech - Producer - Web Development", baseRate: 120.0 },
+        { name: "Tech - Producer - Workflows", baseRate: 120.0 },
+        { name: "Tech - SEO Producer", baseRate: 120.0 },
+        { name: "Tech - SEO Strategy", baseRate: 180.0 },
+        { name: "Tech - Specialist - Admin Configuration", baseRate: 180.0 },
+        { name: "Tech - Specialist - Campaign Optimisation", baseRate: 180.0 },
+        { name: "Tech - Specialist - Campaign Orchestration", baseRate: 180.0 },
+        { name: "Tech - Specialist - Database Management", baseRate: 180.0 },
+        { name: "Tech - Specialist - Email Production", baseRate: 180.0 },
+        {
+            name: "Tech - Specialist - Integration Configuration",
+            baseRate: 180.0,
+        },
+        { name: "Tech - Specialist - Integration Services", baseRate: 190.0 },
+        { name: "Tech - Specialist - Lead Scoring Setup", baseRate: 180.0 },
+        { name: "Tech - Specialist - Program Management", baseRate: 180.0 },
+        { name: "Tech - Specialist - Reporting", baseRate: 180.0 },
+        { name: "Tech - Specialist - Services", baseRate: 180.0 },
+        { name: "Tech - Specialist - Testing", baseRate: 180.0 },
+        { name: "Tech - Specialist - Training", baseRate: 180.0 },
+        { name: "Tech - Specialist - Workflows", baseRate: 180.0 },
+        { name: "Tech - Sr. Architect - Approval & Testing", baseRate: 365.0 },
+        {
+            name: "Tech - Sr. Architect - Consultancy Services",
+            baseRate: 365.0,
+        },
+        { name: "Tech - Sr. Architect - Data Strategy", baseRate: 365.0 },
+        {
+            name: "Tech - Sr. Architect - Integration Strategy",
+            baseRate: 365.0,
+        },
+        {
+            name: "Tech - Sr. Consultant - Admin Configuration",
+            baseRate: 295.0,
+        },
+        {
+            name: "Tech - Sr. Consultant - Advisory & Consultation",
+            baseRate: 295.0,
+        },
+        { name: "Tech - Sr. Consultant - Approval & Testing", baseRate: 295.0 },
+        {
+            name: "Tech - Sr. Consultant - Campaign Optimisation",
+            baseRate: 295.0,
+        },
+        { name: "Tech - Sr. Consultant - Campaign Strategy", baseRate: 295.0 },
+        {
+            name: "Tech - Sr. Consultant - Database Management",
+            baseRate: 295.0,
+        },
+        { name: "Tech - Sr. Consultant - Reporting", baseRate: 295.0 },
+        { name: "Tech - Sr. Consultant - Services", baseRate: 295.0 },
+        { name: "Tech - Sr. Consultant - Strategy", baseRate: 295.0 },
+        { name: "Tech - Sr. Consultant - Training", baseRate: 295.0 },
+        { name: "Tech - Website Optimisation", baseRate: 120.0 },
+        { name: "Content - Campaign Strategy (Onshore)", baseRate: 180.0 },
+        { name: "Content - Keyword Research (Offshore)", baseRate: 120.0 },
+        { name: "Content - Keyword Research (Onshore)", baseRate: 150.0 },
+        { name: "Content - Optimisation (Onshore)", baseRate: 150.0 },
+        { name: "Content - Reporting (Offshore)", baseRate: 120.0 },
+        { name: "Content - Reporting (Onshore)", baseRate: 150.0 },
+        { name: "Content - SEO Copywriting (Onshore)", baseRate: 150.0 },
+        { name: "Content - SEO Strategy (Onshore)", baseRate: 210.0 },
+        { name: "Content - Website Optimisations (Offshore)", baseRate: 120.0 },
+        { name: "Copywriting (Offshore)", baseRate: 120.0 },
+        { name: "Copywriting (Onshore)", baseRate: 180.0 },
+        { name: "Design - Digital Asset (Offshore)", baseRate: 140.0 },
+        { name: "Design - Digital Asset (Onshore)", baseRate: 190.0 },
+        { name: "Design - Email (Offshore)", baseRate: 120.0 },
+        { name: "Design - Email (Onshore)", baseRate: 295.0 },
+        { name: "Design - Landing Page (Offshore)", baseRate: 120.0 },
+        { name: "Design - Landing Page (Onshore)", baseRate: 190.0 },
+        { name: "Dev (orTech) - Landing Page - (Offshore)", baseRate: 120.0 },
+        { name: "Dev (orTech) - Landing Page - (Onshore)", baseRate: 210.0 },
     ];
+
+    // Helper function to ensure values are numbers
+    const safeNumber = (value: any): number => {
+        const num = Number(value);
+        return isNaN(num) ? 0 : num;
+    };
 
     // Calculations
     const calculateScopeTotal = (scope: Scope) => {
         if (!scope.roles || scope.roles.length === 0) return 0;
-        return scope.roles.reduce((sum, row) => sum + ((row.hours || 0) * (row.rate || 0)), 0);
+        return scope.roles.reduce(
+            (sum, row) => sum + safeNumber(row.hours) * safeNumber(row.rate),
+            0,
+        );
     };
 
     const calculateGrandTotal = () => {
@@ -192,8 +244,11 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
             };
         }
 
-        const subtotal = scopes.reduce((sum, scope) => sum + calculateScopeTotal(scope), 0);
-        const discountAmount = subtotal * (discount / 100);
+        const subtotal = scopes.reduce(
+            (sum, scope) => sum + calculateScopeTotal(scope),
+            0,
+        );
+        const discountAmount = subtotal * (safeNumber(discount) / 100);
         const afterDiscount = subtotal - discountAmount;
         const gst = afterDiscount * 0.1;
         return {
@@ -208,24 +263,31 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
     const totals = calculateGrandTotal();
 
     // Row operations
-    const updateRow = (scopeId: string, rowId: string, field: keyof RoleRow, value: any) => {
-        setScopes(prev =>
-            prev.map(scope =>
+    const updateRow = (
+        scopeId: string,
+        rowId: string,
+        field: keyof RoleRow,
+        value: any,
+    ) => {
+        setScopes((prev) =>
+            prev.map((scope) =>
                 scope.id === scopeId
                     ? {
                         ...scope,
-                        roles: scope.roles.map(row =>
-                            row.id === rowId ? { ...row, [field]: value } : row
+                        roles: scope.roles.map((row) =>
+                            row.id === rowId
+                                ? { ...row, [field]: value }
+                                : row,
                         ),
                     }
-                    : scope
-            )
+                    : scope,
+            ),
         );
     };
 
     const addRow = (scopeId: string) => {
-        setScopes(prev =>
-            prev.map(scope =>
+        setScopes((prev) =>
+            prev.map((scope) =>
                 scope.id === scopeId
                     ? {
                         ...scope,
@@ -233,67 +295,83 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                             ...scope.roles,
                             {
                                 id: `row-${Date.now()}`,
-                                task: '',
-                                role: '',
+                                task: "",
+                                role: "",
                                 hours: 0,
                                 rate: 0,
                             },
                         ],
                     }
-                    : scope
-            )
+                    : scope,
+            ),
         );
     };
 
     const removeRow = (scopeId: string, rowId: string) => {
-        setScopes(prev =>
-            prev.map(scope =>
+        setScopes((prev) =>
+            prev.map((scope) =>
                 scope.id === scopeId
                     ? {
                         ...scope,
-                        roles: scope.roles.filter(row => row.id !== rowId),
+                        roles: scope.roles.filter((row) => row.id !== rowId),
                     }
-                    : scope
-            )
+                    : scope,
+            ),
         );
     };
 
-    const handleRoleSelect = (scopeId: string, rowId: string, roleName: string) => {
-        const role = availableRoles.find(r => r.name === roleName);
-        updateRow(scopeId, rowId, 'role', roleName);
+    const handleRoleSelect = (
+        scopeId: string,
+        rowId: string,
+        roleName: string,
+    ) => {
+        const role = availableRoles.find((r) => r.name === roleName);
+        updateRow(scopeId, rowId, "role", roleName);
         if (role) {
-            updateRow(scopeId, rowId, 'rate', role.baseRate);
+            updateRow(scopeId, rowId, "rate", role.baseRate);
         }
     };
 
     // Drag and drop
-    const handleDragStart = (e: React.DragEvent, scopeId: string, rowId: string) => {
+    const handleDragStart = (
+        e: React.DragEvent,
+        scopeId: string,
+        rowId: string,
+    ) => {
         setDraggedRow({ scopeId, rowId });
-        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.effectAllowed = "move";
     };
 
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
+        e.dataTransfer.dropEffect = "move";
     };
 
-    const handleDrop = (e: React.DragEvent, targetScopeId: string, targetRowId: string) => {
+    const handleDrop = (
+        e: React.DragEvent,
+        targetScopeId: string,
+        targetRowId: string,
+    ) => {
         e.preventDefault();
         if (!draggedRow || draggedRow.scopeId !== targetScopeId) return;
 
-        setScopes(prev =>
-            prev.map(scope => {
+        setScopes((prev) =>
+            prev.map((scope) => {
                 if (scope.id !== targetScopeId) return scope;
 
-                const draggedIndex = scope.roles.findIndex(r => r.id === draggedRow.rowId);
-                const targetIndex = scope.roles.findIndex(r => r.id === targetRowId);
+                const draggedIndex = scope.roles.findIndex(
+                    (r) => r.id === draggedRow.rowId,
+                );
+                const targetIndex = scope.roles.findIndex(
+                    (r) => r.id === targetRowId,
+                );
 
                 const newRoles = [...scope.roles];
                 const [draggedItem] = newRoles.splice(draggedIndex, 1);
                 newRoles.splice(targetIndex, 0, draggedItem);
 
                 return { ...scope, roles: newRoles };
-            })
+            }),
         );
         setDraggedRow(null);
     };
@@ -301,12 +379,12 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
     // Insert SOW content directly into editor
     const insertToEditor = () => {
         if (!scopes || scopes.length === 0) {
-            alert('No SOW content to insert yet!');
+            toast.error("No SOW content to insert yet!");
             return;
         }
 
         // Dispatch custom event to insert content into editor
-        const event = new CustomEvent('insert-sow-content', {
+        const event = new CustomEvent("insert-sow-content", {
             detail: {
                 scopes,
                 projectTitle,
@@ -314,8 +392,8 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                 projectOverview,
                 budgetNotes,
                 totals,
-                discount
-            }
+                discount,
+            },
         });
         window.dispatchEvent(event);
     };
@@ -324,7 +402,9 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
         <div className="w-full max-w-7xl mx-auto p-6 bg-card rounded-lg border border-border shadow-sm space-y-8">
             {/* Header */}
             <div className="border-b border-border pb-4">
-                <h1 className="text-3xl font-bold text-foreground mb-2">{projectTitle}</h1>
+                <h1 className="text-3xl font-bold text-foreground mb-2">
+                    {projectTitle}
+                </h1>
                 <p className="text-muted-foreground">Client: {clientName}</p>
             </div>
 
@@ -337,7 +417,9 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                             <h2 className="text-xl font-bold text-foreground mb-2">
                                 Scope {scopeIndex + 1}: {scope.title}
                             </h2>
-                            <p className="text-muted-foreground italic">{scope.description}</p>
+                            <p className="text-muted-foreground italic">
+                                {scope.description}
+                            </p>
                         </div>
 
                         {/* Pricing Table */}
@@ -346,17 +428,31 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                                 <thead>
                                     <tr className="bg-muted border-b-2 border-border">
                                         <th className="px-4 py-3 text-left text-sm font-semibold text-foreground w-8"></th>
-                                        <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">TASK/DESCRIPTION</th>
-                                        <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">ROLE</th>
-                                        <th className="px-4 py-3 text-center text-sm font-semibold text-foreground w-24">HOURS</th>
-                                        <th className="px-4 py-3 text-center text-sm font-semibold text-foreground w-24">RATE</th>
-                                        <th className="px-4 py-3 text-right text-sm font-semibold text-foreground w-32">TOTAL COST + GST</th>
-                                        <th className="px-4 py-3 text-center text-sm font-semibold text-foreground w-16">ACTIONS</th>
+                                        <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">
+                                            TASK/DESCRIPTION
+                                        </th>
+                                        <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">
+                                            ROLE
+                                        </th>
+                                        <th className="px-4 py-3 text-center text-sm font-semibold text-foreground w-24">
+                                            HOURS
+                                        </th>
+                                        <th className="px-4 py-3 text-center text-sm font-semibold text-foreground w-24">
+                                            RATE
+                                        </th>
+                                        <th className="px-4 py-3 text-right text-sm font-semibold text-foreground w-32">
+                                            TOTAL COST + GST
+                                        </th>
+                                        <th className="px-4 py-3 text-center text-sm font-semibold text-foreground w-16">
+                                            ACTIONS
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {(scope.roles || []).map((row) => {
-                                        const rowCost = (row.hours || 0) * (row.rate || 0);
+                                        const rowCost =
+                                            safeNumber(row.hours) *
+                                            safeNumber(row.rate);
                                         const rowGST = rowCost * 0.1;
                                         const rowTotal = rowCost + rowGST;
 
@@ -364,43 +460,98 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                                             <tr
                                                 key={row.id}
                                                 draggable
-                                                onDragStart={(e) => handleDragStart(e, scope.id, row.id)}
+                                                onDragStart={(e) =>
+                                                    handleDragStart(
+                                                        e,
+                                                        scope.id,
+                                                        row.id,
+                                                    )
+                                                }
                                                 onDragOver={handleDragOver}
-                                                onDrop={(e) => handleDrop(e, scope.id, row.id)}
-                                                className={`border-b border-border hover:bg-muted/50 transition ${draggedRow?.rowId === row.id ? 'bg-primary/10 opacity-50' : ''
+                                                onDrop={(e) =>
+                                                    handleDrop(
+                                                        e,
+                                                        scope.id,
+                                                        row.id,
+                                                    )
+                                                }
+                                                className={`border-b border-border hover:bg-muted/50 transition ${draggedRow?.rowId === row.id
+                                                    ? "bg-primary/10 opacity-50"
+                                                    : ""
                                                     }`}
                                             >
                                                 <td className="px-4 py-3">
-                                                    <GripVertical size={16} className="text-muted-foreground cursor-move" />
+                                                    <GripVertical
+                                                        size={16}
+                                                        className="text-muted-foreground cursor-move"
+                                                    />
                                                 </td>
                                                 <td className="px-4 py-3">
                                                     <input
                                                         type="text"
-                                                        value={row.task || ''}
-                                                        onChange={(e) => updateRow(scope.id, row.id, 'task', e.target.value)}
+                                                        value={row.task || ""}
+                                                        onChange={(e) =>
+                                                            updateRow(
+                                                                scope.id,
+                                                                row.id,
+                                                                "task",
+                                                                e.target.value,
+                                                            )
+                                                        }
                                                         placeholder="e.g., Handle HubSpot setup..."
                                                         className="w-full px-3 py-2 border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
                                                     />
                                                 </td>
                                                 <td className="px-4 py-3">
                                                     <select
-                                                        value={row.role || ''}
-                                                        onChange={(e) => handleRoleSelect(scope.id, row.id, e.target.value)}
+                                                        value={row.role || ""}
+                                                        onChange={(e) =>
+                                                            handleRoleSelect(
+                                                                scope.id,
+                                                                row.id,
+                                                                e.target.value,
+                                                            )
+                                                        }
                                                         className="w-full px-3 py-2 border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
                                                     >
-                                                        <option value="">Select role...</option>
-                                                        {availableRoles.map((role, idx) => (
-                                                            <option key={`${role.name}-${idx}`} value={role.name}>
-                                                                {role.name}
-                                                            </option>
-                                                        ))}
+                                                        <option value="">
+                                                            Select role...
+                                                        </option>
+                                                        {availableRoles.map(
+                                                            (role, idx) => (
+                                                                <option
+                                                                    key={`${role.name}-${idx}`}
+                                                                    value={
+                                                                        role.name
+                                                                    }
+                                                                >
+                                                                    {role.name}
+                                                                </option>
+                                                            ),
+                                                        )}
                                                     </select>
                                                 </td>
                                                 <td className="px-4 py-3">
                                                     <input
                                                         type="number"
-                                                        value={row.hours || 0}
-                                                        onChange={(e) => updateRow(scope.id, row.id, 'hours', parseFloat(e.target.value) || 0)}
+                                                        value={
+                                                            isNaN(row.hours)
+                                                                ? 0
+                                                                : row.hours || 0
+                                                        }
+                                                        onChange={(e) =>
+                                                            updateRow(
+                                                                scope.id,
+                                                                row.id,
+                                                                "hours",
+                                                                safeNumber(
+                                                                    parseFloat(
+                                                                        e.target
+                                                                            .value,
+                                                                    ),
+                                                                ),
+                                                            )
+                                                        }
                                                         min="0"
                                                         step="0.5"
                                                         className="w-full px-3 py-2 border border-input rounded-md text-center bg-background focus:outline-none focus:ring-2 focus:ring-ring"
@@ -409,8 +560,24 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                                                 <td className="px-4 py-3">
                                                     <input
                                                         type="number"
-                                                        value={row.rate || 0}
-                                                        onChange={(e) => updateRow(scope.id, row.id, 'rate', parseFloat(e.target.value) || 0)}
+                                                        value={
+                                                            isNaN(row.rate)
+                                                                ? 0
+                                                                : row.rate || 0
+                                                        }
+                                                        onChange={(e) =>
+                                                            updateRow(
+                                                                scope.id,
+                                                                row.id,
+                                                                "rate",
+                                                                safeNumber(
+                                                                    parseFloat(
+                                                                        e.target
+                                                                            .value,
+                                                                    ),
+                                                                ),
+                                                            )
+                                                        }
                                                         min="0"
                                                         className="w-full px-3 py-2 border border-input rounded-md text-center bg-background focus:outline-none focus:ring-2 focus:ring-ring"
                                                     />
@@ -420,7 +587,12 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                                                 </td>
                                                 <td className="px-4 py-3 text-center">
                                                     <button
-                                                        onClick={() => removeRow(scope.id, row.id)}
+                                                        onClick={() =>
+                                                            removeRow(
+                                                                scope.id,
+                                                                row.id,
+                                                            )
+                                                        }
                                                         className="text-destructive hover:text-destructive/80 transition"
                                                         title="Remove row"
                                                     >
@@ -443,24 +615,37 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                         </button>
 
                         {/* Deliverables */}
-                        {scope.deliverables && scope.deliverables.length > 0 && (
-                            <div className="bg-muted p-4 rounded-lg">
-                                <h3 className="font-bold text-foreground mb-2">Deliverables:</h3>
-                                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                                    {scope.deliverables.map((item, idx) => (
-                                        <li key={idx}>{item}</li>
-                                    ))}
-                                </ul>
-                            </div>
-                        )}
+                        {scope.deliverables &&
+                            scope.deliverables.length > 0 && (
+                                <div className="bg-muted p-4 rounded-lg">
+                                    <h3 className="font-bold text-foreground mb-2">
+                                        Deliverables:
+                                    </h3>
+                                    <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                                        {scope.deliverables.map((item, idx) => (
+                                            <li
+                                                key={`deliverable-${scope.id}-${idx}`}
+                                            >
+                                                {item}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
 
                         {/* Assumptions */}
                         {scope.assumptions && scope.assumptions.length > 0 && (
                             <div className="bg-muted p-4 rounded-lg">
-                                <h3 className="font-bold text-foreground mb-2">Assumptions:</h3>
+                                <h3 className="font-bold text-foreground mb-2">
+                                    Assumptions:
+                                </h3>
                                 <ul className="list-disc list-inside space-y-1 text-muted-foreground">
                                     {scope.assumptions.map((item, idx) => (
-                                        <li key={idx}>{item}</li>
+                                        <li
+                                            key={`assumption-${scope.id}-${idx}`}
+                                        >
+                                            {item}
+                                        </li>
                                     ))}
                                 </ul>
                             </div>
@@ -469,44 +654,104 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                 ))
             ) : (
                 <div className="text-center p-8 bg-muted rounded-lg">
-                    <p className="text-muted-foreground">No scopes defined yet. Tambo will generate SOW scopes here.</p>
+                    <p className="text-muted-foreground">
+                        No scopes defined yet. Tambo will generate SOW scopes
+                        here.
+                    </p>
                 </div>
             )}
 
             {/* Scope & Price Overview */}
             <div className="border-t border-border pt-6">
-                <h2 className="text-2xl font-bold text-foreground mb-4 text-center">Scope & Price Overview</h2>
+                <h2 className="text-2xl font-bold text-foreground mb-4 text-center">
+                    Scope & Price Overview
+                </h2>
                 <div className="overflow-x-auto">
                     <table className="w-full border-collapse">
                         <thead>
                             <tr className="bg-muted border-b-2 border-border">
-                                <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">SCOPE</th>
-                                <th className="px-4 py-3 text-center text-sm font-semibold text-foreground">ESTIMATED TOTAL HOURS</th>
-                                <th className="px-4 py-3 text-right text-sm font-semibold text-foreground">TOTAL COST</th>
+                                <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">
+                                    SCOPE
+                                </th>
+                                <th className="px-4 py-3 text-center text-sm font-semibold text-foreground">
+                                    ESTIMATED TOTAL HOURS
+                                </th>
+                                <th className="px-4 py-3 text-right text-sm font-semibold text-foreground">
+                                    TOTAL COST
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
-                            {scopes && scopes.length > 0 && scopes.map((scope, idx) => {
-                                const scopeTotal = calculateScopeTotal(scope);
-                                const scopeHours = (scope.roles || []).reduce((sum, row) => sum + row.hours, 0);
-                                const scopeGST = scopeTotal * 0.1;
-                                const scopeTotalWithGST = scopeTotal + scopeGST;
+                            {scopes && scopes.length > 0 ? (
+                                <>
+                                    {scopes.map((scope, idx) => {
+                                        const scopeTotal =
+                                            calculateScopeTotal(scope);
+                                        const scopeHours = (
+                                            scope.roles || []
+                                        ).reduce(
+                                            (sum, row) =>
+                                                sum + safeNumber(row.hours),
+                                            0,
+                                        );
+                                        const scopeGST = scopeTotal * 0.1;
+                                        const scopeTotalWithGST =
+                                            scopeTotal + scopeGST;
 
-                                return (
-                                    <tr key={scope.id} className="border-b border-border">
-                                        <td className="px-4 py-3 font-bold">Scope {idx + 1}: {scope.title}</td>
-                                        <td className="px-4 py-3 text-center font-bold">{scopeHours}</td>
-                                        <td className="px-4 py-3 text-right font-bold">${scopeTotalWithGST.toFixed(2)}</td>
-                                    </tr>
-                                );
-                            })}
-                            <tr className="bg-muted border-t-2 border-border">
-                                <td className="px-4 py-3 font-bold text-lg">TOTAL PROJECT</td>
-                                <td className="px-4 py-3 text-center font-bold text-lg">
-                                    {scopes && scopes.length > 0 ? scopes.reduce((sum, scope) => sum + (scope.roles || []).reduce((s, r) => s + r.hours, 0), 0) : 0}
+                                        return (
+                                            <tr
+                                                key={scope.id}
+                                                className="border-b border-border"
+                                            >
+                                                <td className="px-4 py-3 font-bold">
+                                                    Scope {idx + 1}: {scope.title}
+                                                </td>
+                                                <td className="px-4 py-3 text-center font-bold">
+                                                    {scopeHours.toFixed(1)}
+                                                </td>
+                                                <td className="px-4 py-3 text-right font-bold">
+                                                    $
+                                                    {isNaN(scopeTotalWithGST)
+                                                        ? "0.00"
+                                                        : scopeTotalWithGST.toFixed(
+                                                            2,
+                                                        )}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </>
+                            ) : null}
+                            <tr key="total-project-row" className="bg-muted border-t-2 border-border">
+                                <td className="px-4 py-3 font-bold text-lg">
+                                    TOTAL PROJECT
                                 </td>
-                                <td className="px-4 py-3 text-right font-bold text-lg text-primary">
-                                    ${totals.total.toFixed(2)}
+                                <td className="px-4 py-3 text-center font-bold text-lg">
+                                    {scopes && scopes.length > 0
+                                        ? scopes
+                                            .reduce(
+                                                (sum, scope) =>
+                                                    sum +
+                                                    (
+                                                        scope.roles || []
+                                                    ).reduce(
+                                                        (s, r) =>
+                                                            s +
+                                                            safeNumber(
+                                                                r.hours,
+                                                            ),
+                                                        0,
+                                                    ),
+                                                0,
+                                            )
+                                            .toFixed(1)
+                                        : 0}
+                                </td>
+                                <td className="px-4 py-3 text-right font-bold text-lg">
+                                    $
+                                    {isNaN(totals.total)
+                                        ? "0.00"
+                                        : totals.total.toFixed(2)}
                                 </td>
                             </tr>
                         </tbody>
@@ -520,11 +765,25 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                     <div className="space-y-3">
                         {/* Discount Input */}
                         <div className="flex justify-between items-center pb-3 border-b border-border">
-                            <label className="text-sm font-medium text-foreground">Discount (%):</label>
+                            <label className="text-sm font-medium text-foreground">
+                                Discount (%):
+                            </label>
                             <input
                                 type="number"
-                                value={discount}
-                                onChange={(e) => setDiscount(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)))}
+                                value={isNaN(discount) ? 0 : discount}
+                                onChange={(e) =>
+                                    setDiscount(
+                                        Math.max(
+                                            0,
+                                            Math.min(
+                                                100,
+                                                safeNumber(
+                                                    parseFloat(e.target.value),
+                                                ),
+                                            ),
+                                        ),
+                                    )
+                                }
                                 min="0"
                                 max="100"
                                 className="w-20 px-3 py-1 border border-input rounded-md text-right bg-background focus:outline-none focus:ring-2 focus:ring-ring"
@@ -533,30 +792,59 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
 
                         <div className="flex justify-between text-foreground">
                             <span className="text-sm">Subtotal:</span>
-                            <span className="font-semibold">${totals.subtotal.toFixed(2)}</span>
+                            <span className="font-semibold">
+                                $
+                                {isNaN(totals.subtotal)
+                                    ? "0.00"
+                                    : totals.subtotal.toFixed(2)}
+                            </span>
                         </div>
 
                         {discount > 0 && (
-                            <>
+                            <div className="space-y-3">
                                 <div className="flex justify-between text-destructive text-sm">
                                     <span>Discount ({discount}%):</span>
-                                    <span>-${totals.discountAmount.toFixed(2)}</span>
+                                    <span>
+                                        -$
+                                        {isNaN(totals.discountAmount)
+                                            ? "0.00"
+                                            : totals.discountAmount.toFixed(2)}
+                                    </span>
                                 </div>
                                 <div className="flex justify-between text-foreground">
-                                    <span className="text-sm">After Discount:</span>
-                                    <span className="font-semibold">${totals.afterDiscount.toFixed(2)}</span>
+                                    <span className="text-sm">
+                                        After Discount:
+                                    </span>
+                                    <span className="font-semibold">
+                                        $
+                                        {isNaN(totals.afterDiscount)
+                                            ? "0.00"
+                                            : totals.afterDiscount.toFixed(2)}
+                                    </span>
                                 </div>
-                            </>
+                            </div>
                         )}
 
                         <div className="flex justify-between text-foreground">
                             <span className="text-sm">GST (10%):</span>
-                            <span className="font-semibold">+${totals.gst.toFixed(2)}</span>
+                            <span className="font-semibold">
+                                +$
+                                {isNaN(totals.gst)
+                                    ? "0.00"
+                                    : totals.gst.toFixed(2)}
+                            </span>
                         </div>
 
                         <div className="flex justify-between items-center pt-3 border-t-2 border-border">
-                            <span className="font-bold text-foreground">Total (AUD):</span>
-                            <span className="text-2xl font-bold text-primary">${totals.total.toFixed(2)}</span>
+                            <span className="font-bold text-foreground">
+                                Total (AUD):
+                            </span>
+                            <span className="text-2xl font-bold text-primary">
+                                $
+                                {isNaN(totals.total)
+                                    ? "0.00"
+                                    : totals.total.toFixed(2)}
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -565,7 +853,9 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
             {/* Project Overview */}
             {projectOverview && (
                 <div className="border-t border-border pt-6">
-                    <h3 className="text-xl font-bold text-foreground mb-2">Project Overview:</h3>
+                    <h3 className="text-xl font-bold text-foreground mb-2">
+                        Project Overview:
+                    </h3>
                     <p className="text-muted-foreground">{projectOverview}</p>
                 </div>
             )}
@@ -573,7 +863,9 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
             {/* Budget Notes */}
             {budgetNotes && (
                 <div className="border-t border-border pt-6">
-                    <h3 className="text-xl font-bold text-foreground mb-2">Budget Notes:</h3>
+                    <h3 className="text-xl font-bold text-foreground mb-2">
+                        Budget Notes:
+                    </h3>
                     <p className="text-muted-foreground">{budgetNotes}</p>
                 </div>
             )}
@@ -598,8 +890,9 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
 
 // Wrap with Interactable
 export const FullSOWDocument = withInteractable(FullSOWDocumentBase, {
-    componentName: 'FullSOWDocument',
-    description: 'Complete multi-scope SOW document with interactive pricing tables, deliverables, assumptions, and budget tracking',
+    componentName: "FullSOWDocument",
+    description:
+        "Complete multi-scope SOW document with interactive pricing tables, deliverables, assumptions, and budget tracking",
     propsSchema: fullSOWSchema,
 });
 

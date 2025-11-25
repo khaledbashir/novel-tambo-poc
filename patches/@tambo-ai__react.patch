@@ -1,0 +1,31 @@
+diff --git a/esm/hooks/use-message-images.js b/esm/hooks/use-message-images.js
+index 03ccccc6f3bc3ffec6b60a02a52a23200777908f..4a010a3e0a32cdddfc5634e44e0125551ed5bc10 100644
+--- a/esm/hooks/use-message-images.js
++++ b/esm/hooks/use-message-images.js
+@@ -14,8 +14,8 @@ export function useMessageImages() {
+         });
+     };
+     const addImage = useCallback(async (file) => {
+-        if (!file.type.startsWith("image/")) {
+-            throw new Error("Only image files are allowed");
++        if (!file.type.startsWith("image/") && file.type !== "application/pdf" && file.type !== "application/vnd.openxmlformats-officedocument.wordprocessingml.document" && file.type !== "application/msword") {
++            throw new Error("Only image, PDF, and Word files are allowed");
+         }
+         const dataUrl = await fileToDataUrl(file);
+         const newImage = {
+@@ -29,11 +29,11 @@ export function useMessageImages() {
+         setImages((prev) => [...prev, newImage]);
+     }, []);
+     const addImages = useCallback(async (files) => {
+-        const imageFiles = files.filter((file) => file.type.startsWith("image/"));
+-        if (imageFiles.length === 0) {
+-            throw new Error("No valid image files provided");
++        const validFiles = files.filter((file) => file.type.startsWith("image/") || file.type === "application/pdf" || file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" || file.type === "application/msword");
++        if (validFiles.length === 0) {
++            throw new Error("No valid files provided");
+         }
+-        const newImages = await Promise.all(imageFiles.map(async (file) => {
++        const newImages = await Promise.all(validFiles.map(async (file) => {
+             const dataUrl = await fileToDataUrl(file);
+             return {
+                 id: crypto.randomUUID(),

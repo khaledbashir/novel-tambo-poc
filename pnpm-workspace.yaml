@@ -1,0 +1,5 @@
+onlyBuiltDependencies:
+  - puppeteer
+
+patchedDependencies:
+  '@tambo-ai/react': patches/@tambo-ai__react.patch

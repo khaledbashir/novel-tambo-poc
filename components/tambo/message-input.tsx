@@ -25,6 +25,7 @@ import {
 import { cva, type VariantProps } from "class-variance-authority";
 import {
   ArrowUp,
+  FileText,
   Image as ImageIcon,
   Paperclip,
   Square,
@@ -298,14 +299,17 @@ const MessageInputInternal = React.forwardRef<
       dragCounter.current = 0;
 
       const files = Array.from(e.dataTransfer.files).filter((file) =>
-        file.type.startsWith("image/"),
+        file.type.startsWith("image/") ||
+        file.type === "application/pdf" ||
+        file.type === "application/msword" ||
+        file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       );
 
       if (files.length > 0) {
         try {
           await addImages(files);
         } catch (error) {
-          console.error("Failed to add dropped images:", error);
+          console.error("Failed to add dropped files:", error);
         }
       }
     },
@@ -729,7 +733,7 @@ export interface MessageInputFileButtonProps
 const MessageInputFileButton = React.forwardRef<
   HTMLButtonElement,
   MessageInputFileButtonProps
->(({ className, accept = "image/*", multiple = true, ...props }, ref) => {
+>(({ className, accept = "image/*,application/pdf,.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document", multiple = true, ...props }, ref) => {
   const { addImages } = useTamboThreadInput();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -754,13 +758,13 @@ const MessageInputFileButton = React.forwardRef<
   );
 
   return (
-    <Tooltip content="Attach Images" side="top">
+    <Tooltip content="Attach Files (Images, PDFs, Word Docs)" side="top">
       <button
         ref={ref}
         type="button"
         onClick={handleClick}
         className={buttonClasses}
-        aria-label="Attach Images"
+        aria-label="Attach Files"
         data-slot="message-input-file-button"
         {...props}
       >
@@ -890,64 +894,90 @@ const ImageContextBadge: React.FC<ImageContextBadgeProps> = ({
   isExpanded,
   onToggle,
   onRemove,
-}) => (
-  <div className="relative group flex-shrink-0">
-    <button
-      type="button"
-      onClick={onToggle}
-      aria-expanded={isExpanded}
-      className={cn(
-        "relative flex items-center rounded-lg border overflow-hidden",
-        "border-border bg-background hover:bg-muted cursor-pointer",
-        "transition-[width,height,padding] duration-200 ease-in-out",
-        isExpanded ? "w-40 h-28 p-0" : "w-32 h-9 pl-3 pr-8 gap-2",
-      )}
-    >
-      {isExpanded && (
-        <div
-          className={cn(
-            "absolute inset-0 transition-opacity duration-150",
-            "opacity-100 delay-100",
-          )}
-        >
-          <div className="relative w-full h-full">
-            <Image
-              src={image.dataUrl}
-              alt={displayName}
-              fill
-              unoptimized
-              className="object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-            <div className="absolute bottom-1 left-2 right-2 text-white text-xs font-medium truncate">
-              {displayName}
-            </div>
-          </div>
-        </div>
-      )}
-      <span
+}) => {
+  // Detect if this is a PDF or Word document
+  const isPDF = image.file.type === 'application/pdf';
+  const isWordDoc = image.file.type === 'application/msword' ||
+    image.file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+  const isDocument = isPDF || isWordDoc;
+
+  return (
+    <div className="relative group flex-shrink-0">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={isExpanded}
         className={cn(
-          "flex items-center gap-1.5 text-sm text-foreground truncate leading-none transition-opacity duration-150",
-          isExpanded ? "opacity-0" : "opacity-100 delay-100",
+          "relative flex items-center rounded-lg border overflow-hidden",
+          "border-border bg-background hover:bg-muted cursor-pointer",
+          "transition-[width,height,padding] duration-200 ease-in-out",
+          isExpanded ? "w-40 h-28 p-0" : "w-32 h-9 pl-3 pr-8 gap-2",
         )}
       >
-        <ImageIcon className="w-3.5 h-3.5 flex-shrink-0" />
-        <span className="truncate">{displayName}</span>
-      </span>
-    </button>
-    <button
-      type="button"
-      onClick={(e) => {
-        e.stopPropagation();
-        onRemove();
-      }}
-      className="absolute -top-1 -right-1 w-5 h-5 bg-background border border-border text-muted-foreground rounded-full flex items-center justify-center hover:bg-muted hover:text-foreground transition-colors shadow-sm z-10"
-      aria-label={`Remove ${displayName}`}
-    >
-      <X className="w-3 h-3" />
-    </button>
-  </div>
-);
+        {isExpanded && (
+          <div
+            className={cn(
+              "absolute inset-0 transition-opacity duration-150",
+              "opacity-100 delay-100",
+            )}
+          >
+            {isDocument ? (
+              // Show document icon for PDFs and Word docs
+              <div className="relative w-full h-full flex flex-col items-center justify-center bg-muted">
+                <FileText className="w-12 h-12 text-primary mb-2" />
+                <div className="px-2 text-xs font-medium text-foreground truncate max-w-full">
+                  {displayName}
+                </div>
+                <div className="text-[10px] text-muted-foreground">
+                  {isPDF ? 'PDF' : 'Word Doc'}
+                </div>
+              </div>
+            ) : (
+              // Show image preview for actual images
+              <div className="relative w-full h-full">
+                <Image
+                  src={image.dataUrl}
+                  alt={displayName}
+                  fill
+                  unoptimized
+                  className="object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                <div className="absolute bottom-1 left-2 right-2 text-white text-xs font-medium truncate">
+                  {displayName}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+        <span
+          className={cn(
+            "flex items-center gap-1.5 text-sm text-foreground truncate leading-none transition-opacity duration-150",
+            isExpanded ? "opacity-0" : "opacity-100 delay-100",
+          )}
+        >
+          {isDocument ? (
+            <FileText className="w-3.5 h-3.5 flex-shrink-0 text-primary" />
+          ) : (
+            <ImageIcon className="w-3.5 h-3.5 flex-shrink-0" />
+          )}
+          <span className="truncate">{displayName}</span>
+        </span>
+      </button>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onRemove();
+        }}
+        className="absolute -top-1 -right-1 w-5 h-5 bg-background border border-border text-muted-foreground rounded-full flex items-center justify-center hover:bg-muted hover:text-foreground transition-colors shadow-sm z-10"
+        aria-label={`Remove ${displayName}`}
+      >
+        <X className="w-3 h-3" />
+      </button>
+    </div>
+  );
+};
 
 /**
  * Props for the MessageInputStagedImages component.

@@ -1,227 +1,144 @@
-import { Editor } from 'novel';
-// Fake change for testing push
+import { EditorInstance } from "novel";
 
 /**
- * Converts SOW data to Tiptap JSON format and inserts into editor
+ * Converts SOW data to HTML and inserts into editor
  */
-export function insertSOWToEditor(editor: Editor, sowData: {
-    clientName: string;
-    projectTitle: string;
-    scopes: Array<{
-        id: string;
-        title: string;
-        description: string;
-        roles: Array<{
+export function insertSOWToEditor(
+    editor: EditorInstance,
+    sowData: {
+        clientName: string;
+        projectTitle: string;
+        scopes: Array<{
             id: string;
-            task: string;
-            role: string;
-            hours: number;
-            rate: number;
+            title: string;
+            description: string;
+            roles: Array<{
+                id: string;
+                task: string;
+                role: string;
+                hours: number;
+                rate: number;
+            }>;
+            deliverables: string[];
+            assumptions: string[];
         }>;
-        deliverables: string[];
-        assumptions: string[];
-    }>;
-    projectOverview?: string;
-    budgetNotes?: string;
-    discount?: number;
-}) {
+        projectOverview?: string;
+        budgetNotes?: string;
+        discount?: number;
+    },
+) {
     if (!editor) {
-        console.error('Editor not available');
+        console.error("Editor not available");
         return;
     }
 
     // Calculate totals
-    const calculateScopeTotal = (scope: typeof sowData.scopes[0]) => {
+    const calculateScopeTotal = (scope: (typeof sowData.scopes)[0]) => {
         if (!scope.roles || scope.roles.length === 0) return 0;
-        return scope.roles.reduce((sum, row) => sum + (row.hours * row.rate), 0);
+        return scope.roles.reduce((sum, row) => sum + row.hours * row.rate, 0);
     };
 
-    const subtotal = sowData.scopes.reduce((sum, scope) => sum + calculateScopeTotal(scope), 0);
+    const subtotal = sowData.scopes.reduce(
+        (sum, scope) => sum + calculateScopeTotal(scope),
+        0,
+    );
     const discountAmount = subtotal * ((sowData.discount || 0) / 100);
     const afterDiscount = subtotal - discountAmount;
     const gst = afterDiscount * 0.1;
     const total = afterDiscount + gst;
 
-    // Build Tiptap JSON content
-    const content: any[] = [];
+    // Insert HTML content directly
+    let htmlContent = "";
 
     // Header
-    content.push({
-        type: 'heading',
-        attrs: { level: 1 },
-        content: [{ type: 'text', text: sowData.projectTitle }]
-    });
-
-    content.push({
-        type: 'paragraph',
-        content: [{ type: 'text', text: `Client: ${sowData.clientName}` }]
-    });
-
-    // content.push({
-    //     type: 'horizontalRule'
-    // });
+    htmlContent += `<h1>${sowData.projectTitle}</h1>`;
+    htmlContent += `<p><strong>Client:</strong> ${sowData.clientName}</p>`;
+    htmlContent += `<hr>`;
 
     // Each Scope
     sowData.scopes.forEach((scope, scopeIndex) => {
         // Scope Header
-        content.push({
-            type: 'heading',
-            attrs: { level: 2 },
-            content: [{ type: 'text', text: `Scope ${scopeIndex + 1}: ${scope.title}` }]
-        });
+        htmlContent += `<h2>Scope ${scopeIndex + 1}: ${scope.title}</h2>`;
 
         // Scope Description
-        content.push({
-            type: 'paragraph',
-            content: [{ type: 'text', text: scope.description, marks: [{ type: 'italic' }] }]
+        htmlContent += `<p><em>${scope.description}</em></p>`;
+
+        // Pricing Table
+        htmlContent += `<h3>Pricing</h3>`;
+        htmlContent += `<table class="border-collapse border border-border"><thead><tr><th class="font-medium text-left border border-border bg-muted">Task/Description</th><th class="font-medium text-left border border-border bg-muted">Role</th><th class="font-medium text-center border border-border bg-muted">Hours</th><th class="font-medium text-right border border-border bg-muted">Rate ($/hr)</th><th class="font-medium text-right border border-border bg-muted">Total (incl. GST)</th></tr></thead><tbody>`;
+
+        // Add table rows
+        scope.roles.forEach((row) => {
+            const rowCost = row.hours * row.rate;
+            const rowGST = rowCost * 0.1;
+            const rowTotal = rowCost + rowGST;
+
+            htmlContent += `<tr><td class="border border-border">${row.task}</td><td class="border border-border">${row.role}</td><td class="border border-border text-center">${row.hours}</td><td class="border border-border text-right">$${row.rate.toFixed(2)}</td><td class="border border-border text-right">$${rowTotal.toFixed(2)}</td></tr>`;
         });
 
-        // Deliverables
-        if (scope.deliverables && scope.deliverables.length > 0) {
-            content.push({
-                type: 'heading',
-                attrs: { level: 3 },
-                content: [{ type: 'text', text: 'Deliverables' }]
-            });
-
-            content.push({
-                type: 'bulletList',
-                content: scope.deliverables.map(item => ({
-                    type: 'listItem',
-                    content: [{
-                        type: 'paragraph',
-                        content: [{ type: 'text', text: item }]
-                    }]
-                }))
-            });
-        }
-
-        // Pricing List (using bullet list instead of table)
-        content.push({
-            type: 'heading',
-            attrs: { level: 3 },
-            content: [{ type: 'text', text: 'Pricing' }]
-        });
-
-        // Create pricing list items
-        const pricingItems = scope.roles.map(row => ({
-            type: 'listItem',
-            content: [{
-                type: 'paragraph',
-                content: [
-                    { type: 'text', text: `${row.task} - `, marks: [{ type: 'bold' }] },
-                    { type: 'text', text: `${row.role} (${row.hours}h @ $${row.rate.toFixed(2)}/h) = $${(row.hours * row.rate * 1.1).toFixed(2)} AUD (incl. GST)` }
-                ]
-            }]
-        }));
-
-        content.push({
-            type: 'bulletList',
-            content: pricingItems
-        });
+        htmlContent += `</tbody></table>`;
 
         // Scope Total
         const scopeTotal = calculateScopeTotal(scope);
         const scopeGST = scopeTotal * 0.1;
         const scopeTotalWithGST = scopeTotal + scopeGST;
 
-        content.push({
-            type: 'paragraph',
-            content: [
-                { type: 'text', text: 'Scope Total: ', marks: [{ type: 'bold' }] },
-                { type: 'text', text: `$${scopeTotalWithGST.toFixed(2)} AUD (inc. GST)` }
-            ]
-        });
+        htmlContent += `<p><strong>Scope Total: $${scopeTotalWithGST.toFixed(
+            2,
+        )} AUD (inc. GST)</strong></p>`;
+
+        // Deliverables
+        if (scope.deliverables && scope.deliverables.length > 0) {
+            htmlContent += `<h3>Deliverables</h3>`;
+            htmlContent += `<ul>`;
+            scope.deliverables.forEach((item) => {
+                htmlContent += `<li>${item}</li>`;
+            });
+            htmlContent += `</ul>`;
+        }
 
         // Assumptions
         if (scope.assumptions && scope.assumptions.length > 0) {
-            content.push({
-                type: 'heading',
-                attrs: { level: 3 },
-                content: [{ type: 'text', text: 'Assumptions' }]
+            htmlContent += `<h3>Assumptions</h3>`;
+            htmlContent += `<ul>`;
+            scope.assumptions.forEach((item) => {
+                htmlContent += `<li>${item}</li>`;
             });
-
-            content.push({
-                type: 'bulletList',
-                content: scope.assumptions.map(item => ({
-                    type: 'listItem',
-                    content: [{
-                        type: 'paragraph',
-                        content: [{ type: 'text', text: item }]
-                    }]
-                }))
-            });
+            htmlContent += `</ul>`;
         }
 
-        // content.push({
-        //     type: 'horizontalRule'
-        // });
+        htmlContent += `<hr>`;
     });
 
     // Grand Total Summary
-    content.push({
-        type: 'heading',
-        attrs: { level: 2 },
-        content: [{ type: 'text', text: 'Financial Summary' }]
-    });
-
-    const summaryLines = [
-        `Subtotal: $${subtotal.toFixed(2)} AUD`,
-    ];
+    htmlContent += `<h2>Financial Summary</h2>`;
+    htmlContent += `<table class="border-collapse border border-border"><thead><tr><th class="font-medium text-left border border-border bg-muted">Item</th><th class="font-medium text-right border border-border bg-muted">Amount (AUD)</th></tr></thead><tbody>`;
+    htmlContent += `<tr><td class="border border-border">Subtotal</td><td class="border border-border text-right">$${subtotal.toFixed(2)}</td></tr>`;
 
     if (sowData.discount && sowData.discount > 0) {
-        summaryLines.push(`Discount (${sowData.discount}%): -$${discountAmount.toFixed(2)} AUD`);
-        summaryLines.push(`After Discount: $${afterDiscount.toFixed(2)} AUD`);
+        htmlContent += `<tr><td class="border border-border">Discount (${sowData.discount}%)</td><td class="border border-border text-right">-$${discountAmount.toFixed(2)}</td></tr>`;
+        htmlContent += `<tr><td class="border border-border">After Discount</td><td class="border border-border text-right">$${afterDiscount.toFixed(2)}</td></tr>`;
     }
 
-    summaryLines.push(`GST (10%): +$${gst.toFixed(2)} AUD`);
-    summaryLines.push(`**Grand Total: $${total.toFixed(2)} AUD**`);
-
-    summaryLines.forEach(line => {
-        const isBold = line.includes('**');
-        const text = line.replace(/\*\*/g, '');
-        content.push({
-            type: 'paragraph',
-            content: [{
-                type: 'text',
-                text,
-                marks: isBold ? [{ type: 'bold' }] : []
-            }]
-        });
-    });
+    htmlContent += `<tr><td class="border border-border">GST (10%)</td><td class="border border-border text-right">+$${gst.toFixed(2)}</td></tr>`;
+    htmlContent += `<tr><td class="border border-border font-bold">Grand Total</td><td class="border border-border text-right font-bold">$${total.toFixed(2)}</td></tr>`;
+    htmlContent += `</tbody></table>`;
 
     // Project Overview
     if (sowData.projectOverview) {
-        // content.push({
-        //     type: 'horizontalRule'
-        // });
-        content.push({
-            type: 'heading',
-            attrs: { level: 2 },
-            content: [{ type: 'text', text: 'Project Overview' }]
-        });
-        content.push({
-            type: 'paragraph',
-            content: [{ type: 'text', text: sowData.projectOverview }]
-        });
+        htmlContent += `<h2>Project Overview</h2>`;
+        htmlContent += `<p>${sowData.projectOverview}</p>`;
     }
 
     // Budget Notes
     if (sowData.budgetNotes) {
-        content.push({
-            type: 'heading',
-            attrs: { level: 2 },
-            content: [{ type: 'text', text: 'Budget Notes' }]
-        });
-        content.push({
-            type: 'paragraph',
-            content: [{ type: 'text', text: sowData.budgetNotes }]
-        });
+        htmlContent += `<h2>Budget Notes</h2>`;
+        htmlContent += `<p>${sowData.budgetNotes}</p>`;
     }
 
-    // Insert into editor
-    editor.commands.insertContent(content);
+    // Insert HTML content into editor
+    editor.commands.setContent(htmlContent);
 
     // Scroll to bottom
-    editor.commands.focus('end');
+    editor.commands.focus("end");
 }

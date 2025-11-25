@@ -3,14 +3,14 @@ import { getDocumentsByWorkspace, createDocument } from '@/lib/db-operations';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const workspaceId = searchParams.get('workspaceId');
+
+  if (!workspaceId) {
+    return NextResponse.json({ error: 'workspaceId is required' }, { status: 400 });
+  }
+
   try {
-    const { searchParams } = new URL(request.url);
-    const workspaceId = searchParams.get('workspaceId');
-
-    if (!workspaceId) {
-      return NextResponse.json({ error: 'workspaceId is required' }, { status: 400 });
-    }
-
     const documents = await getDocumentsByWorkspace(workspaceId);
     return NextResponse.json(documents);
   } catch (error) {
@@ -30,8 +30,15 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  let name: string | undefined;
+  let workspaceId: string | undefined;
+  let tamboThreadId: string | undefined;
+
   try {
-    const { name, workspaceId, tamboThreadId } = await request.json();
+    const body = await request.json();
+    name = body.name;
+    workspaceId = body.workspaceId;
+    tamboThreadId = body.tamboThreadId;
 
     if (!name || !workspaceId) {
       return NextResponse.json({ error: 'Name and workspaceId are required' }, { status: 400 });
@@ -47,8 +54,8 @@ export async function POST(request: NextRequest) {
     // Return mock data when database fails
     const mockDocument = {
       id: uuidv4(),
-      workspace_id: workspaceId,
-      name: name,
+      workspace_id: workspaceId || 'unknown',
+      name: name || 'Untitled',
       tambo_thread_id: tamboThreadId || uuidv4(),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()

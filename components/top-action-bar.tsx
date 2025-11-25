@@ -3,7 +3,8 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/tailwind/ui/theme-toggle";
-import { ChevronRight, Home } from "lucide-react";
+import { ChevronRight, Home, FileDown } from "lucide-react";
+import { toast } from "sonner";
 
 interface TopActionBarProps {
   className?: string;
@@ -76,7 +77,7 @@ export function TopActionBar({ className, workspaceId, documentId }: TopActionBa
 
       <div className="flex items-center gap-2">
         <ThemeToggle />
-      </div>
-    </div>
+      </div >
+    </div >
   );
 }
