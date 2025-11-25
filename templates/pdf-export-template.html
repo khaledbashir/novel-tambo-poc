@@ -23,7 +23,7 @@
         }
 
         body {
-            font-family: 'Open Sans', 'Roboto', Arial, sans-serif;
+            font-family: 'Plus Jakarta Sans', 'Open Sans', 'Roboto', Arial, Helvetica, sans-serif;
             color: var(--text-dark);
             background: white;
             line-height: 1.6;
@@ -183,6 +183,10 @@
             border-bottom: 1px solid #E0E0E0;
         }
 
+        .scope-table tbody tr.pricing-row {
+            page-break-inside: avoid;
+        }
+
         .scope-table tbody td {
             padding: 12px;
             vertical-align: top;
@@ -205,26 +209,38 @@
             font-weight: 600;
         }
 
-        /* Deliverables & Assumptions Block */
-        .deliverables-block {
+        /* Deliverables & Assumptions Combined Container */
+        .deliverables-assumptions-container {
             background: var(--light-grey);
-            padding: 15px 20px;
+            padding: 20px 25px;
+            border-left: 4px solid var(--primary-green);
         }
 
-        .deliverables-block h4 {
+        .deliverables-assumptions-container .info-section {
+            margin-bottom: 15px;
+        }
+
+        .deliverables-assumptions-container .info-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .deliverables-assumptions-container h4 {
             font-size: 14px;
             font-weight: 700;
             margin-bottom: 10px;
             color: var(--text-dark);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
-        .deliverables-block ul {
+        .deliverables-assumptions-container ul {
             margin-left: 20px;
             font-size: 13px;
             line-height: 1.8;
+            color: var(--text-dark);
         }
 
-        .deliverables-block ul li {
+        .deliverables-assumptions-container ul li {
             margin-bottom: 5px;
         }
 

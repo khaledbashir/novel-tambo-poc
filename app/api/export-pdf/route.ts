@@ -87,12 +87,54 @@ export async function POST(request: NextRequest) {
             .replace(/November 25, 2025/g, currentDate);
 
         // Generate scope table rows HTML
+        // NEW STRUCTURE: Title -> Description -> [Deliverables & Assumptions Together] -> Items
         const scopeRowsHtml = data.scopes
             .map((scope) => {
+                // Build deliverables and assumptions together in one container
+                const deliverablesAssumptionsHtml = (() => {
+                    const hasDeliverables = scope.deliverables && scope.deliverables.length > 0;
+                    const hasAssumptions = scope.assumptions && scope.assumptions.length > 0;
+
+                    if (!hasDeliverables && !hasAssumptions) return "";
+
+                    let content = "";
+
+                    if (hasDeliverables) {
+                        content += `
+            <div class="info-section">
+              <h4>Deliverables:</h4>
+              <ul>
+                ${scope.deliverables.map((d) => `<li>${d}</li>`).join("")}
+              </ul>
+            </div>
+          `;
+                    }
+
+                    if (hasAssumptions) {
+                        content += `
+            <div class="info-section">
+              <h4>Assumptions:</h4>
+              <ul>
+                ${scope.assumptions.map((a) => `<li>${a}</li>`).join("")}
+              </ul>
+            </div>
+          `;
+                    }
+
+                    return `
+        <tr>
+          <td colspan="4" class="deliverables-assumptions-container">
+            ${content}
+          </td>
+        </tr>
+      `;
+                })();
+
+                // Build pricing table items
                 const itemsHtml = scope.items
                     .map(
                         (item) => `
-        <tr>
+        <tr class="pricing-row">
           <td>${item.description}</td>
           <td>${item.role}</td>
           <td>${item.hours}</td>
@@ -101,34 +143,6 @@ export async function POST(request: NextRequest) {
       `,
                     )
                     .join("");
-
-                const deliverablesHtml =
-                    scope.deliverables.length > 0
-                        ? `
-        <tr>
-          <td colspan="4" class="deliverables-block">
-            <h4>Deliverables:</h4>
-            <ul>
-              ${scope.deliverables.map((d) => `<li>${d}</li>`).join("")}
-            </ul>
-          </td>
-        </tr>
-      `
-                        : "";
-
-                const assumptionsHtml =
-                    scope.assumptions && scope.assumptions.length > 0
-                        ? `
-        <tr>
-          <td colspan="4" class="deliverables-block">
-            <h4>Assumptions:</h4>
-            <ul>
-              ${scope.assumptions.map((a) => `<li>${a}</li>`).join("")}
-            </ul>
-          </td>
-        </tr>
-      `
-                        : "";
 
                 return `
         <tr>
@@ -141,14 +155,13 @@ export async function POST(request: NextRequest) {
             ${scope.description}
           </td>
         </tr>
+        ${deliverablesAssumptionsHtml}
         ${itemsHtml}
-        ${deliverablesHtml}
-        ${assumptionsHtml}
       `;
             })
             .join("");
 
-        // Calculate summary data
+        // Calculate summary data DYNAMICALLY from actual scope data
         const summaryRows = data.scopes.map((scope) => {
             const totalHours = scope.items.reduce(
                 (sum, item) => sum + item.hours,
@@ -164,6 +177,10 @@ export async function POST(request: NextRequest) {
                 cost: totalCost,
             };
         });
+
+        // Calculate GRAND TOTALS from summary rows
+        const grandTotalHours = summaryRows.reduce((sum, row) => sum + row.hours, 0);
+        const grandTotalCost = summaryRows.reduce((sum, row) => sum + row.cost, 0);
 
         const summaryRowsHtml = summaryRows
             .map(
@@ -191,10 +208,10 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Replace grand total
+        // Replace grand total with calculated value
         htmlTemplate = htmlTemplate.replace(
-            /<span class="amount">\$[\d,]+\.00<\/span>/,
-            `<span class="amount">$${data.grandTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>`,
+            /\$[\d,]+\.00<\/td>\s*<\/tr>\s*<\/table>\s*<\/div>\s*<!-- ===== SUMMARY TABLE/,
+            `$${grandTotalCost.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>\n                </tr>\n            </table>\n        </div>\n\n        <!-- ===== SUMMARY TABLE`,
         );
 
         // Replace scope rows
@@ -207,6 +224,12 @@ export async function POST(request: NextRequest) {
         htmlTemplate = htmlTemplate.replace(
             "<!-- SUMMARY_ROWS_PLACEHOLDER -->",
             summaryRowsHtml,
+        );
+
+        // Replace summary footer totals with calculated values
+        htmlTemplate = htmlTemplate.replace(
+            /<td class="bold">128<\/td>\s*<td class="bold">\$25,608\.00<\/td>/,
+            `<td class="bold">${grandTotalHours}</td>\n                        <td class="bold">$${grandTotalCost.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>`,
         );
 
         // Call WeasyPrint API with timeout and retry logic
