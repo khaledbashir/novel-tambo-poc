@@ -48,6 +48,14 @@ const nextConfig = {
     productionBrowserSourceMaps: true,
     output: 'standalone', // Required for Docker deployment
 
+    // Performance optimizations
+    swcMinify: true, // Use SWC for faster minification
+    compiler: {
+        removeConsole: process.env.NODE_ENV === 'production' ? {
+            exclude: ['error', 'warn'],
+        } : false,
+    },
+
     // CRITICAL: Exclude massive directories from Next.js compilation
     // These directories contain 1400+ files and were causing 30s+ dev startup
     webpack: (config, { isServer }) => {
@@ -58,10 +66,10 @@ const nextConfig = {
                 '**/node_modules/**',
                 '**/.git/**',
                 '**/.next/**',
-                '**/tambo/**',           // 850+ subdirectories
-                '**/novel/**',           // Large monorepo
-                '**/my-tambo-app/**',    // Separate app
-                '**/frontend/**',        // Separate frontend
+                '**/tambo/**',           // 81MB, 850+ subdirectories
+                '**/novel/**',           // 108KB but still a monorepo
+                '**/my-tambo-app/**',    // 960MB! Separate app
+                '**/frontend/**',        // 36KB, Separate frontend
             ],
         };
 
