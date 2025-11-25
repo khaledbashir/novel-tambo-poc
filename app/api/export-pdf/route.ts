@@ -327,14 +327,7 @@ export async function POST(request: NextRequest) {
                 headers: {
                     "Content-Type": "application/pdf",
                     "Content-Disposition": `attachment; filename="${filename}"`,
-                },
-            });
 
-                error: "Failed to generate PDF",
-                details:
-                    error instanceof Error ? error.message : "Unknown error",
-            },
-            { status: 500 },
         );
     }
 }
