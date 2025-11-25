@@ -6,7 +6,7 @@ settings:
 
 patchedDependencies:
   '@tambo-ai/react':
-    hash: 605230182ebd1a720c596d473e7e495ac3472e1ee9430e833bd019181d931666
+    hash: 11931f3787ec3a6a6e4746e04b9cb4320c18b1fd1cd31bde95efac58eea3a3e4
     path: patches/@tambo-ai__react.patch
 
 importers:
@@ -48,7 +48,7 @@ importers:
         version: 0.5.19(tailwindcss@3.4.18(yaml@2.8.1))
       '@tambo-ai/react':
         specifier: ^0.65.1
-        version: 0.65.1(patch_hash=605230182ebd1a720c596d473e7e495ac3472e1ee9430e833bd019181d931666)(@types/node@20.11.24)(@types/react-dom@18.2.19)(@types/react@18.3.27)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(typescript@5.9.3)
+        version: 0.65.1(patch_hash=11931f3787ec3a6a6e4746e04b9cb4320c18b1fd1cd31bde95efac58eea3a3e4)(@types/node@20.11.24)(@types/react-dom@18.2.19)(@types/react@18.3.27)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(typescript@5.9.3)
       '@tambo-ai/typescript-sdk':
         specifier: ^0.77.0
         version: 0.77.0
@@ -5038,7 +5038,7 @@ snapshots:
       postcss-selector-parser: 6.0.10
       tailwindcss: 3.4.18(yaml@2.8.1)
 
-  '@tambo-ai/react@0.65.1(patch_hash=605230182ebd1a720c596d473e7e495ac3472e1ee9430e833bd019181d931666)(@types/node@20.11.24)(@types/react-dom@18.2.19)(@types/react@18.3.27)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(typescript@5.9.3)':
+  '@tambo-ai/react@0.65.1(patch_hash=11931f3787ec3a6a6e4746e04b9cb4320c18b1fd1cd31bde95efac58eea3a3e4)(@types/node@20.11.24)(@types/react-dom@18.2.19)(@types/react@18.3.27)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(typescript@5.9.3)':
     dependencies:
       '@modelcontextprotocol/sdk': 1.22.0
       '@tambo-ai/typescript-sdk': 0.77.0
