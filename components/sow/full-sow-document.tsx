@@ -883,17 +883,17 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                     projectTitle={projectTitle}
                     clientName={clientName}
                     projectDescription={projectOverview || ""}
-                    scopes={scopes.map(s => ({
+                    scopes={(scopes || []).map(s => ({
                         name: s.title,
                         description: s.description,
-                        items: s.roles.map(r => ({
+                        items: (s.roles || []).map(r => ({
                             description: r.task,
                             role: r.role,
                             hours: r.hours,
                             cost: r.hours * r.rate
                         })),
-                        deliverables: s.deliverables,
-                        assumptions: s.assumptions
+                        deliverables: s.deliverables || [],
+                        assumptions: s.assumptions || []
                     }))}
                     grandTotal={totals.total}
                     budgetNotes={budgetNotes || ""}
