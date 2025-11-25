@@ -209,18 +209,88 @@ export async function POST(request: NextRequest) {
             summaryRowsHtml,
         );
 
-        // Call WeasyPrint API
-        try {
-            const response = await fetch(
-                "http://168.231.115.219:5000/generate-pdf",
-                {
+        // Call WeasyPrint API with timeout and retry logic
+        const WEASYPRINT_URL = "http://168.231.115.219:5000/generate-pdf";
+        const MAX_RETRIES = 3;
+        const TIMEOUT_MS = 30000; // 30 seconds
+
+        let retryCount = 0;
+        let lastError: Error | null = null;
+
+        while (retryCount < MAX_RETRIES) {
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+                const response = await fetch(WEASYPRINT_URL, {
                     method: "POST",
                     headers: {
                         "Content-Type": "text/html",
                     },
                     body: htmlTemplate,
-                },
-            );
+                    signal: controller.signal,
+                });
+
+                // Clear timeout on successful response
+                clearTimeout(timeoutId);
+
+                if (!response.ok) {
+                    // Try to get error details for better debugging
+                    let errorDetails = "";
+                    try {
+                        const errorData = await response.json().catch(() => null);
+                        errorDetails = errorData ? JSON.stringify(errorData) : "No error details available";
+                    } catch (e) {
+                        errorDetails = `Failed to parse error response: ${e}`;
+                    }
+
+                    lastError = new Error(`WeasyPrint API error: ${response.statusText} - Details: ${errorDetails}`);
+                } else {
+                    const result = await response.json();
+                    if (!result || !result.downloadUrl) {
+                        lastError = new Error("WeasyPrint API returned invalid response");
+                    } else {
+                        const pdfUrl = result.downloadUrl;
+
+                        // Generate filename from project title and current date
+                        const filename = `${data.projectTitle.replace(/\s+/g, "-")}-${new Date().toISOString().split("T")[0]}.pdf`;
+
+                        // Fetch the PDF and return it
+                        const pdfResponse = await fetch(pdfUrl);
+                        if (!pdfResponse.ok) {
+                            lastError = new Error(`Failed to fetch PDF from WeasyPrint: ${pdfResponse.statusText}`);
+                        } else {
+                            const pdfBuffer = await pdfResponse.arrayBuffer();
+                            return new NextResponse(pdfBuffer, {
+                                status: 200,
+                                headers: {
+                                    "Content-Type": "application/pdf",
+                                    "Content-Disposition": `attachment; filename="${filename}"`,
+                                },
+                            });
+                        }
+                    }
+                }
+
+                // If we got here, it was successful
+                break;
+
+            } catch (error) {
+                retryCount++;
+                lastError = error instanceof Error ? error : new Error(`Failed to connect to WeasyPrint: ${error}`);
+
+                if (retryCount < MAX_RETRIES) {
+                    console.log(`WeasyPrint attempt ${retryCount + 1} failed, retrying in ${retryCount * 2} seconds...`);
+                    // Wait before retrying with exponential backoff
+                    await new Promise(resolve => setTimeout(resolve, retryCount * 2000));
+                }
+            }
+        }
+
+        // If all retries failed, throw the last error
+        if (lastError) {
+            throw lastError;
+        }
 
             if (!response.ok) {
                 // Try to get error details for better debugging
