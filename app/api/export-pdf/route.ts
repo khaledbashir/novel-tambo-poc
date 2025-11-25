@@ -223,10 +223,22 @@ export async function POST(request: NextRequest) {
             );
 
             if (!response.ok) {
-                throw new Error(`WeasyPrint API error: ${response.statusText}`);
+                // Try to get error details for better debugging
+                let errorDetails = "";
+                try {
+                    const errorData = await response.json().catch(() => null);
+                    errorDetails = errorData ? JSON.stringify(errorData) : "No error details available";
+                } catch (e) {
+                    errorDetails = `Failed to parse error response: ${e}`;
+                }
+
+                throw new Error(`WeasyPrint API error: ${response.statusText} - Details: ${errorDetails}`);
+            const result = await response.json();
+
+            if (!result || !result.downloadUrl) {
+                throw new Error("WeasyPrint API returned invalid response");
             }
 
-            const result = await response.json();
             const pdfUrl = result.downloadUrl;
 
             // Generate filename from project title and current date
@@ -234,6 +246,10 @@ export async function POST(request: NextRequest) {
 
             // Fetch the PDF and return it
             const pdfResponse = await fetch(pdfUrl);
+            if (!pdfResponse.ok) {
+                throw new Error(`Failed to fetch PDF from WeasyPrint: ${pdfResponse.statusText}`);
+            }
+
             const pdfBuffer = await pdfResponse.arrayBuffer();
 
             return new NextResponse(pdfBuffer, {
