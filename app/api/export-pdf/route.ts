@@ -329,15 +329,7 @@ export async function POST(request: NextRequest) {
                     "Content-Disposition": `attachment; filename="${filename}"`,
                 },
             });
-        } catch (apiError) {
-            console.error("WeasyPrint API error:", apiError);
-            throw new Error("Failed to generate PDF using WeasyPrint service");
-        }
-    } catch (error) {
-        console.error("PDF Export Error:", error);
 
-        return NextResponse.json(
-            {
                 error: "Failed to generate PDF",
                 details:
                     error instanceof Error ? error.message : "Unknown error",
