@@ -6,7 +6,8 @@ This document tracks all changes made after commit `ea01380` which fixed the "wo
 - **Starting Commit**: `ea01380` (Fix: workspaces.map is not a function error - Add proper error handling to ensure arrays are always set)
 - **Current Commit**: `549ca17` (fix: remove Puppeteer completely - use browser print instead)
 - **Date**: November 25, 2025
-- **Branch**: Detached HEAD at commit `549ca17`
+- **Branch**: main (merged from puppeteer-removal-final)
+- **Status**: Changes deployed to EasyPanel
 
 ## Changes Made
 
