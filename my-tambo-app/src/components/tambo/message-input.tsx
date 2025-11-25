@@ -245,10 +245,15 @@ const MessageInputInternal = React.forwardRef<
     e.stopPropagation();
     dragCounter.current++;
     if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
-      const hasImages = Array.from(e.dataTransfer.items).some((item) =>
-        item.type.startsWith("image/"),
+      const hasValidFiles = Array.from(e.dataTransfer.items).some(
+        (item) =>
+          item.type.startsWith("image/") ||
+          item.type === "application/pdf" ||
+          item.type === "application/msword" ||
+          item.type ===
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       );
-      if (hasImages) {
+      if (hasValidFiles) {
         setIsDragging(true);
       }
     }
@@ -275,8 +280,13 @@ const MessageInputInternal = React.forwardRef<
       setIsDragging(false);
       dragCounter.current = 0;
 
-      const files = Array.from(e.dataTransfer.files).filter((file) =>
-        file.type.startsWith("image/"),
+      const files = Array.from(e.dataTransfer.files).filter(
+        (file) =>
+          file.type.startsWith("image/") ||
+          file.type === "application/pdf" ||
+          file.type === "application/msword" ||
+          file.type ===
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       );
 
       if (files.length > 0) {
@@ -688,7 +698,7 @@ export interface MessageInputFileButtonProps
 const MessageInputFileButton = React.forwardRef<
   HTMLButtonElement,
   MessageInputFileButtonProps
->(({ className, accept = "image/*", multiple = true, ...props }, ref) => {
+>(({ className, accept = "image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document", multiple = true, ...props }, ref) => {
   const { addImages } = useTamboThreadInput();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { withInteractable } from '@tambo-ai/react';
+import { withInteractable, useTamboComponentState } from '@tambo-ai/react';
 import { Trash2, Plus } from 'lucide-react';
 import { z } from 'zod';
 
@@ -43,11 +43,11 @@ const SOWPricingTableBase: React.FC<SOWPricingProps> = ({
     scopeOverview = '',
     assumptions = [],
 }) => {
-    // Use initial values directly - no useEffect needed
-    const [rows, setRows] = useState<PricingRow[]>(initialRows.length > 0 ? initialRows : [
+    // Use Tambo's state management to prevent infinite loops
+    const [rows, setRows] = useTamboComponentState('rows', initialRows.length > 0 ? initialRows : [
         { id: 'row-1', role: '', description: '', hours: 0, rate: 0 }
-    ]);
-    const [discount, setDiscount] = useState(initialDiscount);
+    ], initialRows);
+    const [discount, setDiscount] = useTamboComponentState('discount', initialDiscount, initialDiscount);
     const [budgetNotes] = useState(initialBudgetNotes);
     const [draggedRow, setDraggedRow] = useState<string | null>(null);
 

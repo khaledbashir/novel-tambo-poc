@@ -3,8 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "postinstall": "patch-package",
-    "dev": "next dev -p 4546",
+    "dev": "next dev -p 4547",
     "build": "next build",
     "start": "next start",
     "lint": "biome lint .",
