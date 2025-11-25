@@ -20,6 +20,7 @@ import {
   UploadImagesPlugin,
   Youtube,
 } from "novel";
+// import { Table } from "@tiptap/extension-table";
 
 import { MarkdownExtension } from "./markdown-extension";
 
@@ -101,27 +102,6 @@ const starterKit = StarterKit.configure({
     },
   },
   codeBlock: false,
-  // Table configuration removed - not supported in current StarterKit version
-  // table: {
-  //   HTMLAttributes: {
-  //     class: cx("border-collapse table-auto w-full my-4 border border-border"),
-  //   },
-  // },
-  // tableRow: {
-  //   HTMLAttributes: {
-  //     class: cx("border-b border-border"),
-  //   },
-  // },
-  // tableCell: {
-  //   HTMLAttributes: {
-  //     class: cx("border border-border px-4 py-2 text-foreground"),
-  //   },
-  // },
-  // tableHeader: {
-  //   HTMLAttributes: {
-  //     class: cx("border border-border px-4 py-2 bg-muted/50 font-semibold text-foreground"),
-  //   },
-  // },
   horizontalRule: false,
   dropcursor: {
     color: "#DBEAFE",
@@ -172,6 +152,12 @@ const markdownExtension = MarkdownExtension.configure({
   transformCopiedText: false,
 });
 
+// const table = Table.configure({
+//   HTMLAttributes: {
+//     class: cx("border-collapse table-auto w-full my-4 border border-border"),
+//   },
+// });
+
 export const defaultExtensions = [
   starterKit,
   placeholder,
@@ -180,6 +166,7 @@ export const defaultExtensions = [
   taskList,
   taskItem,
   horizontalRule,
+  // table,
   aiHighlight,
   codeBlockLowlight,
   youtube,

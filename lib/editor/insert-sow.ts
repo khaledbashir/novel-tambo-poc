@@ -1,4 +1,4 @@
-import { Editor } from '@tiptap/react';
+import { Editor } from 'novel';
 // Fake change for testing push
 
 /**
@@ -57,9 +57,9 @@ export function insertSOWToEditor(editor: Editor, sowData: {
         content: [{ type: 'text', text: `Client: ${sowData.clientName}` }]
     });
 
-    content.push({
-        type: 'horizontalRule'
-    });
+    // content.push({
+    //     type: 'horizontalRule'
+    // });
 
     // Each Scope
     sowData.scopes.forEach((scope, scopeIndex) => {
@@ -96,42 +96,28 @@ export function insertSOWToEditor(editor: Editor, sowData: {
             });
         }
 
-        // Pricing Table
+        // Pricing List (using bullet list instead of table)
         content.push({
             type: 'heading',
             attrs: { level: 3 },
             content: [{ type: 'text', text: 'Pricing' }]
         });
 
-        // Create table rows
-        const tableRows = [
-            // Header row
-            {
-                type: 'tableRow',
+        // Create pricing list items
+        const pricingItems = scope.roles.map(row => ({
+            type: 'listItem',
+            content: [{
+                type: 'paragraph',
                 content: [
-                    { type: 'tableHeader', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Task' }] }] },
-                    { type: 'tableHeader', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Role' }] }] },
-                    { type: 'tableHeader', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Hours' }] }] },
-                    { type: 'tableHeader', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Rate (AUD)' }] }] },
-                    { type: 'tableHeader', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Cost (AUD)' }] }] },
+                    { type: 'text', text: `${row.task} - `, marks: [{ type: 'bold' }] },
+                    { type: 'text', text: `${row.role} (${row.hours}h @ $${row.rate.toFixed(2)}/h) = $${(row.hours * row.rate * 1.1).toFixed(2)} AUD (incl. GST)` }
                 ]
-            },
-            // Data rows
-            ...scope.roles.map(row => ({
-                type: 'tableRow',
-                content: [
-                    { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: row.task }] }] },
-                    { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: row.role }] }] },
-                    { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: row.hours.toString() }] }] },
-                    { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: `$${row.rate.toFixed(2)}` }] }] },
-                    { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: `$${(row.hours * row.rate * 1.1).toFixed(2)}` }] }] },
-                ]
-            }))
-        ];
+            }]
+        }));
 
         content.push({
-            type: 'table',
-            content: tableRows
+            type: 'bulletList',
+            content: pricingItems
         });
 
         // Scope Total
@@ -167,9 +153,9 @@ export function insertSOWToEditor(editor: Editor, sowData: {
             });
         }
 
-        content.push({
-            type: 'horizontalRule'
-        });
+        // content.push({
+        //     type: 'horizontalRule'
+        // });
     });
 
     // Grand Total Summary
@@ -206,9 +192,9 @@ export function insertSOWToEditor(editor: Editor, sowData: {
 
     // Project Overview
     if (sowData.projectOverview) {
-        content.push({
-            type: 'horizontalRule'
-        });
+        // content.push({
+        //     type: 'horizontalRule'
+        // });
         content.push({
             type: 'heading',
             attrs: { level: 2 },

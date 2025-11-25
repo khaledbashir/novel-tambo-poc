@@ -25,6 +25,7 @@
     "@tambo-ai/react": "^0.65.1",
     "@tambo-ai/typescript-sdk": "^0.77.0",
     "@tiptap/core": "^2.27.1",
+    "@tiptap/extension-table": "^3.11.0",
     "@tiptap/pm": "^2.27.1",
     "@tiptap/react": "^2.27.1",
     "@upstash/ratelimit": "^1.0.1",
