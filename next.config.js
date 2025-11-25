@@ -49,7 +49,6 @@ const nextConfig = {
     output: 'standalone', // Required for Docker deployment
 
     // Performance optimizations
-    swcMinify: true, // Use SWC for faster minification
     compiler: {
         removeConsole: process.env.NODE_ENV === 'production' ? {
             exclude: ['error', 'warn'],

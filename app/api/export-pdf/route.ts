@@ -1,35 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
-import puppeteer from 'puppeteer';
 
 /**
- * PDF Export API Route - Server-side PDF Generation
+ * PDF Export API Route - Browser-based PDF Generation
  * 
  * POST /api/export-pdf
  * 
- * Request body should contain SOW data:
- * {
- *   projectTitle: string;
- *   clientName: string;
- *   projectDescription: string;
- *   scopes: Array<{
- *     name: string;
- *     description: string;
- *     items: Array<{
- *       description: string;
- *       role: string;
- *       hours: number;
- *       cost: number;
- *     }>;
- *     deliverables: string[];
- *     assumptions: string[];
- *   }>;
- *   grandTotal: number;
- *   budgetNotes: string;
- * }
- * 
- * Returns: PDF file as downloadable blob
+ * Returns HTML that can be printed to PDF by the browser
  */
 
 interface SOWItem {
@@ -58,8 +36,6 @@ interface SOWData {
 }
 
 export async function POST(request: NextRequest) {
-  let browser;
-
   try {
     const data: SOWData = await request.json();
 
@@ -96,7 +72,7 @@ export async function POST(request: NextRequest) {
       .replace(/November 25, 2025/g, currentDate);
 
     // Generate scope table rows HTML
-    const scopeRowsHtml = data.scopes.map((scope, scopeIndex) => {
+    const scopeRowsHtml = data.scopes.map((scope) => {
       const itemsHtml = scope.items.map(item => `
         <tr>
           <td>${item.description}</td>
@@ -156,8 +132,6 @@ export async function POST(request: NextRequest) {
       };
     });
 
-    const totalHours = summaryRows.reduce((sum, row) => sum + row.hours, 0);
-
     const summaryRowsHtml = summaryRows.map(row => `
       <tr>
         <td>${row.name}</td>
@@ -198,64 +172,27 @@ export async function POST(request: NextRequest) {
       summaryRowsHtml
     );
 
-    // Launch Puppeteer and generate PDF
-    console.log('Launching Puppeteer for PDF generation...');
-    browser = await puppeteer.launch({
-      headless: true,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu'
-      ]
-    });
+    // Add auto-print script
+    htmlTemplate = htmlTemplate.replace(
+      '</body>',
+      `<script>
+        // Auto-trigger print dialog when page loads
+        window.onload = function() {
+          window.print();
+        };
+      </script>
+      </body>`
+    );
 
-    const page = await browser.newPage();
-
-    // Set the HTML content
-    await page.setContent(htmlTemplate, {
-      waitUntil: 'networkidle0'
-    });
-
-    // Generate PDF with professional settings
-    const pdfBuffer = await page.pdf({
-      format: 'A4',
-      printBackground: true,
-      margin: {
-        top: '20mm',
-        right: '15mm',
-        bottom: '20mm',
-        left: '15mm'
-      },
-      displayHeaderFooter: false,
-      preferCSSPageSize: true
-    });
-
-    await browser.close();
-    browser = null;
-
-    // Return the PDF as a downloadable file
-    const filename = `${data.projectTitle.replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`;
-
-    return new NextResponse(new Blob([pdfBuffer as any]), {
+    // Return HTML that will trigger browser print dialog
+    return new NextResponse(htmlTemplate, {
       headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${filename}"`,
-        'Content-Length': pdfBuffer.length.toString()
+        'Content-Type': 'text/html',
       }
     });
 
   } catch (error) {
     console.error('PDF Export Error:', error);
-
-    // Clean up browser if it's still running
-    if (browser) {
-      try {
-        await browser.close();
-      } catch (closeError) {
-        console.error('Error closing browser:', closeError);
-      }
-    }
 
     return NextResponse.json(
       {
