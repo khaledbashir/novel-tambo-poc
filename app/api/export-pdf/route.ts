@@ -3,11 +3,11 @@ import fs from "fs";
 import path from "path";
 
 /**
- * PDF Export API Route - Browser-based PDF Generation
+ * PDF Export API Route - WeasyPrint API Integration
  *
  * POST /api/export-pdf
  *
- * Returns HTML with print styling for browser-based PDF generation
+ * Converts HTML to PDF using external WeasyPrint API
  */
 
 interface SOWItem {
@@ -209,31 +209,44 @@ export async function POST(request: NextRequest) {
             summaryRowsHtml,
         );
 
-        // Add auto-print script
-        htmlTemplate = htmlTemplate.replace(
-            "</body>",
-            `<script>
-        // Auto-trigger print dialog when page loads
-        window.onload = function() {
-          // Give user a moment to see the content before printing
-          setTimeout(function() {
-            window.print();
-          }, 1000);
-        };
-      </script>
-      </body>`,
-        );
+        // Call WeasyPrint API
+        try {
+            const response = await fetch(
+                "http://168.231.115.219:5000/generate-pdf",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "text/html",
+                    },
+                    body: htmlTemplate,
+                },
+            );
 
-        // Return HTML with content-disposition to trigger download
-        const filename = `${data.projectTitle.replace(/\s+/g, "-")}-${new Date().toISOString().split("T")[0]}.html`;
+            if (!response.ok) {
+                throw new Error(`WeasyPrint API error: ${response.statusText}`);
+            }
 
-        return new NextResponse(htmlTemplate, {
-            status: 200,
-            headers: {
-                "Content-Type": "text/html",
-                "Content-Disposition": `inline; filename="${filename}"`,
-            },
-        });
+            const result = await response.json();
+            const pdfUrl = result.downloadUrl;
+
+            // Generate filename from project title and current date
+            const filename = `${data.projectTitle.replace(/\s+/g, "-")}-${new Date().toISOString().split("T")[0]}.pdf`;
+
+            // Fetch the PDF and return it
+            const pdfResponse = await fetch(pdfUrl);
+            const pdfBuffer = await pdfResponse.arrayBuffer();
+
+            return new NextResponse(pdfBuffer, {
+                status: 200,
+                headers: {
+                    "Content-Type": "application/pdf",
+                    "Content-Disposition": `attachment; filename="${filename}"`,
+                },
+            });
+        } catch (apiError) {
+            console.error("WeasyPrint API error:", apiError);
+            throw new Error("Failed to generate PDF using WeasyPrint service");
+        }
     } catch (error) {
         console.error("PDF Export Error:", error);
 
