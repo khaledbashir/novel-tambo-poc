@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,7 +15,7 @@
         }
 
         :root {
-            --primary-green: #23D38E;
+            --primary-green: #00D084;
             --light-grey: #F5F5F5;
             --dark-grey: #555555;
             --text-dark: #333333;
@@ -44,7 +45,7 @@
                 margin: 0;
                 padding: 0;
             }
-            
+
             .page {
                 width: 100%;
                 margin: 0;
@@ -66,13 +67,14 @@
         }
 
         /* ===== HEADER SECTION ===== */
-        .logo {
-            text-align: center;
-            font-size: 32px;
-            font-weight: 700;
-            letter-spacing: 2px;
-            color: var(--text-dark);
+        .logo-container {
             margin-bottom: 30px;
+        }
+
+        .logo-img {
+            height: 40px;
+            width: auto;
+            display: block;
         }
 
         .title-banner {
@@ -339,10 +341,13 @@
         }
     </style>
 </head>
+
 <body>
     <div class="page">
         <!-- ===== HEADER SECTION ===== -->
-        <div class="logo">SOCIALGARDEN</div>
+        <div class="logo-container">
+            <img src="{{LOGO_BASE64}}" alt="Social Garden" class="logo-img">
+        </div>
 
         <div class="title-banner">
             <div class="project-title">Statement of Work</div>
@@ -359,9 +364,9 @@
         <div class="text-block no-break">
             <h3>Project Overview:</h3>
             <p>
-                This Statement of Work outlines the scope, deliverables, and pricing for the HubSpot integration 
-                and marketing automation setup project. Our team will work closely with your organization to 
-                implement a comprehensive solution that streamlines your marketing operations and enhances 
+                This Statement of Work outlines the scope, deliverables, and pricing for the HubSpot integration
+                and marketing automation setup project. Our team will work closely with your organization to
+                implement a comprehensive solution that streamlines your marketing operations and enhances
                 customer engagement.
             </p>
         </div>
@@ -377,144 +382,7 @@
                 </tr>
             </thead>
             <tbody>
-                <!-- Scope 1 Section -->
-                <tr>
-                    <td colspan="4" class="scope-section-header">
-                        Scope 1: Discovery & Planning
-                    </td>
-                </tr>
-                <tr>
-                    <td colspan="4" class="description-row">
-                        Initial consultation and requirements gathering to understand business objectives and technical requirements.
-                    </td>
-                </tr>
-                <tr>
-                    <td>Stakeholder interviews and requirements documentation</td>
-                    <td>Senior Consultant</td>
-                    <td>8</td>
-                    <td>$1,760.00</td>
-                </tr>
-                <tr>
-                    <td>Technical assessment and integration planning</td>
-                    <td>Technical Lead</td>
-                    <td>12</td>
-                    <td>$2,640.00</td>
-                </tr>
-                <tr>
-                    <td>Project roadmap and timeline development</td>
-                    <td>Project Manager</td>
-                    <td>6</td>
-                    <td>$1,188.00</td>
-                </tr>
-                <tr>
-                    <td colspan="4" class="deliverables-block">
-                        <h4>Deliverables:</h4>
-                        <ul>
-                            <li>Requirements documentation</li>
-                            <li>Technical architecture diagram</li>
-                            <li>Project timeline and milestones</li>
-                        </ul>
-                        <h4 style="margin-top: 15px;">Assumptions:</h4>
-                        <ul>
-                            <li>Client provides access to all necessary systems within 2 business days</li>
-                            <li>Key stakeholders are available for scheduled meetings</li>
-                        </ul>
-                    </td>
-                </tr>
-
-                <!-- Scope 2 Section -->
-                <tr>
-                    <td colspan="4" class="scope-section-header">
-                        Scope 2: HubSpot Configuration & Integration
-                    </td>
-                </tr>
-                <tr>
-                    <td colspan="4" class="description-row">
-                        Complete setup and configuration of HubSpot platform including CRM, Marketing Hub, and third-party integrations.
-                    </td>
-                </tr>
-                <tr>
-                    <td>HubSpot account setup and configuration</td>
-                    <td>HubSpot Specialist</td>
-                    <td>16</td>
-                    <td>$3,168.00</td>
-                </tr>
-                <tr>
-                    <td>CRM data migration and cleanup</td>
-                    <td>Data Analyst</td>
-                    <td>20</td>
-                    <td>$3,520.00</td>
-                </tr>
-                <tr>
-                    <td>Third-party integrations (Salesforce, Slack, etc.)</td>
-                    <td>Integration Engineer</td>
-                    <td>24</td>
-                    <td>$5,280.00</td>
-                </tr>
-                <tr>
-                    <td>Custom workflow automation development</td>
-                    <td>Marketing Automation Specialist</td>
-                    <td>18</td>
-                    <td>$3,564.00</td>
-                </tr>
-                <tr>
-                    <td colspan="4" class="deliverables-block">
-                        <h4>Deliverables:</h4>
-                        <ul>
-                            <li>Fully configured HubSpot account</li>
-                            <li>Integrated CRM with clean, migrated data</li>
-                            <li>Automated workflows for lead nurturing and scoring</li>
-                            <li>Integration documentation and API credentials</li>
-                        </ul>
-                        <h4 style="margin-top: 15px;">Assumptions:</h4>
-                        <ul>
-                            <li>Client provides clean data export from existing systems</li>
-                            <li>Maximum of 3 third-party integrations included</li>
-                            <li>Standard HubSpot API limits apply</li>
-                        </ul>
-                    </td>
-                </tr>
-
-                <!-- Scope 3 Section -->
-                <tr>
-                    <td colspan="4" class="scope-section-header">
-                        Scope 3: Training & Documentation
-                    </td>
-                </tr>
-                <tr>
-                    <td colspan="4" class="description-row">
-                        Comprehensive training for your team and detailed documentation for ongoing management.
-                    </td>
-                </tr>
-                <tr>
-                    <td>Admin training sessions (2 sessions, 3 hours each)</td>
-                    <td>Senior Consultant</td>
-                    <td>6</td>
-                    <td>$1,320.00</td>
-                </tr>
-                <tr>
-                    <td>End-user training and onboarding</td>
-                    <td>Training Specialist</td>
-                    <td>8</td>
-                    <td>$1,408.00</td>
-                </tr>
-                <tr>
-                    <td>Documentation creation and knowledge base setup</td>
-                    <td>Technical Writer</td>
-                    <td>10</td>
-                    <td>$1,760.00</td>
-                </tr>
-                <tr>
-                    <td colspan="4" class="deliverables-block">
-                        <h4>Deliverables:</h4>
-                        <ul>
-                            <li>Recorded training sessions</li>
-                            <li>User guides and quick reference cards</li>
-                            <li>Internal knowledge base with FAQs</li>
-                            <li>Best practices documentation</li>
-                        </ul>
-                    </td>
-                </tr>
+                <!-- SCOPE_ROWS_PLACEHOLDER -->
             </tbody>
         </table>
 
@@ -536,21 +404,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>Scope 1: Discovery & Planning</td>
-                        <td>26</td>
-                        <td>$5,588.00</td>
-                    </tr>
-                    <tr>
-                        <td>Scope 2: HubSpot Configuration & Integration</td>
-                        <td>78</td>
-                        <td>$15,532.00</td>
-                    </tr>
-                    <tr>
-                        <td>Scope 3: Training & Documentation</td>
-                        <td>24</td>
-                        <td>$4,488.00</td>
-                    </tr>
+                    <!-- SUMMARY_ROWS_PLACEHOLDER -->
                 </tbody>
                 <tfoot>
                     <tr>
@@ -566,11 +420,16 @@
         <div class="text-block no-break">
             <h3>Budget Notes:</h3>
             <p>
-                All pricing is inclusive of GST. Payment terms are Net 30 from invoice date. 
-                A 50% deposit is required to commence work, with the balance due upon project completion. 
-                Any scope changes or additional work requests will be quoted separately and require written approval 
+                All pricing is inclusive of GST. Payment terms are Net 30 from invoice date.
+                A 50% deposit is required to commence work, with the balance due upon project completion.
+                Any scope changes or additional work requests will be quoted separately and require written approval
                 before proceeding.
             </p>
+        </div>
+
+        <!-- ===== CLOSING STATEMENT ===== -->
+        <div style="text-align: center; color: #999999; font-style: italic; margin-top: 40px; margin-bottom: 20px;">
+            *** This concludes the Scope of Work document. ***
         </div>
 
         <!-- ===== FOOTER ===== -->
@@ -579,4 +438,5 @@
         </div>
     </div>
 </body>
+
 </html>

@@ -63,6 +63,16 @@ export function insertSOWToEditor(
         // Scope Description
         htmlContent += `<p><em>${scope.description}</em></p>`;
 
+        // Deliverables - Moved to Top per Compliance
+        if (scope.deliverables && scope.deliverables.length > 0) {
+            htmlContent += `<h3>Deliverables</h3>`;
+            htmlContent += `<ul>`;
+            scope.deliverables.forEach((item) => {
+                htmlContent += `<li>${item}</li>`;
+            });
+            htmlContent += `</ul>`;
+        }
+
         // Pricing Table
         htmlContent += `<h3>Pricing</h3>`;
         htmlContent += `<table class="border-collapse border border-border"><thead><tr><th class="font-medium text-left border border-border bg-muted">Task/Description</th><th class="font-medium text-left border border-border bg-muted">Role</th><th class="font-medium text-center border border-border bg-muted">Hours</th><th class="font-medium text-right border border-border bg-muted">Rate ($/hr)</th><th class="font-medium text-right border border-border bg-muted">Total (incl. GST)</th></tr></thead><tbody>`;
@@ -86,16 +96,6 @@ export function insertSOWToEditor(
         htmlContent += `<p><strong>Scope Total: $${scopeTotalWithGST.toFixed(
             2,
         )} AUD (inc. GST)</strong></p>`;
-
-        // Deliverables
-        if (scope.deliverables && scope.deliverables.length > 0) {
-            htmlContent += `<h3>Deliverables</h3>`;
-            htmlContent += `<ul>`;
-            scope.deliverables.forEach((item) => {
-                htmlContent += `<li>${item}</li>`;
-            });
-            htmlContent += `</ul>`;
-        }
 
         // Assumptions
         if (scope.assumptions && scope.assumptions.length > 0) {
@@ -135,6 +135,9 @@ export function insertSOWToEditor(
         htmlContent += `<h2>Budget Notes</h2>`;
         htmlContent += `<p>${sowData.budgetNotes}</p>`;
     }
+
+    // Closing Statement
+    htmlContent += `<p style="text-align: center; color: #6b7280; font-style: italic; margin-top: 2rem;">*** This concludes the Scope of Work document. ***</p>`;
 
     // Insert HTML content into editor
     editor.commands.setContent(htmlContent);

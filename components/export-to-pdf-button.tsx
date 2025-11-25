@@ -1,6 +1,7 @@
 "use client";
 
 import React from 'react';
+import { toast } from "sonner";
 
 interface SOWItem {
     description: string;
@@ -56,11 +57,10 @@ export function ExportToPDFButton({
     children = 'Export to PDF'
 }: ExportToPDFButtonProps) {
     const [isExporting, setIsExporting] = React.useState(false);
-    const [error, setError] = React.useState<string | null>(null);
 
     const handleExport = async () => {
         setIsExporting(true);
-        setError(null);
+        const toastId = toast.loading("Generating PDF...");
 
         try {
             const response = await fetch('/api/export-pdf', {
@@ -108,20 +108,21 @@ export function ExportToPDFButton({
             document.body.removeChild(link);
             setTimeout(() => URL.revokeObjectURL(pdfUrl), 100);
 
+            toast.success("PDF exported successfully!", { id: toastId });
+
         } catch (err) {
             console.error('Export error:', err);
-            setError(err instanceof Error ? err.message : 'Failed to export PDF');
+            toast.error(err instanceof Error ? err.message : 'Failed to export PDF', { id: toastId });
         } finally {
             setIsExporting(false);
         }
     };
 
     return (
-        <div>
-            <button
-                onClick={handleExport}
-                disabled={isExporting}
-                className={className || `
+        <button
+            onClick={handleExport}
+            disabled={isExporting}
+            className={className || `
           px-6 py-3 
           bg-primary text-primary-foreground 
           rounded-lg font-semibold 
@@ -129,13 +130,9 @@ export function ExportToPDFButton({
           disabled:opacity-50 disabled:cursor-not-allowed
           transition-colors
         `}
-            >
-                {isExporting ? 'Generating PDF...' : children}
-            </button>
-            {error && (
-                <p className="text-sm text-destructive mt-2">{error}</p>
-            )}
-        </div>
+        >
+            {isExporting ? 'Generating...' : children}
+        </button>
     );
 }
 

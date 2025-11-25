@@ -10,6 +10,7 @@ import {
     FileDown,
     ArrowDownToLine,
 } from "lucide-react";
+import { ExportToPDFButton } from "@/components/export-to-pdf-button";
 import { z } from "zod";
 
 // Types
@@ -422,6 +423,25 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                             </p>
                         </div>
 
+                        {/* Deliverables - Moved to Top per Compliance */}
+                        {scope.deliverables &&
+                            scope.deliverables.length > 0 && (
+                                <div className="bg-muted p-4 rounded-lg">
+                                    <h3 className="font-bold text-foreground mb-2">
+                                        Deliverables:
+                                    </h3>
+                                    <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                                        {scope.deliverables.map((item, idx) => (
+                                            <li
+                                                key={`deliverable-${scope.id}-${idx}`}
+                                            >
+                                                {item}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+
                         {/* Pricing Table */}
                         <div className="overflow-x-auto">
                             <table className="w-full border-collapse">
@@ -449,7 +469,7 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {(scope.roles || []).map((row) => {
+                                    {(scope.roles || []).map((row, rowIdx) => {
                                         const rowCost =
                                             safeNumber(row.hours) *
                                             safeNumber(row.rate);
@@ -458,7 +478,7 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
 
                                         return (
                                             <tr
-                                                key={row.id}
+                                                key={row.id || `row-${scope.id}-${rowIdx}`}
                                                 draggable
                                                 onDragStart={(e) =>
                                                     handleDragStart(
@@ -607,50 +627,33 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                         </div>
 
                         {/* Add Row Button */}
-                        <button
+                        < button
                             onClick={() => addRow(scope.id)}
                             className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition text-sm"
                         >
                             <Plus size={16} /> Add Role
                         </button>
 
-                        {/* Deliverables */}
-                        {scope.deliverables &&
-                            scope.deliverables.length > 0 && (
+                        {/* Assumptions */}
+                        {
+                            scope.assumptions && scope.assumptions.length > 0 && (
                                 <div className="bg-muted p-4 rounded-lg">
                                     <h3 className="font-bold text-foreground mb-2">
-                                        Deliverables:
+                                        Assumptions:
                                     </h3>
                                     <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                                        {scope.deliverables.map((item, idx) => (
+                                        {scope.assumptions.map((item, idx) => (
                                             <li
-                                                key={`deliverable-${scope.id}-${idx}`}
+                                                key={`assumption-${scope.id}-${idx}`}
                                             >
                                                 {item}
                                             </li>
                                         ))}
                                     </ul>
                                 </div>
-                            )}
-
-                        {/* Assumptions */}
-                        {scope.assumptions && scope.assumptions.length > 0 && (
-                            <div className="bg-muted p-4 rounded-lg">
-                                <h3 className="font-bold text-foreground mb-2">
-                                    Assumptions:
-                                </h3>
-                                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                                    {scope.assumptions.map((item, idx) => (
-                                        <li
-                                            key={`assumption-${scope.id}-${idx}`}
-                                        >
-                                            {item}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        )}
-                    </div>
+                            )
+                        }
+                    </div >
                 ))
             ) : (
                 <div className="text-center p-8 bg-muted rounded-lg">
@@ -851,40 +854,73 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
             </div>
 
             {/* Project Overview */}
-            {projectOverview && (
-                <div className="border-t border-border pt-6">
-                    <h3 className="text-xl font-bold text-foreground mb-2">
-                        Project Overview:
-                    </h3>
-                    <p className="text-muted-foreground">{projectOverview}</p>
-                </div>
-            )}
+            {
+                projectOverview && (
+                    <div className="border-t border-border pt-6">
+                        <h3 className="text-xl font-bold text-foreground mb-2">
+                            Project Overview:
+                        </h3>
+                        <p className="text-muted-foreground">{projectOverview}</p>
+                    </div>
+                )
+            }
 
             {/* Budget Notes */}
-            {budgetNotes && (
-                <div className="border-t border-border pt-6">
-                    <h3 className="text-xl font-bold text-foreground mb-2">
-                        Budget Notes:
-                    </h3>
-                    <p className="text-muted-foreground">{budgetNotes}</p>
-                </div>
-            )}
+            {
+                budgetNotes && (
+                    <div className="border-t border-border pt-6">
+                        <h3 className="text-xl font-bold text-foreground mb-2">
+                            Budget Notes:
+                        </h3>
+                        <p className="text-muted-foreground">{budgetNotes}</p>
+                    </div>
+                )
+            }
 
-            {/* Insert to Editor Button - Prominent at Bottom */}
-            <div className="border-t border-border pt-6">
+            {/* Actions - Prominent at Bottom */}
+            <div className="border-t border-border pt-6 flex flex-col sm:flex-row gap-4">
+                <ExportToPDFButton
+                    projectTitle={projectTitle}
+                    clientName={clientName}
+                    projectDescription={projectOverview || ""}
+                    scopes={scopes.map(s => ({
+                        name: s.title,
+                        description: s.description,
+                        items: s.roles.map(r => ({
+                            description: r.task,
+                            role: r.role,
+                            hours: r.hours,
+                            cost: r.hours * r.rate
+                        })),
+                        deliverables: s.deliverables,
+                        assumptions: s.assumptions
+                    }))}
+                    grandTotal={totals.total}
+                    budgetNotes={budgetNotes || ""}
+                    className="flex-1 flex items-center justify-center gap-3 px-6 py-4 bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-lg transition-all hover:shadow-lg text-lg font-semibold"
+                >
+                    <FileDown size={22} />
+                    Export PDF
+                </ExportToPDFButton>
+
                 <button
                     onClick={insertToEditor}
-                    className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-primary-foreground rounded-lg transition-all hover:shadow-lg text-lg font-semibold"
+                    className="flex-1 flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-primary-foreground rounded-lg transition-all hover:shadow-lg text-lg font-semibold"
                     title="Insert SOW content directly into editor"
                 >
                     <ArrowDownToLine size={22} />
                     Insert to Editor
                 </button>
-                <p className="text-xs text-muted-foreground text-center mt-2">
-                    Click to insert this SOW directly into the Novel editor
-                </p>
             </div>
-        </div>
+            <p className="text-xs text-muted-foreground text-center mt-2">
+                Export as PDF or insert directly into the Novel editor
+            </p>
+
+            {/* Closing Statement - Mandatory Compliance */}
+            <div className="w-full text-center py-8 text-gray-500 italic font-medium">
+                *** This concludes the Scope of Work document. ***
+            </div>
+        </div >
     );
 };
 

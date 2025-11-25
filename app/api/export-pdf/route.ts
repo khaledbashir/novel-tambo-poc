@@ -74,8 +74,21 @@ export async function POST(request: NextRequest) {
       day: 'numeric'
     });
 
+    // Read and embed logo
+    let logoBase64 = '';
+    try {
+      const logoPath = path.join(process.cwd(), 'public', 'logo.png');
+      if (fs.existsSync(logoPath)) {
+        const logoBuffer = fs.readFileSync(logoPath);
+        logoBase64 = `data:image/png;base64,${logoBuffer.toString('base64')}`;
+      }
+    } catch (e) {
+      console.error('Error reading logo:', e);
+    }
+
     // Replace header information
     htmlTemplate = htmlTemplate
+      .replace('{{LOGO_BASE64}}', logoBase64)
       .replace('Statement of Work', data.projectTitle || 'Statement of Work')
       .replace('Client Name | Advisory | Services', `${data.clientName} | Advisory | Services`)
       .replace('HubSpot Integration & Marketing Automation Setup', data.projectDescription)
@@ -94,17 +107,25 @@ export async function POST(request: NextRequest) {
       `).join('');
 
       const deliverablesHtml = scope.deliverables.length > 0 ? `
-        <h4>Deliverables:</h4>
-        <ul>
-          ${scope.deliverables.map(d => `<li>${d}</li>`).join('')}
-        </ul>
+        <tr>
+          <td colspan="4" class="deliverables-block">
+            <h4>Deliverables:</h4>
+            <ul>
+              ${scope.deliverables.map(d => `<li>${d}</li>`).join('')}
+            </ul>
+          </td>
+        </tr>
       ` : '';
 
       const assumptionsHtml = scope.assumptions && scope.assumptions.length > 0 ? `
-        <h4 style="margin-top: 15px;">Assumptions:</h4>
-        <ul>
-          ${scope.assumptions.map(a => `<li>${a}</li>`).join('')}
-        </ul>
+        <tr>
+          <td colspan="4" class="deliverables-block">
+            <h4>Assumptions:</h4>
+            <ul>
+              ${scope.assumptions.map(a => `<li>${a}</li>`).join('')}
+            </ul>
+          </td>
+        </tr>
       ` : '';
 
       return `
@@ -118,13 +139,9 @@ export async function POST(request: NextRequest) {
             ${scope.description}
           </td>
         </tr>
+        ${deliverablesHtml}
         ${itemsHtml}
-        <tr>
-          <td colspan="4" class="deliverables-block">
-            ${deliverablesHtml}
-            ${assumptionsHtml}
-          </td>
-        </tr>
+        ${assumptionsHtml}
       `;
     }).join('');
 
@@ -167,6 +184,18 @@ export async function POST(request: NextRequest) {
     htmlTemplate = htmlTemplate.replace(
       /<span class="amount">\$[\d,]+\.00<\/span>/,
       `<span class="amount">$${data.grandTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>`
+    );
+
+    // Replace scope rows
+    htmlTemplate = htmlTemplate.replace(
+      '<!-- SCOPE_ROWS_PLACEHOLDER -->',
+      scopeRowsHtml
+    );
+
+    // Replace summary rows
+    htmlTemplate = htmlTemplate.replace(
+      '<!-- SUMMARY_ROWS_PLACEHOLDER -->',
+      summaryRowsHtml
     );
 
     // Launch Puppeteer and generate PDF
