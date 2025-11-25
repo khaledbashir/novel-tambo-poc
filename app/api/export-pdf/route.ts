@@ -225,9 +225,9 @@ export async function POST(request: NextRequest) {
                 const response = await fetch(WEASYPRINT_URL, {
                     method: "POST",
                     headers: {
-                        "Content-Type": "text/html",
+                        "Content-Type": "application/json",
                     },
-                    body: htmlTemplate,
+                    body: JSON.stringify({ html: htmlTemplate }),
                     signal: controller.signal,
                 });
 
@@ -247,13 +247,21 @@ export async function POST(request: NextRequest) {
                     lastError = new Error(`WeasyPrint API error: ${response.statusText} - Details: ${errorDetails}`);
                 } else {
                     const result = await response.json();
-                    if (!result || !result.downloadUrl) {
-                        lastError = new Error("WeasyPrint API returned invalid response");
+                    // WeasyPrint API returns {success: true, url: "/download-pdf/xxx.pdf"}
+                    if (!result || !result.url) {
+                        console.error("WeasyPrint API response:", result);
+                        lastError = new Error(`WeasyPrint API returned invalid response: ${JSON.stringify(result)}`);
                     } else {
-                        const pdfUrl = result.downloadUrl;
+                        // Build absolute URL from the relative path
+                        const baseUrl = WEASYPRINT_URL.replace(/\/generate-pdf$/, "");
+                        const pdfUrl = result.url.startsWith("http")
+                            ? result.url
+                            : `${baseUrl}${result.url}`;
+
+                        console.log("PDF URL:", pdfUrl);
 
                         // Generate filename from project title and current date
-                        const filename = `${data.projectTitle.replace(/\s+/g, "-")}-${new Date().toISOString().split("T")[0]}.pdf`;
+                        const filename = `${data.projectTitle.replace(/\\s+/g, "-")}-${new Date().toISOString().split("T")[0]}.pdf`;
 
                         // Fetch the PDF and return it
                         const pdfResponse = await fetch(pdfUrl);
