@@ -3,7 +3,22 @@ FROM node:18-alpine AS base
 
 # Install dependencies only when needed
 FROM base AS deps
-RUN apk add --no-cache libc6-compat
+# Install system dependencies for WeasyPrint
+RUN apk add --no-cache \
+    libc6-compat \
+    python3 \
+    py3-pip \
+    cairo \
+    pango \
+    gdk-pixbuf \
+    libxml2 \
+    libxslt \
+    shared-mime-info \
+    ghostscript
+
+# Install WeasyPrint
+RUN pip3 install weasyprint
+
 WORKDIR /app
 
 # Install pnpm
@@ -17,7 +32,7 @@ ENV PUPPETEER_SKIP_DOWNLOAD=true
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 
 # Install dependencies
-RUN pnpm install --no-frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -39,6 +54,21 @@ RUN pnpm build
 # Production image, copy all the files and run next
 FROM base AS runner
 WORKDIR /app
+
+# Install runtime dependencies for WeasyPrint
+RUN apk add --no-cache \
+    python3 \
+    py3-pip \
+    cairo \
+    pango \
+    gdk-pixbuf \
+    libxml2 \
+    libxslt \
+    shared-mime-info \
+    ghostscript
+
+# Install WeasyPrint for runtime
+RUN pip3 install weasyprint
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1

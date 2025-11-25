@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
+import { WeasyPrint } from "node-weasyprint";
 
 /**
- * PDF Export API Route - HTML-based PDF Generation
+ * PDF Export API Route - WeasyPrint HTML to PDF Conversion
  *
  * POST /api/export-pdf
  *
- * Returns an HTML file with print styling that the user can save as PDF
+ * Converts HTML to PDF using WeasyPrint for high-quality output
  */
 
 interface SOWItem {
@@ -209,40 +210,20 @@ export async function POST(request: NextRequest) {
             summaryRowsHtml,
         );
 
-        // Add print-specific styling and instructions
-        const printInstructions = `
-      <div id="print-instructions" style="position: fixed; top: 10px; right: 10px; background: #f8f9fa; padding: 15px; border: 1px solid #ddd; border-radius: 5px; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-        <h3 style="margin-top: 0; color: #333;">PDF Export Instructions</h3>
-        <p style="margin-bottom: 10px;">To save this document as a PDF:</p>
-        <ol style="margin: 0; padding-left: 20px;">
-          <li>Press <strong>Ctrl+P</strong> (Windows/Linux) or <strong>Cmd+P</strong> (Mac)</li>
-          <li>Select "Save as PDF" as the destination</li>
-          <li>Adjust settings if needed (margins, headers/footers)</li>
-          <li>Click "Save" to download the PDF</li>
-        </ol>
-        <p style="margin-bottom: 0; font-size: 12px; color: #666;">This dialog will not appear in the printed PDF.</p>
-        <style>
-          @media print {
-            #print-instructions { display: none !important; }
-          }
-        </style>
-      </div>
-    `;
+        // Generate PDF using WeasyPrint
+        const wp = new WeasyPrint();
+        const pdfBuffer = await wp.create(htmlTemplate);
 
-        // Add the instructions before closing body tag
-        htmlTemplate = htmlTemplate.replace(
-            "</body>",
-            printInstructions + "</body>",
-        );
+        // Generate filename from project title and current date
+        const filename = `${data.projectTitle.replace(/\s+/g, "-")}-${new Date().toISOString().split("T")[0]}.pdf`;
 
-        // Return HTML with content-disposition to trigger download
-        const filename = `${data.projectTitle.replace(/\s+/g, "-")}-${new Date().toISOString().split("T")[0]}.html`;
-
-        return new NextResponse(htmlTemplate, {
+        // Return the PDF as a downloadable file
+        return new NextResponse(pdfBuffer, {
             status: 200,
             headers: {
-                "Content-Type": "text/html",
+                "Content-Type": "application/pdf",
                 "Content-Disposition": `attachment; filename="${filename}"`,
+                "Content-Length": pdfBuffer.length.toString(),
             },
         });
     } catch (error) {
