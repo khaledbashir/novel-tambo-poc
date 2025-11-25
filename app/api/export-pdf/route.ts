@@ -292,42 +292,17 @@ export async function POST(request: NextRequest) {
             throw lastError;
         }
 
-            if (!response.ok) {
-                // Try to get error details for better debugging
-                let errorDetails = "";
-                try {
-                    const errorData = await response.json().catch(() => null);
-                    errorDetails = errorData ? JSON.stringify(errorData) : "No error details available";
-                } catch (e) {
-                    errorDetails = `Failed to parse error response: ${e}`;
-                }
+        // This should never be reached, but just in case
+        throw new Error("Failed to generate PDF after retries");
 
-                throw new Error(`WeasyPrint API error: ${response.statusText} - Details: ${errorDetails}`);
-            const result = await response.json();
-
-            if (!result || !result.downloadUrl) {
-                throw new Error("WeasyPrint API returned invalid response");
-            }
-
-            const pdfUrl = result.downloadUrl;
-
-            // Generate filename from project title and current date
-            const filename = `${data.projectTitle.replace(/\s+/g, "-")}-${new Date().toISOString().split("T")[0]}.pdf`;
-
-            // Fetch the PDF and return it
-            const pdfResponse = await fetch(pdfUrl);
-            if (!pdfResponse.ok) {
-                throw new Error(`Failed to fetch PDF from WeasyPrint: ${pdfResponse.statusText}`);
-            }
-
-            const pdfBuffer = await pdfResponse.arrayBuffer();
-
-            return new NextResponse(pdfBuffer, {
-                status: 200,
-                headers: {
-                    "Content-Type": "application/pdf",
-                    "Content-Disposition": `attachment; filename="${filename}"`,
-
+    } catch (error) {
+        console.error("PDF generation error:", error);
+        return NextResponse.json(
+            {
+                error: "Failed to generate PDF",
+                details: error instanceof Error ? error.message : String(error),
+            },
+            { status: 500 },
         );
     }
 }
