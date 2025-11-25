@@ -35,3 +35,9 @@ coverage
 README.md
 docs
 *.md
+
+# Large monorepo directories (not needed for build)
+tambo/
+novel/
+my-tambo-app/
+frontend/

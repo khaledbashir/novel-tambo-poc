@@ -47,6 +47,29 @@ const nextConfig = {
     },
     productionBrowserSourceMaps: true,
     output: 'standalone', // Required for Docker deployment
+
+    // CRITICAL: Exclude massive directories from Next.js compilation
+    // These directories contain 1400+ files and were causing 30s+ dev startup
+    webpack: (config, { isServer }) => {
+        // Exclude massive monorepo directories from compilation
+        config.watchOptions = {
+            ...config.watchOptions,
+            ignored: [
+                '**/node_modules/**',
+                '**/.git/**',
+                '**/.next/**',
+                '**/tambo/**',           // 850+ subdirectories
+                '**/novel/**',           // Large monorepo
+                '**/my-tambo-app/**',    // Separate app
+                '**/frontend/**',        // Separate frontend
+            ],
+        };
+
+        // Exclude from module resolution
+        config.externals = config.externals || [];
+
+        return config;
+    },
 };
 
 module.exports = nextConfig;
