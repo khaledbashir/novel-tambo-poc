@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr">
 
 <head>
     <meta charset="UTF-8">
@@ -27,6 +27,8 @@
             color: var(--text-dark);
             background: white;
             line-height: 1.6;
+            direction: ltr;
+            unicode-bidi: bidi-override;
         }
 
         /* ===== PAGE LAYOUT ===== */
@@ -231,22 +233,27 @@
             background: var(--dark-grey);
             color: var(--white);
             padding: 18px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
             font-size: 18px;
             font-weight: 700;
             margin-bottom: 30px;
             border-radius: 4px;
+            width: 100%;
+        }
+
+        .grand-total-bar table {
+            width: 100%;
+            border-collapse: collapse;
         }
 
         .grand-total-bar .label {
             text-transform: uppercase;
             letter-spacing: 1px;
+            text-align: left;
         }
 
         .grand-total-bar .amount {
             font-size: 22px;
+            text-align: right;
         }
 
         /* ===== SUMMARY TABLE ===== */
@@ -388,8 +395,12 @@
 
         <!-- ===== GRAND TOTAL BAR ===== -->
         <div class="grand-total-bar no-break">
-            <span class="label">TOTAL</span>
-            <span class="amount">$25,608.00</span>
+            <table>
+                <tr>
+                    <td class="label">TOTAL</td>
+                    <td class="amount">$25,608.00</td>
+                </tr>
+            </table>
         </div>
 
         <!-- ===== SUMMARY TABLE ===== -->

@@ -141,8 +141,8 @@ export async function POST(request: NextRequest) {
             ${scope.description}
           </td>
         </tr>
-        ${deliverablesHtml}
         ${itemsHtml}
+        ${deliverablesHtml}
         ${assumptionsHtml}
       `;
             })
