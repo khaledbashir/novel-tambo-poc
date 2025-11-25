@@ -87,7 +87,18 @@ export function ExportToPDFButton({
                 const errorData = await response
                     .json()
                     .catch(() => ({ error: "Failed to generate PDF" }));
-                throw new Error(errorData.error || "Failed to generate PDF");
+                const errorMessage = errorData.error || "Failed to generate PDF";
+                const errorDetails = errorData.details || "";
+                const fullErrorMessage = errorDetails
+                    ? `${errorMessage}: ${errorDetails}`
+                    : errorMessage;
+                console.error("PDF Export API Error:", {
+                    status: response.status,
+                    statusText: response.statusText,
+                    error: errorMessage,
+                    details: errorDetails
+                });
+                throw new Error(fullErrorMessage);
             }
 
             // Get PDF binary data from response
