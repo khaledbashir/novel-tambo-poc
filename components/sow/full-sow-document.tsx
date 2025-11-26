@@ -267,13 +267,13 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
             prev.map((scope) =>
                 scope.id === scopeId
                     ? {
-                          ...scope,
-                          roles: scope.roles.map((row) =>
-                              row.id === rowId
-                                  ? { ...row, [field]: value }
-                                  : row,
-                          ),
-                      }
+                        ...scope,
+                        roles: scope.roles.map((row) =>
+                            row.id === rowId
+                                ? { ...row, [field]: value }
+                                : row,
+                        ),
+                    }
                     : scope,
             ),
         );
@@ -284,18 +284,18 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
             prev.map((scope) =>
                 scope.id === scopeId
                     ? {
-                          ...scope,
-                          roles: [
-                              ...scope.roles,
-                              {
-                                  id: `row-${Date.now()}`,
-                                  task: "",
-                                  role: "",
-                                  hours: 0,
-                                  rate: 0,
-                              },
-                          ],
-                      }
+                        ...scope,
+                        roles: [
+                            ...scope.roles,
+                            {
+                                id: `row-${Date.now()}`,
+                                task: "",
+                                role: "",
+                                hours: 0,
+                                rate: 0,
+                            },
+                        ],
+                    }
                     : scope,
             ),
         );
@@ -306,9 +306,9 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
             prev.map((scope) =>
                 scope.id === scopeId
                     ? {
-                          ...scope,
-                          roles: scope.roles.filter((row) => row.id !== rowId),
-                      }
+                        ...scope,
+                        roles: scope.roles.filter((row) => row.id !== rowId),
+                    }
                     : scope,
             ),
         );
@@ -365,14 +365,14 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
             prev.map((scope) =>
                 scope.id === scopeId
                     ? {
-                          ...scope,
-                          roles: (() => {
-                              const newRoles = [...scope.roles];
-                              const [removed] = newRoles.splice(fromIndex, 1);
-                              newRoles.splice(toIndex, 0, removed);
-                              return newRoles;
-                          })(),
-                      }
+                        ...scope,
+                        roles: (() => {
+                            const newRoles = [...scope.roles];
+                            const [removed] = newRoles.splice(fromIndex, 1);
+                            newRoles.splice(toIndex, 0, removed);
+                            return newRoles;
+                        })(),
+                    }
                     : scope,
             ),
         );
@@ -931,13 +931,13 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
     };
 
     return (
-        <div className="sow-print-container w-full max-w-7xl mx-auto p-8 bg-card rounded-lg border border-border shadow-lg space-y-8">
+        <div className="sow-print-container w-full max-w-7xl mx-auto p-8 bg-card rounded-lg border border-border shadow-lg space-y-3">
             {/* Header - Centered Logo */}
-            <div className="flex flex-col items-center border-b border-border pb-8 mb-8">
+            <div className="flex flex-col items-center border-b border-border pb-4 mb-4">
                 <img
                     src="/images/logogreendark.png"
                     alt="Social Garden"
-                    className="h-16 mb-6"
+                    className="h-16 mb-3"
                     onError={(e) => {
                         (e.target as HTMLImageElement).style.display = "none";
                     }}
@@ -948,7 +948,7 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
             {scopes && scopes.length > 0 ? (
                 <>
                     {scopes.map((scope, scopeIndex) => (
-                        <div key={scope.id} className="space-y-4">
+                        <div key={scope.id} className="space-y-2">
                             {/* Single Continuous Table - Gold Standard Format */}
                             <div className="overflow-x-auto">
                                 <table className="w-full border-collapse border border-border">
@@ -961,13 +961,13 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                                             <th className="px-4 py-3 text-left text-sm font-semibold text-white">
                                                 ROLE
                                             </th>
-                                            <th className="px-4 py-3 text-center text-sm font-semibold text-white w-24">
+                                            <th className="px-4 py-3 text-center text-sm font-semibold text-white">
                                                 HOURS
                                             </th>
-                                            <th className="px-4 py-3 text-center text-sm font-semibold text-white w-24">
+                                            <th className="px-4 py-3 text-center text-sm font-semibold text-white">
                                                 RATE
                                             </th>
-                                            <th className="px-4 py-3 text-right text-sm font-semibold text-white w-32">
+                                            <th className="px-4 py-3 text-right text-sm font-semibold text-white">
                                                 TOTAL COST + GST
                                             </th>
                                             <th className="px-4 py-3 text-center text-sm font-semibold text-white w-16">
@@ -1050,7 +1050,7 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                                             const isDragging =
                                                 draggedRow?.rowId === row.id &&
                                                 draggedRow?.scopeId ===
-                                                    scope.id;
+                                                scope.id;
 
                                             return (
                                                 <tr
@@ -1075,18 +1075,16 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                                                         }
                                                     }}
                                                     onDragEnd={handleDragEnd}
-                                                    className={`border-b border-border transition-colors hover:bg-muted/50 ${
-                                                        isDragging
-                                                            ? "opacity-50"
-                                                            : ""
-                                                    } ${
-                                                        dragOverIndex ===
+                                                    className={`border-b border-border transition-colors hover:bg-muted/50 ${isDragging
+                                                        ? "opacity-50"
+                                                        : ""
+                                                        } ${dragOverIndex ===
                                                             rowIndex &&
-                                                        draggedRow?.scopeId ===
+                                                            draggedRow?.scopeId ===
                                                             scope.id
                                                             ? "border-t-2 border-t-primary"
                                                             : ""
-                                                    }`}
+                                                        }`}
                                                 >
                                                     <td className="px-4 py-3">
                                                         <GripVertical
@@ -1274,8 +1272,8 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
             )}
 
             {/* Scope & Price Overview */}
-            <div className="border-t border-border pt-6">
-                <h2 className="text-2xl font-bold text-foreground mb-4 text-center">
+            <div className="border-t border-border pt-3">
+                <h2 className="text-2xl font-bold text-foreground mb-2 text-center">
                     Scope & Price Overview
                 </h2>
                 <div className="overflow-x-auto">
@@ -1333,15 +1331,15 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                                 <td className="px-4 py-3 text-center font-bold text-lg">
                                     {scopes && scopes.length > 0
                                         ? scopes.reduce(
-                                              (sum, scope) =>
-                                                  sum +
-                                                  (scope.roles || []).reduce(
-                                                      (s, r) =>
-                                                          s + (r.hours || 0),
-                                                      0,
-                                                  ),
-                                              0,
-                                          )
+                                            (sum, scope) =>
+                                                sum +
+                                                (scope.roles || []).reduce(
+                                                    (s, r) =>
+                                                        s + (r.hours || 0),
+                                                    0,
+                                                ),
+                                            0,
+                                        )
                                         : 0}
                                 </td>
                                 <td className="px-4 py-3 text-right font-bold text-lg text-primary">
@@ -1355,10 +1353,10 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
 
             {/* Financial Summary */}
             <div className="flex justify-end">
-                <div className="w-full max-w-sm bg-muted rounded-lg p-6 border border-border">
-                    <div className="space-y-3">
+                <div className="w-full max-w-sm bg-muted rounded-lg p-4 border border-border">
+                    <div className="space-y-2">
                         {/* Hide Total Toggle */}
-                        <div className="flex justify-between items-center pb-3 border-b border-border">
+                        <div className="flex justify-between items-center pb-2 border-b border-border">
                             <label className="text-sm font-medium text-foreground">
                                 Hide Grand Total:
                             </label>
@@ -1366,18 +1364,17 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                                 onClick={() =>
                                     setHideGrandTotal(!hideGrandTotal)
                                 }
-                                className={`px-3 py-1 rounded-md transition text-sm font-medium ${
-                                    hideGrandTotal
-                                        ? "bg-primary text-primary-foreground"
-                                        : "bg-muted-foreground/20 text-foreground"
-                                }`}
+                                className={`px-3 py-1 rounded-md transition text-sm font-medium ${hideGrandTotal
+                                    ? "bg-primary text-primary-foreground"
+                                    : "bg-muted-foreground/20 text-foreground"
+                                    }`}
                             >
                                 {hideGrandTotal ? "Hidden" : "Visible"}
                             </button>
                         </div>
 
                         {/* Discount Input */}
-                        <div className="flex justify-between items-center pb-3 border-b border-border">
+                        <div className="flex justify-between items-center pb-2 border-b border-border">
                             <label className="text-sm font-medium text-foreground">
                                 Discount (%):
                             </label>
@@ -1464,7 +1461,7 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
 
             {/* Project Overview */}
             {projectOverview && (
-                <div className="border-t border-border pt-6">
+                <div className="border-t border-border pt-3">
                     <h3 className="text-xl font-bold text-foreground mb-2">
                         Project Overview:
                     </h3>
@@ -1474,7 +1471,7 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
 
             {/* Budget Notes */}
             {budgetNotes && (
-                <div className="border-t border-border pt-6">
+                <div className="border-t border-border pt-3">
                     <h3 className="text-xl font-bold text-foreground mb-2">
                         Budget Notes:
                     </h3>
@@ -1483,14 +1480,14 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
             )}
 
             {/* Legal Concluding Statement */}
-            <div className="border-t border-border pt-6 text-center">
+            <div className="border-t border-border pt-3 text-center">
                 <p className="text-sm font-medium text-foreground">
                     *** This concludes the Scope of Work document. ***
                 </p>
             </div>
 
             {/* Actions Footer */}
-            <div className="border-t border-border pt-4 space-y-3">
+            <div className="border-t border-border pt-3 space-y-2">
                 {/* Insert Button - Minimal & Clean */}
                 <div className="flex flex-col gap-1">
                     <button
