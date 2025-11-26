@@ -1,7 +1,14 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import { Upload, X, FileText, CheckCircle, Loader2, Paperclip } from "lucide-react";
+import {
+    Upload,
+    X,
+    FileText,
+    CheckCircle,
+    Loader2,
+    Paperclip,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tooltip } from "@/components/tambo/suggestions-tooltip";
 
@@ -10,7 +17,10 @@ interface StandaloneUploaderProps {
     className?: string;
 }
 
-export function StandaloneUploader({ variant = "dropzone", className }: StandaloneUploaderProps) {
+export function StandaloneUploader({
+    variant = "dropzone",
+    className,
+}: StandaloneUploaderProps) {
     const [isUploading, setIsUploading] = useState(false);
     const [uploadedFile, setUploadedFile] = useState<{
         name: string;
@@ -19,27 +29,29 @@ export function StandaloneUploader({ variant = "dropzone", className }: Standalo
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const formatFileSize = (bytes: number): string => {
-        if (bytes === 0) return '0 Bytes';
+        if (bytes === 0) return "0 Bytes";
         const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB'];
+        const sizes = ["Bytes", "KB", "MB"];
         const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        return (
+            Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i]
+        );
     };
 
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        const fileExt = '.' + file.name.split('.').pop()?.toLowerCase();
-        const validTypes = ['.pdf', '.doc', '.docx'];
+        const fileExt = "." + file.name.split(".").pop()?.toLowerCase();
+        const validTypes = [".pdf", ".doc", ".docx"];
 
         if (!validTypes.includes(fileExt)) {
-            alert('Please upload PDF or Word documents only');
+            alert("Please upload PDF or Word documents only");
             return;
         }
 
         if (file.size > 10 * 1024 * 1024) {
-            alert('File is too large. Maximum size is 10MB');
+            alert("File is too large. Maximum size is 10MB");
             return;
         }
 
@@ -76,25 +88,26 @@ export function StandaloneUploader({ variant = "dropzone", className }: Standalo
 
             setUploadedFile({
                 name: file.name,
-                size: file.size
+                size: file.size,
             });
 
             console.log("✅ Document uploaded to Knowledge Base:", result);
             console.log("📤 Dispatching brief-ingested event with:", {
                 fileName: file.name,
                 isKnowledgeBase: true,
-                metadata: result.metadata
+                metadata: result.metadata,
             });
 
-            window.dispatchEvent(new CustomEvent('brief-ingested', {
-                detail: {
-                    text: result.text, // This is now just a confirmation message
-                    fileName: file.name,
-                    isKnowledgeBase: true, // Flag to indicate RAG usage
-                    metadata: result.metadata
-                }
-            }));
-
+            window.dispatchEvent(
+                new CustomEvent("brief-ingested", {
+                    detail: {
+                        text: result.text, // This is now just a confirmation message
+                        fileName: file.name,
+                        isKnowledgeBase: true, // Flag to indicate RAG usage
+                        metadata: result.metadata,
+                    },
+                }),
+            );
         } catch (error: any) {
             console.error("Upload error:", error);
             console.error("Error stack:", error.stack);
@@ -102,12 +115,12 @@ export function StandaloneUploader({ variant = "dropzone", className }: Standalo
             // Provide more user-friendly error messages
             let userMessage = error.message || "Failed to upload document";
             if (error.message.includes("Failed to fetch")) {
-                userMessage = "Network error. Please check your internet connection and try again.";
+                userMessage =
+                    "Network error. Please check your internet connection and try again.";
             }
 
             alert(userMessage);
             setUploadedFile(null);
-        }
         } finally {
             setIsUploading(false);
             if (fileInputRef.current) {
@@ -144,7 +157,7 @@ export function StandaloneUploader({ variant = "dropzone", className }: Standalo
                         className={cn(
                             "w-10 h-10 rounded-lg border border-border bg-background text-foreground transition-colors hover:bg-muted disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                             isUploading && "animate-pulse",
-                            className
+                            className,
                         )}
                         aria-label="Upload Brief"
                     >
@@ -186,7 +199,9 @@ export function StandaloneUploader({ variant = "dropzone", className }: Standalo
                             )}
                         </div>
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">
-                            {isUploading ? "Uploading..." : "Upload Client Brief"}
+                            {isUploading
+                                ? "Uploading..."
+                                : "Upload Client Brief"}
                         </h3>
                         <p className="text-sm text-gray-500 dark:text-gray-400 text-center max-w-xs">
                             Click to upload PDF or Word document (max 10MB)
@@ -209,7 +224,10 @@ export function StandaloneUploader({ variant = "dropzone", className }: Standalo
                                 </p>
                                 <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                                     <CheckCircle className="w-3 h-3 text-green-500 flex-shrink-0" />
-                                    <span>Uploaded • {formatFileSize(uploadedFile.size)}</span>
+                                    <span>
+                                        Uploaded •{" "}
+                                        {formatFileSize(uploadedFile.size)}
+                                    </span>
                                 </div>
                             </div>
                         </div>
