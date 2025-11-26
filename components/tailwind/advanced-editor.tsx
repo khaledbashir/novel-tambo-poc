@@ -409,7 +409,7 @@ const TailwindAdvancedEditor = ({
                     />
                 </div>
                 <div className="flex-1 overflow-y-auto p-8">
-                    <div className="max-w-[90%] mx-auto">
+                    <div className="w-full max-w-none">
                         <EditorContent
                             immediatelyRender={false}
                             initialContent={initialContent ?? undefined}
