@@ -926,6 +926,7 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
         // Write file
         XLSX.writeFile(
             workbook,
+            `${projectTitle.replace(/[^a-z0-9]/gi, "_")}_SOW.xlsx`,
         );
     };
 

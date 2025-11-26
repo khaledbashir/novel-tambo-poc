@@ -179,6 +179,53 @@ const MessageInput = React.forwardRef<HTMLFormElement, MessageInputProps>(
 MessageInput.displayName = "MessageInput";
 
 /**
+ * Component that displays currently attached context documents with remove functionality.
+ */
+const MessageInputContextAttachments = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => {
+  const { attachments, removeContextAttachment } = useTamboContextAttachment();
+
+  if (!attachments || attachments.length === 0) {
+    return null;
+  }
+
+  return (
+    <div
+      ref={ref}
+      className={cn(
+        "flex flex-wrap items-center gap-2 pb-2 pt-1 border-b border-border",
+        className,
+      )}
+      data-slot="message-input-context-attachments"
+      {...props}
+    >
+      {attachments.map((attachment) => (
+        <div
+          key={attachment.id}
+          className="relative flex items-center rounded-lg border border-border bg-background px-3 py-1.5 gap-2"
+        >
+          <span className="flex items-center gap-1.5 text-sm text-foreground">
+            {attachment.icon || <FileText className="w-3.5 h-3.5" />}
+            <span className="truncate max-w-[150px]">{attachment.name}</span>
+          </span>
+          <button
+            type="button"
+            onClick={() => removeContextAttachment(attachment.id)}
+            className="ml-1 text-muted-foreground hover:text-foreground"
+            aria-label={`Remove ${attachment.name}`}
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+});
+MessageInputContextAttachments.displayName = "MessageInput.ContextAttachments";
+
+/**
  * Internal MessageInput component that uses the TamboThreadInput context
  */
 const MessageInputInternal = React.forwardRef<
@@ -428,6 +475,7 @@ const MessageInputInternal = React.forwardRef<
           ) : (
             <>
               <MessageInputStagedImages />
+              <MessageInputContextAttachments />
               {children}
             </>
           )}
