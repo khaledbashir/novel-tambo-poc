@@ -1,0 +1,157 @@
+react-dom-client.development.js:24651 Download the React DevTools for a better development experience: https://react.dev/link/react-devtools
+script.debug.js:1 [Vercel Web Analytics] Debug mode is enabled by default in development. No requests will be sent to the server.
+script.debug.js:1 [Vercel Web Analytics] [pageview] http://localhost:4546/ Object
+hot-reloader-client.js:241 [Fast Refresh] rebuilding
+hot-reloader-client.js:68 [Fast Refresh] done in 5898ms
+tippy.esm.js:318 tippy.jsInteractive tippy element may not be accessible via keyboard navigation because it is not directly after the reference element in the DOM source order. Using a wrapper <div> or <span> tag around the reference element solves this by creating a new parentNode context. Specifying `appendTo: document.body` silences this warning, but it assumes you are using a focus management solution to handle keyboard navigation. See: https://atomiks.github.io/tippyjs/v6/accessibility/#interactivity👷‍ This is a development-only message. It will be removed in production.
+warnWhen @ tippy.esm.js:318
+hot-reloader-client.js:241 [Fast Refresh] rebuilding
+hot-reloader-client.js:68 [Fast Refresh] done in 2900ms
+standalone-uploader.tsx:69 ✅ Document uploaded to Knowledge Base: Object
+standalone-uploader.tsx:70 📤 Dispatching brief-ingested event with: Object
+message-input.tsx:221 [MessageInput] 📥 Received brief-ingested event: Object
+message-input.tsx:237 [MessageInput] ✅ Brief added to context (metadata only): NIDA Scope of Work Brief Example (1).pdf
+hot-reloader-client.js:241 [Fast Refresh] rebuilding
+hot-reloader-client.js:68 [Fast Refresh] done in 1478ms
+scheduler.development.js:14 [Violation] 'message' handler took 392ms
+react-dom-client.development.js:15983 [Violation] 'setTimeout' handler took 358ms
+hot-reloader-client.js:241 [Fast Refresh] rebuilding
+hot-reloader-client.js:68 [Fast Refresh] done in 4202ms
+full-sow-document.tsx:442 Each child in a list should have a unique "key" prop.
+
+Check the render method of `FullSOWDocumentBase`. See https://react.dev/link/warning-keys for more information.
+error @ intercept-console-error.js:51
+validateExplicitKey @ react-jsx-dev-runtime.development.js:586
+validateChildKeys @ react-jsx-dev-runtime.development.js:534
+jsxDEVImpl @ react-jsx-dev-runtime.development.js:456
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:658
+FullSOWDocumentBase @ full-sow-document.tsx:442
+react-stack-bottom-frame @ react-dom-client.development.js:23610
+renderWithHooks @ react-dom-client.development.js:4646
+updateFunctionComponent @ react-dom-client.development.js:8032
+beginWork @ react-dom-client.development.js:9689
+runWithFiberInDEV @ react-dom-client.development.js:544
+performUnitOfWork @ react-dom-client.development.js:15064
+workLoopSync @ react-dom-client.development.js:14888
+renderRootSync @ react-dom-client.development.js:14868
+performWorkOnRoot @ react-dom-client.development.js:14351
+performSyncWorkOnRoot @ react-dom-client.development.js:15970
+flushSyncWorkAcrossRoots_impl @ react-dom-client.development.js:15830
+commitRootImpl @ react-dom-client.development.js:15422
+commitRoot @ react-dom-client.development.js:15273
+commitRootWhenReady @ react-dom-client.development.js:14584
+performWorkOnRoot @ react-dom-client.development.js:14505
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:15955
+performWorkUntilDeadline @ scheduler.development.js:44
+scheduler.development.js:14 [Violation] 'message' handler took 621ms
+scheduler.development.js:14 [Violation] 'message' handler took 351ms
+scheduler.development.js:14 [Violation] 'message' handler took 160ms
+scheduler.development.js:14 [Violation] 'message' handler took 197ms
+scheduler.development.js:14 [Violation] 'message' handler took 484ms
+scheduler.development.js:14 [Violation] 'message' handler took 170ms
+scheduler.development.js:14 [Violation] 'message' handler took 209ms
+scheduler.development.js:14 [Violation] 'message' handler took 283ms
+scheduler.development.js:14 [Violation] 'message' handler took 236ms
+scheduler.development.js:14 [Violation] 'message' handler took 210ms
+scheduler.development.js:14 [Violation] 'message' handler took 295ms
+scheduler.development.js:14 [Violation] 'message' handler took 214ms
+scheduler.development.js:14 [Violation] 'message' handler took 218ms
+scheduler.development.js:14 [Violation] 'message' handler took 202ms
+scheduler.development.js:14 [Violation] 'message' handler took 206ms
+scheduler.development.js:14 [Violation] 'message' handler took 226ms
+scheduler.development.js:14 [Violation] 'message' handler took 231ms
+scheduler.development.js:14 [Violation] 'message' handler took 189ms
+scheduler.development.js:14 [Violation] 'message' handler took 214ms
+scheduler.development.js:14 [Violation] 'message' handler took 247ms
+scheduler.development.js:14 [Violation] 'message' handler took 290ms
+scheduler.development.js:14 [Violation] 'message' handler took 170ms
+webpack-internal:///…r.development.js:14 [Violation] 'message' handler took 238ms
+webpack-internal:///…r.development.js:14 [Violation] 'message' handler took 302ms
+webpack-internal:///…r.development.js:14 [Violation] 'message' handler took 244ms
+webpack-internal:///…r.development.js:14 [Violation] 'message' handler took 208ms
+webpack-internal:///…r.development.js:14 [Violation] 'message' handler took 225ms
+webpack-internal:///…r.development.js:14 [Violation] 'message' handler took 173ms
+webpack-internal:///…r.development.js:14 [Violation] 'message' handler took 178ms
+webpack-internal:///…r.development.js:14 [Violation] 'message' handler took 241ms
+webpack-internal:///…r.development.js:14 [Violation] 'message' handler took 192ms
+webpack-internal:///…r.development.js:14 [Violation] 'message' handler took 226ms
+webpack-internal:///…r.development.js:14 [Violation] 'message' handler took 263ms
+webpack-internal:///…r.development.js:14 [Violation] 'message' handler took 270ms
+webpack-internal:///…r.development.js:14 [Violation] 'message' handler took 332ms
+webpack-internal:///…r.development.js:14 [Violation] 'message' handler took 186ms
+webpack-internal:///…r.development.js:14 [Violation] 'message' handler took 211ms
+webpack-internal:///…r.development.js:14 [Violation] 'message' handler took 189ms
+webpack-internal:///…r.development.js:14 [Violation] 'message' handler took 199ms
+webpack-internal:///…r.development.js:14 [Violation] 'message' handler took 313ms
+webpack-internal:///…r.development.js:14 [Violation] 'message' handler took 191ms
+ [tiptap warn]: Invalid content. Passed value: (3) [{…}, {…}, {…}] Error: 
+createNodeFromContent @ webpack-internal:///…/dist/index.js:2088
+eval @ webpack-internal:///…/dist/index.js:2204
+eval @ webpack-internal:///…e/dist/index.js:240
+eval @ webpack-internal:///…/dist/index.js:2030
+chainedCommand @ webpack-internal:///…e/dist/index.js:201
+eval @ webpack-internal:///…r/insert-sow.ts:376
+insertSOWToEditor @ webpack-internal:///…or/insert-sow.ts:74
+TailwindAdvancedEditor.useEffect.handleInsertSOW @ webpack-internal:///…nced-editor.tsx:212
+insertToEditor @ webpack-internal:///…ow-document.tsx:576
+processDispatchQueue @ webpack-internal:///…evelopment.js:16146
+eval @ webpack-internal:///…evelopment.js:16749
+batchedUpdates$1 @ webpack-internal:///…development.js:3130
+dispatchEventForPluginEventSystem @ webpack-internal:///…evelopment.js:16305
+dispatchEvent @ webpack-internal:///…evelopment.js:20400
+dispatchDiscreteEvent @ webpack-internal:///…evelopment.js:20368
+webpack-internal:///…nced-editor.tsx:176 [Violation] 'click' handler took 283ms
+[Violation] 'click' handler took 284ms
+webpack-internal:///…r.development.js:14 [Violation] 'message' handler took 274ms
+webpack-internal:///…r.development.js:14 [Violation] 'message' handler took 270ms
+ Get markdown error: 
+editor.storage.markdown.getMarkdown @ webpack-internal:///…wn-extension.ts:121
+TailwindAdvancedEditor.useDebouncedCallback[debouncedUpdates] @ webpack-internal:///…anced-editor.tsx:76
+r @ webpack-internal:///…t/index.module.js:9
+e @ webpack-internal:///…t/index.module.js:9
+r @ webpack-internal:///…t/index.module.js:9
+setTimeout
+n @ webpack-internal:///…t/index.module.js:9
+W @ webpack-internal:///…t/index.module.js:9
+onUpdate @ webpack-internal:///…nced-editor.tsx:332
+onUpdate @ webpack-internal:///…/dist/index.js:1017
+eval @ webpack-internal:///…e/dist/index.js:262
+emit @ webpack-internal:///…e/dist/index.js:262
+dispatchTransaction @ webpack-internal:///…/dist/index.js:4860
+EditorView.dispatch @ webpack-internal:///…/dist/index.js:5763
+run @ webpack-internal:///…e/dist/index.js:193
+insertSOWToEditor @ webpack-internal:///…or/insert-sow.ts:29
+TailwindAdvancedEditor.useEffect.handleInsertSOW @ webpack-internal:///…nced-editor.tsx:212
+insertToEditor @ webpack-internal:///…ow-document.tsx:576
+processDispatchQueue @ webpack-internal:///…evelopment.js:16146
+eval @ webpack-internal:///…evelopment.js:16749
+batchedUpdates$1 @ webpack-internal:///…development.js:3130
+dispatchEventForPluginEventSystem @ webpack-internal:///…evelopment.js:16305
+dispatchEvent @ webpack-internal:///…evelopment.js:20400
+dispatchDiscreteEvent @ webpack-internal:///…evelopment.js:20368
+webpack-internal:///…t/index.module.js:9 [Violation] 'setTimeout' handler took 69ms
+webpack-internal:///…r.development.js:14 [Violation] 'message' handler took 318ms
+webpack-internal:///…r.development.js:14 [Violation] 'message' handler took 278ms
+webpack-internal:///…r.development.js:14 [Violation] 'message' handler took 327ms
+webpack-internal:///…/dist/index.js:3124 [Violation] Handling of 'mousewheel' input event was delayed for 299 ms due to main thread being busy. Consider marking event handler as 'passive' to make the page more responsive.
+webpack-internal:///…r.development.js:14 [Violation] 'message' handler took 358ms
+webpack-internal:///…r.development.js:14 [Violation] 'message' handler took 313ms
+webpack-internal:///…r.development.js:14 [Violation] 'message' handler took 219ms
+webpack-internal:///…r.development.js:14 [Violation] 'message' handler took 288ms
+webpack-internal:///…r.development.js:14 [Violation] 'message' handler took 333ms
+webpack-internal:///…r.development.js:14 [Violation] 'message' handler took 409ms
+webpack-internal:///…r.development.js:14 [Violation] 'message' handler took 305ms
+webpack-internal:///…r.development.js:14 [Violation] 'message' handler took 420ms
+webpack-internal:///…r.development.js:14 [Violation] 'message' handler took 231ms
+webpack-internal:///…r.development.js:14 [Violation] 'message' handler took 249ms
+webpack-internal:///…r.development.js:14 [Violation] 'message' handler took 370ms
+webpack-internal:///…r.development.js:14 [Violation] 'message' handler took 267ms
+[Violation] 'click' handler took 29682ms
+webpack-internal:///…evelopment.js:15983 [Violation] 'click' handler took 249ms
+[Violation] Forced reflow while executing JavaScript took 3300ms
+webpack-internal:///…r.development.js:14 [Violation] 'message' handler took 886ms
+webpack-internal:///…r.development.js:14 [Violation] 'message' handler took 7089ms
+webpack-internal:///…evelopment.js:15983 [Violation] 'setTimeout' handler took 1432ms
+webpack-internal:///…evelopment.js:15983 [Violation] 'change' handler took 240ms
+[Violation] Forced reflow while executing JavaScript took 239ms
+[Violation] 'visibilitychange' handler took 210ms

@@ -388,50 +388,52 @@
     scrollbar-color: hsl(var(--border)) hsl(var(--muted) / 0.5);
   }
 
-  /* Tighter editor spacing - reduce excessive gaps */
+  /* Ultra-minimal editor spacing - straight line style */
   .ProseMirror {
-    line-height: 1.6;
+    line-height: 1.4;
   }
 
-  .ProseMirror h1 {
-    margin-top: 1.5rem;
-    margin-bottom: 0.75rem;
+  .ProseMirror * {
+    margin: 0;
+    padding: 0;
   }
 
-  .ProseMirror h2 {
-    margin-top: 1.25rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .ProseMirror h3 {
-    margin-top: 1rem;
-    margin-bottom: 0.5rem;
+  .ProseMirror h1,
+  .ProseMirror h2,
+  .ProseMirror h3,
+  .ProseMirror h4,
+  .ProseMirror h5,
+  .ProseMirror h6 {
+    margin-top: 0.5rem;
+    margin-bottom: 0.25rem;
+    font-weight: 600;
   }
 
   .ProseMirror p {
-    margin-top: 0.5rem;
-    margin-bottom: 0.5rem;
+    margin: 0.25rem 0;
   }
 
   .ProseMirror ul,
   .ProseMirror ol {
-    margin-top: 0.5rem;
-    margin-bottom: 0.5rem;
+    margin: 0.25rem 0;
     padding-left: 1.5rem;
   }
 
   .ProseMirror li {
-    margin-top: 0.25rem;
-    margin-bottom: 0.25rem;
+    margin: 0;
   }
 
   .ProseMirror table {
-    margin-top: 1rem;
-    margin-bottom: 1rem;
+    margin: 0.5rem 0;
   }
 
   .ProseMirror hr {
-    margin-top: 1.5rem;
-    margin-bottom: 1.5rem;
+    margin: 0.5rem 0;
+  }
+
+  .ProseMirror blockquote {
+    margin: 0.25rem 0;
+    padding-left: 1rem;
+    border-left: 3px solid hsl(var(--border));
   }
 }
