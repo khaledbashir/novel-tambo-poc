@@ -387,4 +387,51 @@
     scrollbar-width: thin;
     scrollbar-color: hsl(var(--border)) hsl(var(--muted) / 0.5);
   }
+
+  /* Tighter editor spacing - reduce excessive gaps */
+  .ProseMirror {
+    line-height: 1.6;
+  }
+
+  .ProseMirror h1 {
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .ProseMirror h2 {
+    margin-top: 1.25rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .ProseMirror h3 {
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .ProseMirror p {
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .ProseMirror ul,
+  .ProseMirror ol {
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+    padding-left: 1.5rem;
+  }
+
+  .ProseMirror li {
+    margin-top: 0.25rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .ProseMirror table {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .ProseMirror hr {
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
 }
