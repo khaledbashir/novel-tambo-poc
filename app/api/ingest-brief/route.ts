@@ -44,11 +44,9 @@ export async function POST(req: NextRequest) {
         console.log(`[Ingest] Uploading ${file.name} to AnythingLLM...`);
         console.log("[Ingest] AnythingLLM URL:", process.env.ANYTHING_LLM_URL);
 
+        let uploadResult;
         try {
-            const uploadResult = await anythingLLM.uploadDocument(
-                file,
-                file.name,
-            );
+            uploadResult = await anythingLLM.uploadDocument(file, file.name);
 
             console.log("[Ingest] Upload result:", {
                 success: uploadResult.success,

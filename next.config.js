@@ -47,10 +47,8 @@ const nextConfig = {
     },
     productionBrowserSourceMaps: true,
     output: "standalone", // Required for Docker deployment
-    experimental: {
-        outputFileTracingIncludes: {
-            "*": ["public/**/*", ".next/static/**/*"],
-        },
+    outputFileTracingIncludes: {
+        "*": ["public/**/*", ".next/static/**/*"],
     },
 };
 
