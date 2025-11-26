@@ -50,21 +50,19 @@ export function insertSOWToEditor(editor: Editor, sowData: {
     editor.chain().insertContentAt(endPos, { type: 'paragraph' }).run();
 
     // Now focus the end, which should be the new paragraph we just added
-    const chain = editor.chain().focus('end');
+    editor.commands.focus('end');
 
-    // Add a spacer paragraph to ensure separation from previous content
-    chain.insertContent({ type: 'horizontalRule' });
-    chain.insertContent({ type: 'paragraph' });
+    // Start a new chain for the rest of the content
+    const chain = editor.chain().focus('end');
 
     // Title
     chain.insertContent({ type: 'heading', attrs: { level: 1 }, content: [{ type: 'text', text: sowData.projectTitle }] });
     chain.insertContent({ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Client: ' }, { type: 'text', text: sowData.clientName }] });
-    chain.insertContent({ type: 'horizontalRule' });
 
     // Each Scope
     sowData.scopes.forEach((scope, scopeIndex) => {
         // Scope heading
-        chain.insertContent({ type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: `Scope ${scopeIndex + 1}: ${scope.title}` }] });
+        chain.insertContent({ type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Scope ' + (scopeIndex + 1) + ': ' + scope.title }] });
         chain.insertContent({ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'italic' }], text: scope.description }] });
 
         // Deliverables
@@ -83,12 +81,9 @@ export function insertSOWToEditor(editor: Editor, sowData: {
         chain.insertContent({ type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Pricing' }] });
 
         if (scope.roles && scope.roles.length > 0) {
-            // Build complete scope content array: table + everything after it
-            const scopeContent = [];
-
             // Create table
             const tableRows = [
-                // Header row - MUST match chat preview exactly
+                // Header row
                 {
                     type: 'tableRow',
                     content: [
@@ -96,7 +91,7 @@ export function insertSOWToEditor(editor: Editor, sowData: {
                         { type: 'tableHeader', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'ROLE' }] }] },
                         { type: 'tableHeader', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'HOURS' }] }] },
                         { type: 'tableHeader', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'RATE' }] }] },
-                        { type: 'tableHeader', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'TOTAL COST + GST' }] }] },
+                        { type: 'tableHeader', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'TOTAL COST + GST' }] }] }
                     ]
                 },
                 // Data rows
@@ -108,76 +103,37 @@ export function insertSOWToEditor(editor: Editor, sowData: {
                             { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: row.task }] }] },
                             { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: row.role }] }] },
                             { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: String(row.hours) }] }] },
-                            { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: `$${row.rate.toFixed(2)}` }] }] },
-                            { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: `$${cost}` }] }] },
+                            { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: `$${row.rate.toFixed(2)} ` }] }] },
+                            { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: `$${cost} ` }] }] }
                         ]
                     };
                 })
             ];
 
-            const tableNode = {
-                type: 'table',
-                content: tableRows
-            };
+            chain.insertContent({ type: 'table', content: tableRows });
+            chain.insertContent({ type: 'paragraph' }); // Empty paragraph after table
 
-            // Add table to scope content
-            scopeContent.push(tableNode);
-
-            // Add paragraph after table to ensure cursor is out
-            scopeContent.push({ type: 'paragraph' });
-
-            // Add scope total
+            // Scope total
             const scopeTotal = calculateScopeTotal(scope);
             const scopeGST = scopeTotal * 0.1;
             const scopeTotalWithGST = scopeTotal + scopeGST;
-            scopeContent.push({
-                type: 'paragraph',
-                content: [
-                    { type: 'text', marks: [{ type: 'bold' }], text: 'Scope Total: ' },
-                    { type: 'text', text: `$${scopeTotalWithGST.toFixed(2)} AUD (inc. GST)` }
-                ]
-            });
+            chain.insertContent({ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Scope Total: ' }, { type: 'text', text: `$${scopeTotalWithGST.toFixed(2)} AUD (inc. GST)` }] });
+        }
 
-            // Add assumptions if present
-            if (scope.assumptions && scope.assumptions.length > 0) {
-                scopeContent.push({ type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Assumptions' }] });
+        // Assumptions
+        if (scope.assumptions && scope.assumptions.length > 0) {
+            chain.insertContent({ type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Assumptions' }] });
 
-                const assumptionItems = scope.assumptions.map(item => ({
-                    type: 'listItem',
-                    content: [{ type: 'paragraph', content: [{ type: 'text', text: item }] }]
-                }));
-                scopeContent.push({ type: 'bulletList', content: assumptionItems });
-            }
-
-            // Insert all scope content as array
-            chain.insertContent(scopeContent);
-        } else {
-            // No table, just add scope total
-            const scopeTotal = calculateScopeTotal(scope);
-            const scopeGST = scopeTotal * 0.1;
-            const scopeTotalWithGST = scopeTotal + scopeGST;
-            chain.insertContent({
-                type: 'paragraph',
-                content: [
-                    { type: 'text', marks: [{ type: 'bold' }], text: 'Scope Total: ' },
-                    { type: 'text', text: `$${scopeTotalWithGST.toFixed(2)} AUD (inc. GST)` }
-                ]
-            });
-
-            if (scope.assumptions && scope.assumptions.length > 0) {
-                chain.insertContent({ type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Assumptions' }] });
-
-                const assumptionItems = scope.assumptions.map(item => ({
-                    type: 'listItem',
-                    content: [{ type: 'paragraph', content: [{ type: 'text', text: item }] }]
-                }));
-                chain.insertContent({ type: 'bulletList', content: assumptionItems });
-            }
+            const assumptionItems = scope.assumptions.map(item => ({
+                type: 'listItem',
+                content: [{ type: 'paragraph', content: [{ type: 'text', text: item }] }]
+            }));
+            chain.insertContent({ type: 'bulletList', content: assumptionItems });
         }
 
         if (scopeIndex < sowData.scopes.length - 1) {
             chain.insertContent({ type: 'horizontalRule' });
-            chain.insertContent({ type: 'paragraph' });
+            chain.insertContent({ type: 'paragraph' }); // Empty paragraph after separator
         }
     });
 
@@ -192,13 +148,7 @@ export function insertSOWToEditor(editor: Editor, sowData: {
     }
 
     chain.insertContent({ type: 'paragraph', content: [{ type: 'text', text: `GST (10%): +$${gst.toFixed(2)} AUD` }] });
-    chain.insertContent({
-        type: 'paragraph',
-        content: [
-            { type: 'text', marks: [{ type: 'bold' }], text: 'Grand Total: ' },
-            { type: 'text', text: `$${total.toFixed(2)} AUD` }
-        ]
-    });
+    chain.insertContent({ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Grand Total: ' }, { type: 'text', text: `$${total.toFixed(2)} AUD` }] });
 
     // Project Overview
     if (sowData.projectOverview) {
@@ -214,7 +164,9 @@ export function insertSOWToEditor(editor: Editor, sowData: {
     }
 
     // Execute all commands
-    chain.run();
+    console.log('Executing chain.run()...');
+    const result = chain.run();
+    console.log('Chain execution result:', result);
 
     // Scroll to bottom
     editor.commands.focus('end');
