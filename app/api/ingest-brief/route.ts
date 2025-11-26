@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+import { anythingLLM } from "@/lib/anything-llm";
 
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
+    console.log("[Ingest] Request received");
+    console.log("[Ingest] Env Check - URL:", process.env.ANYTHING_LLM_URL ? "Set" : "Missing");
+    console.log("[Ingest] Env Check - Key:", process.env.ANYTHING_LLM_API_KEY ? "Set" : "Missing");
+
     try {
-        // Dynamic import for pdf-parse module
-        const pdfParseModule = await import('pdf-parse');
-        const parsePDF = (pdfParseModule as any).default || pdfParseModule;
         const formData = await req.formData();
         const file = formData.get("file") as File;
 
@@ -17,70 +19,53 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // Validate file type
-        if (file.type !== "application/pdf") {
-            return NextResponse.json(
-                {
-                    error: "Only PDF files are supported. Please upload a PDF document.",
-                },
-                { status: 400 },
-            );
+        // 1. Upload to AnythingLLM
+        console.log(`[Ingest] Uploading ${file.name} to AnythingLLM...`);
+        const uploadResult = await anythingLLM.uploadDocument(file, file.name);
+
+        if (!uploadResult.success || !uploadResult.data) {
+            throw new Error(uploadResult.error || "Failed to upload to AnythingLLM");
         }
 
-        // Validate file size (10MB max)
-        const maxSize = 10 * 1024 * 1024; // 10MB
-        if (file.size > maxSize) {
-            return NextResponse.json(
-                {
-                    error: "File too large. Maximum size is 10MB.",
-                },
-                { status: 413 },
-            );
+        const docLocation = uploadResult.data.documents?.[0]?.location;
+        if (!docLocation) {
+            console.warn("[Ingest] Upload successful but no document location returned", uploadResult.data);
         }
 
-        // Convert File to Buffer
-        const arrayBuffer = await file.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
+        // 2. Pin to Workspace (RAG)
+        const workspaceSlug = process.env.ANYTHING_LLM_WORKSPACE_SLUG || "sow-generator";
+        console.log(`[Ingest] Pinning to workspace: ${workspaceSlug}`);
 
-        // Parse PDF
-        const data = await parsePDF(buffer);
+        // We need the full path/location to pin it. 
+        // AnythingLLM upload response usually looks like: { documents: [ { location: 'custom-documents/file.pdf', ... } ] }
+        if (docLocation) {
+            const pinResult = await anythingLLM.updateEmbeddings(workspaceSlug, [docLocation], []);
+            if (!pinResult.success) {
+                console.warn(`[Ingest] Failed to pin document: ${pinResult.error}`);
+                // We don't fail the whole request if pinning fails, but RAG won't work for this doc immediately
+            }
+        }
 
-        // Return parsed data
+        // 3. Return Success
         return NextResponse.json({
             success: true,
-            text: data.text,
-            pages: data.numpages,
+            text: "Document uploaded to Knowledge Base. Use consult_knowledge_base tool to query it.", // No full text returned
+            pages: 0, // We don't get page count easily from AnythingLLM upload
             metadata: {
                 fileName: file.name,
                 fileSize: file.size,
                 uploadedAt: new Date().toISOString(),
+                location: docLocation
             },
         });
+
     } catch (error: any) {
-        console.error("PDF parsing error:", error);
-
-        // Handle specific error cases
-        if (error.message?.includes("encrypted")) {
-            return NextResponse.json(
-                {
-                    error: "PDF is encrypted. Please provide an unencrypted version.",
-                },
-                { status: 400 },
-            );
-        }
-
-        if (error.message?.includes("Invalid PDF")) {
-            return NextResponse.json(
-                {
-                    error: "Invalid or corrupted PDF file. Please check the file and try again.",
-                },
-                { status: 400 },
-            );
-        }
-
+        console.error("Ingest Error:", error);
+        console.error("Stack:", error.stack);
         return NextResponse.json(
             {
-                error: "Failed to parse PDF. The file may be corrupted or in an unsupported format.",
+                error: error.message || "Failed to ingest document",
+                details: error.toString()
             },
             { status: 500 },
         );

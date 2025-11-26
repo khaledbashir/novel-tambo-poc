@@ -58,11 +58,11 @@ export const MarkdownExtension = Extension.create<MarkdownOptions>({
     // Set up getMarkdown and serializer when the editor is created
     if (this.editor) {
       const schema = this.editor.schema;
-      
+
       // Always set up getMarkdown as a function that uses this.editor
       // Try to create a schema-specific serializer if possible
       let serializer: MarkdownSerializer;
-      
+
       try {
         // Check if MarkdownSerializer has a fromSchema static method
         if (typeof (MarkdownSerializer as any).fromSchema === "function") {
@@ -79,7 +79,14 @@ export const MarkdownExtension = Extension.create<MarkdownOptions>({
 
       try {
         const base: any = serializer ?? defaultMarkdownSerializer;
-        const nodes = (base && (base as any).nodes) || (defaultMarkdownSerializer as any).nodes || {};
+        const nodes = {
+          ...(base && (base as any).nodes) || (defaultMarkdownSerializer as any).nodes || {},
+          // Add hardBreak handler to fix "Token type `hardBreak` not supported" error
+          hardBreak: (state: any, node: any, parent: any, index: any) => {
+            // Render as two spaces + newline (standard markdown line break)
+            state.write("  \n");
+          },
+        };
         const marks = {
           ...(((base && (base as any).marks) || (defaultMarkdownSerializer as any).marks || {})),
         } as Record<string, any>;

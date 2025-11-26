@@ -4,11 +4,17 @@ import { v4 as uuidv4 } from 'uuid';
 
 export async function GET() {
   try {
+    console.log('Fetching workspaces...');
     const workspaces = await getAllWorkspaces();
+    console.log('Workspaces fetched:', workspaces);
     return NextResponse.json(workspaces);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching workspaces:', error);
-    return NextResponse.json({ error: 'Failed to fetch workspaces' }, { status: 500 });
+    return NextResponse.json({
+      error: 'Failed to fetch workspaces',
+      details: error.message,
+      code: error.code
+    }, { status: 500 });
   }
 }
 

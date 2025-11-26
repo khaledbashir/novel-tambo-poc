@@ -1,10 +1,8 @@
-"use client";
-
 import { Command, CommandInput } from "@/components/tailwind/ui/command";
 
 import { useCompletion } from "ai/react";
 import { ArrowUp } from "lucide-react";
-import { useEditor } from "novel";
+import { useEditor, getPrevText } from "novel";
 import { addAIHighlight } from "novel";
 import { useState } from "react";
 import Markdown from "react-markdown";
@@ -83,8 +81,18 @@ export function AISelector({ onOpenChange }: AISelectorProps) {
                     body: { option: "zap", command: inputValue },
                   }).then(() => setInputValue(""));
 
+                // Handle empty selection by getting previous text context
                 const slice = editor.state.selection.content();
-                const text = editor.storage.markdown.serializer.serialize(slice.content);
+                let text = "";
+
+                if (slice.content.size > 0) {
+                  // Text is selected, use it
+                  text = editor.storage.markdown.serializer.serialize(slice.content);
+                } else {
+                  // No selection, get previous text for context
+                  const pos = editor.state.selection.from;
+                  text = getPrevText(editor, pos);
+                }
 
                 complete(text, {
                   body: { option: "zap", command: inputValue },

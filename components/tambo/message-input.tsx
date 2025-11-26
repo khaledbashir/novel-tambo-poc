@@ -15,6 +15,7 @@ import {
   useIsTamboTokenUpdating,
   useTamboThread,
   useTamboThreadInput,
+  useTamboContextAttachment,
   type StagedImage,
 } from "@tambo-ai/react";
 import {
@@ -26,9 +27,11 @@ import { cva, type VariantProps } from "class-variance-authority";
 import {
   ArrowUp,
   Image as ImageIcon,
+  ImagePlus,
   Paperclip,
   Square,
   X,
+  FileText,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
@@ -37,6 +40,7 @@ import * as React from "react";
 const DictationButton = dynamic(() => import("./dictation-button"), {
   ssr: false,
 });
+import { StandaloneUploader } from "@/components/ui/standalone-uploader";
 
 /**
  * CSS variants for the message input container
@@ -208,6 +212,36 @@ const MessageInputInternal = React.forwardRef<
       textareaRef.current.focus();
     }
   }, [value]);
+
+  const { addContextAttachment } = useTamboContextAttachment();
+
+  // Listen for brief uploads from StandaloneUploader
+  React.useEffect(() => {
+    const handleBriefIngested = (event: CustomEvent) => {
+      console.log('[MessageInput] 📥 Received brief-ingested event:', event.detail);
+      const { fileName, isKnowledgeBase, metadata } = event.detail;
+
+      // Add badge for UI - NO TEXT CONTENT if isKnowledgeBase is true
+      addContextAttachment({
+        name: fileName,
+        icon: <FileText className="w-4 h-4" />,
+        metadata: {
+          type: 'application/pdf',
+          uploadedAt: new Date().toISOString(),
+          isKnowledgeBase: isKnowledgeBase,
+          // Only include minimal metadata
+          pages: metadata?.pages,
+          wordCount: metadata?.wordCount,
+        },
+      });
+      console.log('[MessageInput] ✅ Brief added to context (metadata only):', fileName);
+    };
+
+    window.addEventListener('brief-ingested', handleBriefIngested as unknown as EventListener);
+    return () => {
+      window.removeEventListener('brief-ingested', handleBriefIngested as unknown as EventListener);
+    };
+  }, [addContextAttachment]);
 
   const handleSubmit = React.useCallback(
     async (e: React.FormEvent) => {
@@ -764,7 +798,7 @@ const MessageInputFileButton = React.forwardRef<
         data-slot="message-input-file-button"
         {...props}
       >
-        <Paperclip className="w-4 h-4" />
+        <ImagePlus className="w-4 h-4" />
         <input
           ref={fileInputRef}
           type="file"
@@ -1038,6 +1072,7 @@ const MessageInputToolbar = React.forwardRef<
     >
       <div className="flex items-center gap-2">
         {/* Left side - everything except submit button */}
+        <StandaloneUploader variant="button" />
         {React.Children.map(children, (child): React.ReactNode => {
           if (
             React.isValidElement(child) &&

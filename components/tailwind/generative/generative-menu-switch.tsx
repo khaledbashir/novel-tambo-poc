@@ -19,8 +19,8 @@ const GenerativeMenuSwitch = ({ children, open, onOpenChange }: GenerativeMenuSw
   return (
     <>
       <EditorBubble
-          tippyOptions={{
-            placement: selectionEmpty ? "top" : "bottom-start",
+        tippyOptions={{
+          placement: selectionEmpty ? "top" : "bottom-start",
           onHidden: () => {
             onOpenChange(false);
             if (editor) editor.chain().unsetHighlight().run();
@@ -28,26 +28,28 @@ const GenerativeMenuSwitch = ({ children, open, onOpenChange }: GenerativeMenuSw
         }}
         className="flex w-fit max-w-[90vw] overflow-hidden rounded-md border border-muted bg-background shadow-xl z-50">
         {!open && (
-            <Fragment>
-              <Button
-                className="gap-1 rounded-none text-purple-500"
-                variant="ghost"
-                onClick={() => onOpenChange(true)}
-                size="sm"
-              >
-                <Magic className="h-5 w-5" />
-                Ask AI
-              </Button>
-              {children}
-            </Fragment>
-          )}
+          <Fragment>
+            <Button
+              className="gap-1 rounded-none text-purple-500"
+              variant="ghost"
+              onClick={() => onOpenChange(true)}
+              size="sm"
+            >
+              <Magic className="h-5 w-5" />
+              Ask AI
+            </Button>
+            {children}
+          </Fragment>
+        )}
         {open && !selectionEmpty && <AISelector open={open} onOpenChange={onOpenChange} />}
       </EditorBubble>
 
       {/* When opened programmatically (e.g., via slash-command), the bubble may be hidden due to lack of selection.
           Render the AI selector overlay absolutely inside the editor container so it is visible even without a selection. */}
-      {open && !selectionEmpty && (
-        <AISelector open={open} onOpenChange={onOpenChange} />
+      {open && selectionEmpty && (
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-50">
+          <AISelector open={open} onOpenChange={onOpenChange} />
+        </div>
       )}
     </>
   );

@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useState } from 'react';
-import { withInteractable } from '@tambo-ai/react';
 import { Trash2, Plus, GripVertical, FileDown, ArrowDownToLine } from 'lucide-react';
 import { z } from 'zod';
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 // Types
 interface RoleRow {
@@ -62,6 +64,7 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
 }) => {
     const [scopes, setScopes] = useState<Scope[]>(initialScopes || []);
     const [discount, setDiscount] = useState(initialDiscount);
+    const [hideGrandTotal, setHideGrandTotal] = useState(false);
 
     // Sync state with props when they change (critical for streaming/updates)
     React.useEffect(() => {
@@ -79,7 +82,6 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
     React.useEffect(() => {
         setDiscount(initialDiscount);
     }, [initialDiscount]);
-    const [draggedRow, setDraggedRow] = useState<{ scopeId: string; rowId: string } | null>(null);
 
     // Available roles from rate card
     const availableRoles = [
@@ -266,36 +268,186 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
         }
     };
 
-    // Drag and drop
-    const handleDragStart = (e: React.DragEvent, scopeId: string, rowId: string) => {
-        setDraggedRow({ scopeId, rowId });
-        e.dataTransfer.effectAllowed = 'move';
+    // Drag and drop state
+    const [draggedRow, setDraggedRow] = useState<{ scopeId: string; rowId: string; index: number } | null>(null);
+    const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+    const handleDragStart = (scopeId: string, rowId: string, index: number) => {
+        setDraggedRow({ scopeId, rowId, index });
     };
 
-    const handleDragOver = (e: React.DragEvent) => {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
+    const handleDragOver = (index: number) => {
+        if (dragOverIndex !== index) {
+            setDragOverIndex(index);
+        }
     };
 
-    const handleDrop = (e: React.DragEvent, targetScopeId: string, targetRowId: string) => {
-        e.preventDefault();
-        if (!draggedRow || draggedRow.scopeId !== targetScopeId) return;
+    const handleDragEnd = () => {
+        if (!draggedRow || dragOverIndex === null) {
+            setDraggedRow(null);
+            setDragOverIndex(null);
+            return;
+        }
 
+        const { scopeId, index: fromIndex } = draggedRow;
+        const toIndex = dragOverIndex;
+
+        if (fromIndex === toIndex) {
+            setDraggedRow(null);
+            setDragOverIndex(null);
+            return;
+        }
+
+        // Reorder the rows
         setScopes(prev =>
-            prev.map(scope => {
-                if (scope.id !== targetScopeId) return scope;
-
-                const draggedIndex = scope.roles.findIndex(r => r.id === draggedRow.rowId);
-                const targetIndex = scope.roles.findIndex(r => r.id === targetRowId);
-
-                const newRoles = [...scope.roles];
-                const [draggedItem] = newRoles.splice(draggedIndex, 1);
-                newRoles.splice(targetIndex, 0, draggedItem);
-
-                return { ...scope, roles: newRoles };
-            })
+            prev.map(scope =>
+                scope.id === scopeId
+                    ? {
+                        ...scope,
+                        roles: (() => {
+                            const newRoles = [...scope.roles];
+                            const [removed] = newRoles.splice(fromIndex, 1);
+                            newRoles.splice(toIndex, 0, removed);
+                            return newRoles;
+                        })(),
+                    }
+                    : scope
+            )
         );
+
         setDraggedRow(null);
+        setDragOverIndex(null);
+    };
+
+    // Export SOW to PDF using jsPDF
+    const handleExportPDF = () => {
+        if (!scopes || scopes.length === 0) {
+            alert('No SOW content to export yet!');
+            return;
+        }
+
+        const doc = new jsPDF();
+
+        // Title
+        doc.setFontSize(20);
+        doc.text(projectTitle, 14, 20);
+        doc.setFontSize(12);
+        doc.text(`Client: ${clientName}`, 14, 30);
+
+        let yPosition = 40;
+
+        // Process each scope
+        scopes.forEach((scope, scopeIndex) => {
+            // Check if we need a new page
+            if (yPosition > 250) {
+                doc.addPage();
+                yPosition = 20;
+            }
+
+            // Scope Title
+            doc.setFontSize(16);
+            doc.setFont('helvetica', 'bold');
+            doc.text(`Scope ${scopeIndex + 1}: ${scope.title}`, 14, yPosition);
+            yPosition += 8;
+
+            // Scope Description
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'italic');
+            const splitDescription = doc.splitTextToSize(scope.description, 180);
+            doc.text(splitDescription, 14, yPosition);
+            yPosition += splitDescription.length * 6 + 5;
+
+            // Deliverables
+            if (scope.deliverables && scope.deliverables.length > 0) {
+                doc.setFont('helvetica', 'bold');
+                doc.text('Deliverables:', 14, yPosition);
+                yPosition += 6;
+                doc.setFont('helvetica', 'normal');
+                scope.deliverables.forEach(item => {
+                    const splitItem = doc.splitTextToSize(`• ${item}`, 180);
+                    doc.text(splitItem, 18, yPosition);
+                    yPosition += splitItem.length * 5;
+                });
+                yPosition += 3;
+            }
+
+            // Pricing Table
+            const tableData = (scope.roles || []).map(row => {
+                const rowCost = (row.hours || 0) * (row.rate || 0);
+                const rowGST = rowCost * 0.1;
+                const rowTotal = rowCost + rowGST;
+                return [
+                    row.task || '',
+                    row.role || '',
+                    row.hours || 0,
+                    `$${(row.rate || 0).toFixed(2)}`,
+                    `$${rowTotal.toFixed(2)}`
+                ];
+            });
+
+            autoTable(doc, {
+                startY: yPosition,
+                head: [['Task', 'Role', 'Hours', 'Rate', 'Total + GST']],
+                body: tableData,
+                theme: 'grid',
+                styles: { fontSize: 9, font: 'helvetica' },
+                headStyles: { fillColor: [0, 208, 132], textColor: 255, fontStyle: 'bold' },
+                margin: { left: 14 },
+            });
+
+            yPosition = (doc as any).lastAutoTable.finalY + 10;
+
+            // Assumptions
+            if (scope.assumptions && scope.assumptions.length > 0) {
+                doc.setFont('helvetica', 'bold');
+                doc.text('Assumptions:', 14, yPosition);
+                yPosition += 6;
+                doc.setFont('helvetica', 'normal');
+                scope.assumptions.forEach(item => {
+                    const splitItem = doc.splitTextToSize(`• ${item}`, 180);
+                    doc.text(splitItem, 18, yPosition);
+                    yPosition += splitItem.length * 5;
+                });
+                yPosition += 10;
+            }
+        });
+
+        // Financial Summary on new page
+        doc.addPage();
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Financial Summary', 14, 20);
+
+        const financialData = [
+            ['Subtotal', `$${totals.subtotal.toFixed(2)}`],
+        ];
+
+        if (discount > 0) {
+            financialData.push(['Discount (' + discount + '%)', `-$${totals.discountAmount.toFixed(2)}`]);
+            financialData.push(['After Discount', `$${totals.afterDiscount.toFixed(2)}`]);
+        }
+
+        financialData.push(['GST (10%)', `$${totals.gst.toFixed(2)}`]);
+        financialData.push(['TOTAL (AUD)', `$${totals.total.toFixed(2)}`]);
+
+        autoTable(doc, {
+            startY: 30,
+            body: financialData,
+            theme: 'plain',
+            styles: { fontSize: 12 },
+            columnStyles: {
+                0: { fontStyle: 'bold' },
+                1: { halign: 'right', fontStyle: 'bold' }
+            }
+        });
+
+        // Legal Statement
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text('*** This concludes the Scope of Work document. ***', 105, (doc as any).lastAutoTable.finalY + 20, { align: 'center' });
+
+        // Save
+        doc.save(`${projectTitle.replace(/[^a-z0-9]/gi, '_')}_SOW.pdf`);
     };
 
     // Insert SOW content directly into editor
@@ -320,8 +472,102 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
         window.dispatchEvent(event);
     };
 
+    // Export SOW data to Excel (.xlsx) with multiple worksheets
+    const handleExportExcel = () => {
+        if (!scopes || scopes.length === 0) {
+            alert('No SOW content to export yet!');
+            return;
+        }
+
+        const workbook = XLSX.utils.book_new();
+
+        // Worksheet 1: Financial Summary
+        const summaryData = [
+            ['Project', projectTitle],
+            ['Client', clientName],
+            [''],
+            ['Financial Summary', ''],
+            ['Subtotal', totals.subtotal.toFixed(2)],
+        ];
+
+        if (discount > 0) {
+            summaryData.push(['Discount (' + discount + '%)', '-' + totals.discountAmount.toFixed(2)]);
+            summaryData.push(['After Discount', totals.afterDiscount.toFixed(2)]);
+        }
+
+        summaryData.push(['GST (10%)', totals.gst.toFixed(2)]);
+        summaryData.push(['TOTAL (AUD)', totals.total.toFixed(2)]);
+        summaryData.push(['']);
+        summaryData.push(['Scope Breakdown', '']);
+
+        scopes.forEach((scope, idx) => {
+            const scopeTotal = calculateScopeTotal(scope);
+            const scopeGST = scopeTotal * 0.1;
+            const scopeTotalWithGST = scopeTotal + scopeGST;
+            const scopeHours = (scope.roles || []).reduce((sum, row) => sum + (row.hours || 0), 0);
+            summaryData.push([`Scope ${idx + 1}: ${scope.title}`, scopeHours + ' hrs', '$' + scopeTotalWithGST.toFixed(2)]);
+        });
+
+        const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
+        XLSX.utils.book_append_sheet(workbook, summarySheet, 'Summary');
+
+        // Worksheet 2+: Each Scope Detail
+        scopes.forEach((scope, scopeIndex) => {
+            const scopeData = [
+                [`Scope ${scopeIndex + 1}: ${scope.title}`],
+                [scope.description],
+                [''],
+            ];
+
+            // Deliverables
+            if (scope.deliverables && scope.deliverables.length > 0) {
+                scopeData.push(['Deliverables:']);
+                scope.deliverables.forEach(item => scopeData.push(['  • ' + item]));
+                scopeData.push(['']);
+            }
+
+            // Pricing Table Header
+            scopeData.push(['Task/Description', 'Role', 'Hours', 'Rate (AUD)', 'Cost (AUD)', 'GST (AUD)', 'Total + GST (AUD)']);
+
+            // Pricing Rows
+            (scope.roles || []).forEach(row => {
+                const rowCost = (row.hours || 0) * (row.rate || 0);
+                const rowGST = rowCost * 0.1;
+                const rowTotal = rowCost + rowGST;
+                scopeData.push([
+                    row.task || '',
+                    row.role || '',
+                    String(row.hours || 0),
+                    String(row.rate || 0),
+                    rowCost.toFixed(2),
+                    rowGST.toFixed(2),
+                    rowTotal.toFixed(2)
+                ]);
+            });
+
+            // Scope Total
+            const scopeTotal = calculateScopeTotal(scope);
+            const scopeGST = scopeTotal * 0.1;
+            const scopeTotalWithGST = scopeTotal + scopeGST;
+            scopeData.push(['', '', '', 'Scope Total:', scopeTotal.toFixed(2), scopeGST.toFixed(2), scopeTotalWithGST.toFixed(2)]);
+            scopeData.push(['']);
+
+            // Assumptions
+            if (scope.assumptions && scope.assumptions.length > 0) {
+                scopeData.push(['Assumptions:']);
+                scope.assumptions.forEach(item => scopeData.push(['  • ' + item]));
+            }
+
+            const scopeSheet = XLSX.utils.aoa_to_sheet(scopeData);
+            XLSX.utils.book_append_sheet(workbook, scopeSheet, `Scope ${scopeIndex + 1}`);
+        });
+
+        // Write file
+        XLSX.writeFile(workbook, `${projectTitle.replace(/[^a-z0-9]/gi, '_')}_SOW.xlsx`);
+    };
+
     return (
-        <div className="w-full max-w-7xl mx-auto p-6 bg-card rounded-lg border border-border shadow-sm space-y-8">
+        <div className="sow-print-container w-full max-w-7xl mx-auto p-6 bg-card rounded-lg border border-border shadow-sm space-y-8">
             {/* Header */}
             <div className="border-b border-border pb-4">
                 <h1 className="text-3xl font-bold text-foreground mb-2">{projectTitle}</h1>
@@ -330,143 +576,177 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
 
             {/* Scopes */}
             {scopes && scopes.length > 0 ? (
-                scopes.map((scope, scopeIndex) => (
-                    <div key={scope.id} className="space-y-4">
-                        {/* Scope Header */}
-                        <div className="bg-muted p-4 rounded-lg">
-                            <h2 className="text-xl font-bold text-foreground mb-2">
-                                Scope {scopeIndex + 1}: {scope.title}
-                            </h2>
-                            <p className="text-muted-foreground italic">{scope.description}</p>
-                        </div>
+                <>
+                    {scopes.map((scope, scopeIndex) => (
+                        <div key={scope.id} className="space-y-4">
+                            {/* Single Continuous Table - Gold Standard Format */}
+                            <div className="overflow-x-auto">
+                                <table className="w-full border-collapse border border-border">
+                                    <thead>
+                                        <tr className="bg-muted border-b-2 border-border">
+                                            <th className="px-4 py-3 text-left text-sm font-semibold text-foreground w-8"></th>
+                                            <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">TASK/DESCRIPTION</th>
+                                            <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">ROLE</th>
+                                            <th className="px-4 py-3 text-center text-sm font-semibold text-foreground w-24">HOURS</th>
+                                            <th className="px-4 py-3 text-center text-sm font-semibold text-foreground w-24">RATE</th>
+                                            <th className="px-4 py-3 text-right text-sm font-semibold text-foreground w-32">TOTAL COST + GST</th>
+                                            <th className="px-4 py-3 text-center text-sm font-semibold text-foreground w-16">ACTIONS</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {/* Scope Title Row - Full Width */}
+                                        <tr className="bg-muted/80 border-b border-border">
+                                            <td colSpan={7} className="px-4 py-3 text-xl font-bold text-foreground">
+                                                Scope {scopeIndex + 1}: {scope.title}
+                                            </td>
+                                        </tr>
 
-                        {/* Pricing Table */}
-                        <div className="overflow-x-auto">
-                            <table className="w-full border-collapse">
-                                <thead>
-                                    <tr className="bg-muted border-b-2 border-border">
-                                        <th className="px-4 py-3 text-left text-sm font-semibold text-foreground w-8"></th>
-                                        <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">TASK/DESCRIPTION</th>
-                                        <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">ROLE</th>
-                                        <th className="px-4 py-3 text-center text-sm font-semibold text-foreground w-24">HOURS</th>
-                                        <th className="px-4 py-3 text-center text-sm font-semibold text-foreground w-24">RATE</th>
-                                        <th className="px-4 py-3 text-right text-sm font-semibold text-foreground w-32">TOTAL COST + GST</th>
-                                        <th className="px-4 py-3 text-center text-sm font-semibold text-foreground w-16">ACTIONS</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {(scope.roles || []).map((row) => {
-                                        const rowCost = (row.hours || 0) * (row.rate || 0);
-                                        const rowGST = rowCost * 0.1;
-                                        const rowTotal = rowCost + rowGST;
+                                        {/* Scope Description Row - Full Width */}
+                                        <tr className="border-b border-border">
+                                            <td colSpan={7} className="px-4 py-3 text-muted-foreground italic">
+                                                {scope.description}
+                                            </td>
+                                        </tr>
 
-                                        return (
-                                            <tr
-                                                key={row.id}
-                                                draggable
-                                                onDragStart={(e) => handleDragStart(e, scope.id, row.id)}
-                                                onDragOver={handleDragOver}
-                                                onDrop={(e) => handleDrop(e, scope.id, row.id)}
-                                                className={`border-b border-border hover:bg-muted/50 transition ${draggedRow?.rowId === row.id ? 'bg-primary/10 opacity-50' : ''
-                                                    }`}
-                                            >
-                                                <td className="px-4 py-3">
-                                                    <GripVertical size={16} className="text-muted-foreground cursor-move" />
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    <input
-                                                        type="text"
-                                                        value={row.task || ''}
-                                                        onChange={(e) => updateRow(scope.id, row.id, 'task', e.target.value)}
-                                                        placeholder="e.g., Handle HubSpot setup..."
-                                                        className="w-full px-3 py-2 border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-                                                    />
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    <select
-                                                        value={row.role || ''}
-                                                        onChange={(e) => handleRoleSelect(scope.id, row.id, e.target.value)}
-                                                        className="w-full px-3 py-2 border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-                                                    >
-                                                        <option value="">Select role...</option>
-                                                        {availableRoles.map((role, idx) => (
-                                                            <option key={`${role.name}-${idx}`} value={role.name}>
-                                                                {role.name}
-                                                            </option>
-                                                        ))}
-                                                    </select>
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    <input
-                                                        type="number"
-                                                        value={row.hours || 0}
-                                                        onChange={(e) => updateRow(scope.id, row.id, 'hours', parseFloat(e.target.value) || 0)}
-                                                        min="0"
-                                                        step="0.5"
-                                                        className="w-full px-3 py-2 border border-input rounded-md text-center bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-                                                    />
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    <input
-                                                        type="number"
-                                                        value={row.rate || 0}
-                                                        onChange={(e) => updateRow(scope.id, row.id, 'rate', parseFloat(e.target.value) || 0)}
-                                                        min="0"
-                                                        className="w-full px-3 py-2 border border-input rounded-md text-center bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-                                                    />
-                                                </td>
-                                                <td className="px-4 py-3 text-right font-semibold text-foreground">
-                                                    ${rowTotal.toFixed(2)}
-                                                </td>
-                                                <td className="px-4 py-3 text-center">
-                                                    <button
-                                                        onClick={() => removeRow(scope.id, row.id)}
-                                                        className="text-destructive hover:text-destructive/80 transition"
-                                                        title="Remove row"
-                                                    >
-                                                        <Trash2 size={18} />
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
+                                        {/* Deliverables Section - Full Width */}
+                                        {scope.deliverables && scope.deliverables.length > 0 && (
+                                            <React.Fragment key={`${scope.id}-deliverables-section`}>
+                                                <tr className="bg-muted/50 border-b border-border">
+                                                    <td colSpan={7} className="px-4 py-2 font-bold text-foreground">
+                                                        Deliverables:
+                                                    </td>
+                                                </tr>
+                                                <tr className="border-b-2 border-border">
+                                                    <td colSpan={7} className="px-4 py-3">
+                                                        <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                                                            {scope.deliverables.map((item, idx) => (
+                                                                <li key={`${scope.id}-deliverable-${idx}`}>{item}</li>
+                                                            ))}
+                                                        </ul>
+                                                    </td>
+                                                </tr>
+                                            </React.Fragment>
+                                        )}
 
-                        {/* Add Row Button */}
-                        <button
-                            onClick={() => addRow(scope.id)}
-                            className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition text-sm"
-                        >
-                            <Plus size={16} /> Add Role
-                        </button>
+                                        {/* Role/Task Rows */}
+                                        {(scope.roles || []).map((row) => {
+                                            const rowCost = (row.hours || 0) * (row.rate || 0);
+                                            const rowGST = rowCost * 0.1;
+                                            const rowTotal = rowCost + rowGST;
 
-                        {/* Deliverables */}
-                        {scope.deliverables && scope.deliverables.length > 0 && (
-                            <div className="bg-muted p-4 rounded-lg">
-                                <h3 className="font-bold text-foreground mb-2">Deliverables:</h3>
-                                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                                    {scope.deliverables.map((item, idx) => (
-                                        <li key={idx}>{item}</li>
-                                    ))}
-                                </ul>
+                                            const rowIndex = scope.roles?.indexOf(row) ?? 0;
+                                            const isDragging = draggedRow?.rowId === row.id && draggedRow?.scopeId === scope.id;
+
+                                            return (
+                                                <tr
+                                                    key={`${scope.id}-${row.id}`}
+                                                    draggable
+                                                    onDragStart={() => handleDragStart(scope.id, row.id, rowIndex)}
+                                                    onDragOver={(e) => {
+                                                        e.preventDefault();
+                                                        if (draggedRow?.scopeId === scope.id) {
+                                                            handleDragOver(rowIndex);
+                                                        }
+                                                    }}
+                                                    onDragEnd={handleDragEnd}
+                                                    className={`border-b border-border transition-colors hover:bg-muted/50 ${isDragging ? 'opacity-50' : ''
+                                                        } ${dragOverIndex === rowIndex && draggedRow?.scopeId === scope.id ? 'border-t-2 border-t-primary' : ''
+                                                        }`}
+                                                >
+                                                    <td className="px-4 py-3">
+                                                        <GripVertical size={16} className="text-muted-foreground cursor-move" />
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        <input
+                                                            type="text"
+                                                            value={row.task || ''}
+                                                            onChange={(e) => updateRow(scope.id, row.id, 'task', e.target.value)}
+                                                            placeholder="e.g., Handle HubSpot setup..."
+                                                            className="w-full px-3 py-2 border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                                                        />
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        <select
+                                                            value={row.role || ''}
+                                                            onChange={(e) => handleRoleSelect(scope.id, row.id, e.target.value)}
+                                                            className="w-full px-3 py-2 border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                                                        >
+                                                            <option value="">Select role...</option>
+                                                            {availableRoles.map((role, idx) => (
+                                                                <option key={`${row.id}-${role.name}-${idx}`} value={role.name}>
+                                                                    {role.name}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        <input
+                                                            type="number"
+                                                            value={row.hours || 0}
+                                                            onChange={(e) => updateRow(scope.id, row.id, 'hours', parseFloat(e.target.value) || 0)}
+                                                            min="0"
+                                                            step="0.5"
+                                                            className="w-full px-3 py-2 border border-input rounded-md text-center bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                                                        />
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        <input
+                                                            type="number"
+                                                            value={row.rate || 0}
+                                                            onChange={(e) => updateRow(scope.id, row.id, 'rate', parseFloat(e.target.value) || 0)}
+                                                            min="0"
+                                                            className="w-full px-3 py-2 border border-input rounded-md text-center bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                                                        />
+                                                    </td>
+                                                    <td className="px-4 py-3 text-right font-semibold text-foreground">
+                                                        ${rowTotal.toFixed(2)}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-center">
+                                                        <button
+                                                            onClick={() => removeRow(scope.id, row.id)}
+                                                            className="text-destructive hover:text-destructive/80 transition"
+                                                            title="Remove row"
+                                                        >
+                                                            <Trash2 size={18} />
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+
+                                        {/* Assumptions Section - Full Width */}
+                                        {scope.assumptions && scope.assumptions.length > 0 && (
+                                            <React.Fragment key={`${scope.id}-assumptions-section`}>
+                                                <tr className="bg-muted/50 border-t-2 border-border">
+                                                    <td colSpan={7} className="px-4 py-2 font-bold text-foreground">
+                                                        Assumptions:
+                                                    </td>
+                                                </tr>
+                                                <tr className="border-b-2 border-border">
+                                                    <td colSpan={7} className="px-4 py-3">
+                                                        <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                                                            {scope.assumptions.map((item, idx) => (
+                                                                <li key={`${scope.id}-assumption-${idx}`}>{item}</li>
+                                                            ))}
+                                                        </ul>
+                                                    </td>
+                                                </tr>
+                                            </React.Fragment>
+                                        )}
+                                    </tbody>
+                                </table>
                             </div>
-                        )}
 
-                        {/* Assumptions */}
-                        {scope.assumptions && scope.assumptions.length > 0 && (
-                            <div className="bg-muted p-4 rounded-lg">
-                                <h3 className="font-bold text-foreground mb-2">Assumptions:</h3>
-                                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                                    {scope.assumptions.map((item, idx) => (
-                                        <li key={idx}>{item}</li>
-                                    ))}
-                                </ul>
-                            </div>
-                        )}
-                    </div>
-                ))
+                            {/* Add Role Button */}
+                            <button
+                                onClick={() => addRow(scope.id)}
+                                className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition text-sm"
+                            >
+                                <Plus size={16} /> Add Role
+                            </button>
+                        </div>
+                    ))}
+                </>
             ) : (
                 <div className="text-center p-8 bg-muted rounded-lg">
                     <p className="text-muted-foreground">No scopes defined yet. Tambo will generate SOW scopes here.</p>
@@ -488,7 +768,7 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                         <tbody>
                             {scopes && scopes.length > 0 && scopes.map((scope, idx) => {
                                 const scopeTotal = calculateScopeTotal(scope);
-                                const scopeHours = (scope.roles || []).reduce((sum, row) => sum + row.hours, 0);
+                                const scopeHours = (scope.roles || []).reduce((sum, row) => sum + (row.hours || 0), 0);
                                 const scopeGST = scopeTotal * 0.1;
                                 const scopeTotalWithGST = scopeTotal + scopeGST;
 
@@ -503,7 +783,7 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                             <tr className="bg-muted border-t-2 border-border">
                                 <td className="px-4 py-3 font-bold text-lg">TOTAL PROJECT</td>
                                 <td className="px-4 py-3 text-center font-bold text-lg">
-                                    {scopes && scopes.length > 0 ? scopes.reduce((sum, scope) => sum + (scope.roles || []).reduce((s, r) => s + r.hours, 0), 0) : 0}
+                                    {scopes && scopes.length > 0 ? scopes.reduce((sum, scope) => sum + (scope.roles || []).reduce((s, r) => s + (r.hours || 0), 0), 0) : 0}
                                 </td>
                                 <td className="px-4 py-3 text-right font-bold text-lg text-primary">
                                     ${totals.total.toFixed(2)}
@@ -518,6 +798,20 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
             <div className="flex justify-end">
                 <div className="w-full max-w-sm bg-muted rounded-lg p-6 border border-border">
                     <div className="space-y-3">
+                        {/* Hide Total Toggle */}
+                        <div className="flex justify-between items-center pb-3 border-b border-border">
+                            <label className="text-sm font-medium text-foreground">Hide Grand Total:</label>
+                            <button
+                                onClick={() => setHideGrandTotal(!hideGrandTotal)}
+                                className={`px-3 py-1 rounded-md transition text-sm font-medium ${hideGrandTotal
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'bg-muted-foreground/20 text-foreground'
+                                    }`}
+                            >
+                                {hideGrandTotal ? 'Hidden' : 'Visible'}
+                            </button>
+                        </div>
+
                         {/* Discount Input */}
                         <div className="flex justify-between items-center pb-3 border-b border-border">
                             <label className="text-sm font-medium text-foreground">Discount (%):</label>
@@ -531,33 +825,43 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                             />
                         </div>
 
-                        <div className="flex justify-between text-foreground">
-                            <span className="text-sm">Subtotal:</span>
-                            <span className="font-semibold">${totals.subtotal.toFixed(2)}</span>
-                        </div>
-
-                        {discount > 0 && (
+                        {!hideGrandTotal && (
                             <>
-                                <div className="flex justify-between text-destructive text-sm">
-                                    <span>Discount ({discount}%):</span>
-                                    <span>-${totals.discountAmount.toFixed(2)}</span>
-                                </div>
                                 <div className="flex justify-between text-foreground">
-                                    <span className="text-sm">After Discount:</span>
-                                    <span className="font-semibold">${totals.afterDiscount.toFixed(2)}</span>
+                                    <span className="text-sm">Subtotal:</span>
+                                    <span className="font-semibold">${totals.subtotal.toFixed(2)}</span>
+                                </div>
+
+                                {discount > 0 && (
+                                    <>
+                                        <div className="flex justify-between text-destructive text-sm">
+                                            <span>Discount ({discount}%):</span>
+                                            <span>-${totals.discountAmount.toFixed(2)}</span>
+                                        </div>
+                                        <div className="flex justify-between text-foreground">
+                                            <span className="text-sm">After Discount:</span>
+                                            <span className="font-semibold">${totals.afterDiscount.toFixed(2)}</span>
+                                        </div>
+                                    </>
+                                )}
+
+                                <div className="flex justify-between text-foreground">
+                                    <span className="text-sm">GST (10%):</span>
+                                    <span className="font-semibold">+${totals.gst.toFixed(2)}</span>
+                                </div>
+
+                                <div className="flex justify-between items-center pt-3 border-t-2 border-border">
+                                    <span className="font-bold text-foreground">Total (AUD):</span>
+                                    <span className="text-2xl font-bold text-primary">${totals.total.toFixed(2)}</span>
                                 </div>
                             </>
                         )}
 
-                        <div className="flex justify-between text-foreground">
-                            <span className="text-sm">GST (10%):</span>
-                            <span className="font-semibold">+${totals.gst.toFixed(2)}</span>
-                        </div>
-
-                        <div className="flex justify-between items-center pt-3 border-t-2 border-border">
-                            <span className="font-bold text-foreground">Total (AUD):</span>
-                            <span className="text-2xl font-bold text-primary">${totals.total.toFixed(2)}</span>
-                        </div>
+                        {hideGrandTotal && (
+                            <div className="text-center py-4 text-muted-foreground text-sm italic">
+                                Grand total hidden for multi-option presentation
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -578,8 +882,15 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                 </div>
             )}
 
+            {/* Legal Concluding Statement */}
+            <div className="border-t border-border pt-6 text-center">
+                <p className="text-sm font-medium text-foreground">
+                    *** This concludes the Scope of Work document. ***
+                </p>
+            </div>
+
             {/* Insert to Editor Button - Prominent at Bottom */}
-            <div className="border-t border-border pt-6">
+            <div className="border-t border-border pt-6 space-y-3">
                 <button
                     onClick={insertToEditor}
                     className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-primary-foreground rounded-lg transition-all hover:shadow-lg text-lg font-semibold"
@@ -588,19 +899,164 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                     <ArrowDownToLine size={22} />
                     Insert to Editor
                 </button>
-                <p className="text-xs text-muted-foreground text-center mt-2">
+                <p className="text-xs text-muted-foreground text-center">
                     Click to insert this SOW directly into the Novel editor
                 </p>
+
+                {/* Export Buttons Row */}
+                <div className="grid grid-cols-2 gap-3">
+                    {/* Export to PDF Button */}
+                    <button
+                        onClick={handleExportPDF}
+                        className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-600 text-white rounded-lg transition-all hover:shadow-lg text-base font-semibold"
+                        title="Export SOW to PDF"
+                    >
+                        <FileDown size={20} />
+                        Export to PDF
+                    </button>
+
+                    {/* Export to Excel Button */}
+                    <button
+                        onClick={handleExportExcel}
+                        className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-600 text-white rounded-lg transition-all hover:shadow-lg text-base font-semibold"
+                        title="Export SOW to Excel for finance team"
+                    >
+                        <FileDown size={20} />
+                        Export to Excel
+                    </button>
+                </div>
+                <p className="text-xs text-muted-foreground text-center">
+                    PDF: Professional document | Excel: Multi-sheet workbook for finance
+                </p>
             </div>
+
+            {/* Print-specific CSS */}
+            <style jsx global>{`
+                /* Import Plus Jakarta Sans font for PDFs */
+                @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+                @media print {
+                    /* Hide everything except the SOW content */
+                    body * {
+                        visibility: hidden;
+                    }
+                    
+                    /* Show only the SOW document and its children */
+                    .sow-print-container,
+                    .sow-print-container * {
+                        visibility: visible;
+                    }
+                    
+                    /* Position at top of page */
+                    .sow-print-container {
+                        position: absolute;
+                        left: 0;
+                        top: 0;
+                        width: 100%;
+                    }
+                    
+                    /* Hide interactive elements */
+                    button,
+                    input,
+                    select,
+                    .no-print {
+                        display: none !important;
+                    }
+                    
+                    /* Page setup */
+                    @page {
+                        margin: 2cm;
+                        size: A4;
+                    }
+                    
+                    /* Typography - Use Plus Jakarta Sans */
+                    body {
+                        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                        font-size: 11pt;
+                        line-height: 1.5;
+                        color: #000;
+                        background: white;
+                    }
+                    
+                    /* Headings */
+                    h1 {
+                        font-family: 'Plus Jakarta Sans', sans-serif;
+                        font-size: 24pt;
+                        margin-bottom: 0.5cm;
+                        page-break-after: avoid;
+                    }
+                    
+                    h2 {
+                        font-family: 'Plus Jakarta Sans', sans-serif;
+                        font-size: 16pt;
+                        margin-top: 0.5cm;
+                        margin-bottom: 0.3cm;
+                        page-break-after: avoid;
+                    }
+                    
+                    h3 {
+                        font-family: 'Plus Jakarta Sans', sans-serif;
+                        font-size: 13pt;
+                        margin-top: 0.4cm;
+                        margin-bottom: 0.2cm;
+                        page-break-after: avoid;
+                    }
+                    
+                    /* Tables */
+                    table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        page-break-inside: avoid;
+                        margin: 0.5cm 0;
+                        font-family: 'Plus Jakarta Sans', sans-serif;
+                    }
+                    
+                    th, td {
+                        border: 1px solid #333;
+                        padding: 8px;
+                        text-align: left;
+                    }
+                    
+                    th {
+                        background-color: #f0f0f0 !important;
+                        font-weight: bold;
+                    }
+                    
+                    /* Avoid breaking inside important sections */
+                    .space-y-4 > div,
+                    .space-y-8 > div {
+                        page-break-inside: avoid;
+                    }
+                    
+                    /* Lists */
+                    ul, ol {
+                        margin: 0.3cm 0;
+                        padding-left: 1cm;
+                    }
+                    
+                    li {
+                        margin: 0.1cm 0;
+                    }
+                    
+                    /* Remove shadows and borders that don't print well */
+                    * {
+                        box-shadow: none !important;
+                        border-radius: 0 !important;
+                    }
+                    
+                    /* Ensure proper spacing */
+                    .border-t {
+                        border-top: 1px solid #333 !important;
+                        margin-top: 0.5cm;
+                        padding-top: 0.5cm;
+                    }
+                }
+            `}</style>
         </div>
     );
 };
 
-// Wrap with Interactable
-export const FullSOWDocument = withInteractable(FullSOWDocumentBase, {
-    componentName: 'FullSOWDocument',
-    description: 'Complete multi-scope SOW document with interactive pricing tables, deliverables, assumptions, and budget tracking',
-    propsSchema: fullSOWSchema,
-});
+// Export directly without Interactable wrapper to prevent infinite loops
+export const FullSOWDocument = FullSOWDocumentBase;
 
 export default FullSOWDocument;

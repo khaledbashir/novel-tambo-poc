@@ -52,7 +52,7 @@ export const tamboTools: TamboTool[] = [
   },
   {
     name: "ingest_client_brief",
-    description: "Upload and parse a client brief PDF to extract requirements for SOW generation. Use this when the user uploads a PDF brief or mentions uploading project requirements. Returns the extracted text content, page count, and metadata. After calling this tool, generate a BriefUpload component to confirm successful upload.",
+    description: "Upload a client brief PDF to the AnythingLLM Knowledge Base. Use this when the user uploads a PDF brief. Returns metadata and confirms availability for RAG queries. DOES NOT return full text. You MUST use the 'consult_knowledge_base' tool to read specific parts of the brief.",
     tool: async (params: { fileData: string; fileName: string }) => {
       try {
         // Convert base64 to blob
@@ -71,22 +71,20 @@ export const tamboTools: TamboTool[] = [
 
         if (!apiResponse.ok) {
           const error = await apiResponse.json();
-          throw new Error(error.error || 'Failed to parse brief');
+          throw new Error(error.error || 'Failed to upload brief');
         }
 
         const result = await apiResponse.json();
         return {
           success: true,
-          briefText: result.text,
-          pages: result.pages,
+          message: "Brief uploaded to Knowledge Base. Use 'consult_knowledge_base' to query it.",
           fileName: result.metadata.fileName,
-          fileSize: result.metadata.fileSize,
           uploadedAt: result.metadata.uploadedAt,
         };
       } catch (error: any) {
         return {
           success: false,
-          error: error.message || 'Failed to parse PDF brief',
+          error: error.message || 'Failed to upload brief',
         };
       }
     },
@@ -100,11 +98,53 @@ export const tamboTools: TamboTool[] = [
       .returns(
         z.object({
           success: z.boolean(),
-          briefText: z.string().optional(),
-          pages: z.number().optional(),
+          message: z.string().optional(),
           fileName: z.string().optional(),
-          fileSize: z.number().optional(),
           uploadedAt: z.string().optional(),
+          error: z.string().optional(),
+        })
+      ),
+  },
+  {
+    name: "consult_knowledge_base",
+    description: "Query the AnythingLLM Knowledge Base for information from the uploaded brief. Use this to extract specific requirements, deliverables, timelines, or budget details from the brief to populate the SOW.",
+    tool: async (params: { query: string }) => {
+      try {
+        const response = await fetch('/api/consult-knowledge-base', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: params.query }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to query knowledge base');
+        }
+
+        const result = await response.json();
+        return {
+          success: true,
+          answer: result.text,
+          sources: result.sources,
+        };
+      } catch (error: any) {
+        return {
+          success: false,
+          error: error.message || 'Failed to query knowledge base',
+        };
+      }
+    },
+    toolSchema: z.function()
+      .args(
+        z.object({
+          query: z.string().describe('The question or query to ask the knowledge base (e.g., "What are the deliverables?", "What is the budget?")'),
+        })
+      )
+      .returns(
+        z.object({
+          success: z.boolean(),
+          answer: z.string().optional(),
+          sources: z.array(z.any()).optional(),
           error: z.string().optional(),
         })
       ),

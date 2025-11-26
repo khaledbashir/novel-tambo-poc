@@ -73,7 +73,7 @@ const BriefUploadBase: React.FC<BriefUploadProps> = ({
                     <div className="p-3 bg-muted rounded-lg">
                         <div className="text-xs text-muted-foreground mb-1">Words</div>
                         <div className="text-lg font-bold text-foreground">
-                            {briefText.split(/\s+/).length.toLocaleString()}
+                            {briefText ? briefText.split(/\s+/).length.toLocaleString() : 'N/A'}
                         </div>
                     </div>
                 </div>
@@ -88,13 +88,15 @@ const BriefUploadBase: React.FC<BriefUploadProps> = ({
             </div>
 
             {/* Preview */}
-            <div className="mt-4 p-4 bg-muted rounded-lg">
-                <div className="text-sm font-semibold text-foreground mb-2">Brief Preview</div>
-                <div className="text-xs text-muted-foreground max-h-32 overflow-y-auto">
-                    {briefText.substring(0, 500)}
-                    {briefText.length > 500 && '...'}
+            {briefText && (
+                <div className="mt-4 p-4 bg-muted rounded-lg">
+                    <div className="text-sm font-semibold text-foreground mb-2">Brief Preview</div>
+                    <div className="text-xs text-muted-foreground max-h-32 overflow-y-auto">
+                        {briefText.substring(0, 500)}
+                        {briefText.length > 500 && '...'}
+                    </div>
                 </div>
-            </div>
+            )}
 
             {/* Status */}
             <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">

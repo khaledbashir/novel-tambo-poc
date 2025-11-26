@@ -1,8 +1,7 @@
 import { Editor } from '@tiptap/react';
-// Fake change for testing push
 
 /**
- * Converts SOW data to Tiptap JSON format and inserts into editor
+ * Inserts SOW data into editor using TipTap commands to create real table nodes
  */
 export function insertSOWToEditor(editor: Editor, sowData: {
     clientName: string;
@@ -42,199 +41,180 @@ export function insertSOWToEditor(editor: Editor, sowData: {
     const gst = afterDiscount * 0.1;
     const total = afterDiscount + gst;
 
-    // Build Tiptap JSON content
-    const content: any[] = [];
+    // Start building content using TipTap commands
+    // We use a single chain to ensure atomicity and prevent race conditions
 
-    // Header
-    content.push({
-        type: 'heading',
-        attrs: { level: 1 },
-        content: [{ type: 'text', text: sowData.projectTitle }]
-    });
+    // CRITICAL FIX: Ensure we are not inside a table by inserting a paragraph at the very end of the document
+    // editor.state.doc.content.size gives the position at the end of the document
+    const endPos = editor.state.doc.content.size;
+    editor.chain().insertContentAt(endPos, { type: 'paragraph' }).run();
 
-    content.push({
-        type: 'paragraph',
-        content: [{ type: 'text', text: `Client: ${sowData.clientName}` }]
-    });
+    // Now focus the end, which should be the new paragraph we just added
+    const chain = editor.chain().focus('end');
 
-    content.push({
-        type: 'horizontalRule'
-    });
+    // Add a spacer paragraph to ensure separation from previous content
+    chain.insertContent({ type: 'horizontalRule' });
+    chain.insertContent({ type: 'paragraph' });
+
+    // Title
+    chain.insertContent({ type: 'heading', attrs: { level: 1 }, content: [{ type: 'text', text: sowData.projectTitle }] });
+    chain.insertContent({ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Client: ' }, { type: 'text', text: sowData.clientName }] });
+    chain.insertContent({ type: 'horizontalRule' });
 
     // Each Scope
     sowData.scopes.forEach((scope, scopeIndex) => {
-        // Scope Header
-        content.push({
-            type: 'heading',
-            attrs: { level: 2 },
-            content: [{ type: 'text', text: `Scope ${scopeIndex + 1}: ${scope.title}` }]
-        });
-
-        // Scope Description
-        content.push({
-            type: 'paragraph',
-            content: [{ type: 'text', text: scope.description, marks: [{ type: 'italic' }] }]
-        });
+        // Scope heading
+        chain.insertContent({ type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: `Scope ${scopeIndex + 1}: ${scope.title}` }] });
+        chain.insertContent({ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'italic' }], text: scope.description }] });
 
         // Deliverables
         if (scope.deliverables && scope.deliverables.length > 0) {
-            content.push({
-                type: 'heading',
-                attrs: { level: 3 },
-                content: [{ type: 'text', text: 'Deliverables' }]
-            });
+            chain.insertContent({ type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Deliverables' }] });
 
-            content.push({
-                type: 'bulletList',
-                content: scope.deliverables.map(item => ({
-                    type: 'listItem',
-                    content: [{
-                        type: 'paragraph',
-                        content: [{ type: 'text', text: item }]
-                    }]
-                }))
-            });
+            // Create bullet list
+            const listItems = scope.deliverables.map(item => ({
+                type: 'listItem',
+                content: [{ type: 'paragraph', content: [{ type: 'text', text: item }] }]
+            }));
+            chain.insertContent({ type: 'bulletList', content: listItems });
         }
 
         // Pricing Table
-        content.push({
-            type: 'heading',
-            attrs: { level: 3 },
-            content: [{ type: 'text', text: 'Pricing' }]
-        });
+        chain.insertContent({ type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Pricing' }] });
 
-        // Create table rows
-        const tableRows = [
-            // Header row
-            {
-                type: 'tableRow',
+        if (scope.roles && scope.roles.length > 0) {
+            // Build complete scope content array: table + everything after it
+            const scopeContent = [];
+
+            // Create table
+            const tableRows = [
+                // Header row - MUST match chat preview exactly
+                {
+                    type: 'tableRow',
+                    content: [
+                        { type: 'tableHeader', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'TASK/DESCRIPTION' }] }] },
+                        { type: 'tableHeader', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'ROLE' }] }] },
+                        { type: 'tableHeader', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'HOURS' }] }] },
+                        { type: 'tableHeader', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'RATE' }] }] },
+                        { type: 'tableHeader', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'TOTAL COST + GST' }] }] },
+                    ]
+                },
+                // Data rows
+                ...scope.roles.map(row => {
+                    const cost = (row.hours * row.rate * 1.1).toFixed(2);
+                    return {
+                        type: 'tableRow',
+                        content: [
+                            { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: row.task }] }] },
+                            { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: row.role }] }] },
+                            { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: String(row.hours) }] }] },
+                            { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: `$${row.rate.toFixed(2)}` }] }] },
+                            { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: `$${cost}` }] }] },
+                        ]
+                    };
+                })
+            ];
+
+            const tableNode = {
+                type: 'table',
+                content: tableRows
+            };
+
+            // Add table to scope content
+            scopeContent.push(tableNode);
+
+            // Add paragraph after table to ensure cursor is out
+            scopeContent.push({ type: 'paragraph' });
+
+            // Add scope total
+            const scopeTotal = calculateScopeTotal(scope);
+            const scopeGST = scopeTotal * 0.1;
+            const scopeTotalWithGST = scopeTotal + scopeGST;
+            scopeContent.push({
+                type: 'paragraph',
                 content: [
-                    { type: 'tableHeader', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Task' }] }] },
-                    { type: 'tableHeader', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Role' }] }] },
-                    { type: 'tableHeader', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Hours' }] }] },
-                    { type: 'tableHeader', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Rate (AUD)' }] }] },
-                    { type: 'tableHeader', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Cost (AUD)' }] }] },
+                    { type: 'text', marks: [{ type: 'bold' }], text: 'Scope Total: ' },
+                    { type: 'text', text: `$${scopeTotalWithGST.toFixed(2)} AUD (inc. GST)` }
                 ]
-            },
-            // Data rows
-            ...scope.roles.map(row => ({
-                type: 'tableRow',
-                content: [
-                    { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: row.task }] }] },
-                    { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: row.role }] }] },
-                    { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: row.hours.toString() }] }] },
-                    { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: `$${row.rate.toFixed(2)}` }] }] },
-                    { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: `$${(row.hours * row.rate * 1.1).toFixed(2)}` }] }] },
-                ]
-            }))
-        ];
-
-        content.push({
-            type: 'table',
-            content: tableRows
-        });
-
-        // Scope Total
-        const scopeTotal = calculateScopeTotal(scope);
-        const scopeGST = scopeTotal * 0.1;
-        const scopeTotalWithGST = scopeTotal + scopeGST;
-
-        content.push({
-            type: 'paragraph',
-            content: [
-                { type: 'text', text: 'Scope Total: ', marks: [{ type: 'bold' }] },
-                { type: 'text', text: `$${scopeTotalWithGST.toFixed(2)} AUD (inc. GST)` }
-            ]
-        });
-
-        // Assumptions
-        if (scope.assumptions && scope.assumptions.length > 0) {
-            content.push({
-                type: 'heading',
-                attrs: { level: 3 },
-                content: [{ type: 'text', text: 'Assumptions' }]
             });
 
-            content.push({
-                type: 'bulletList',
-                content: scope.assumptions.map(item => ({
+            // Add assumptions if present
+            if (scope.assumptions && scope.assumptions.length > 0) {
+                scopeContent.push({ type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Assumptions' }] });
+
+                const assumptionItems = scope.assumptions.map(item => ({
                     type: 'listItem',
-                    content: [{
-                        type: 'paragraph',
-                        content: [{ type: 'text', text: item }]
-                    }]
-                }))
+                    content: [{ type: 'paragraph', content: [{ type: 'text', text: item }] }]
+                }));
+                scopeContent.push({ type: 'bulletList', content: assumptionItems });
+            }
+
+            // Insert all scope content as array
+            chain.insertContent(scopeContent);
+        } else {
+            // No table, just add scope total
+            const scopeTotal = calculateScopeTotal(scope);
+            const scopeGST = scopeTotal * 0.1;
+            const scopeTotalWithGST = scopeTotal + scopeGST;
+            chain.insertContent({
+                type: 'paragraph',
+                content: [
+                    { type: 'text', marks: [{ type: 'bold' }], text: 'Scope Total: ' },
+                    { type: 'text', text: `$${scopeTotalWithGST.toFixed(2)} AUD (inc. GST)` }
+                ]
             });
+
+            if (scope.assumptions && scope.assumptions.length > 0) {
+                chain.insertContent({ type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Assumptions' }] });
+
+                const assumptionItems = scope.assumptions.map(item => ({
+                    type: 'listItem',
+                    content: [{ type: 'paragraph', content: [{ type: 'text', text: item }] }]
+                }));
+                chain.insertContent({ type: 'bulletList', content: assumptionItems });
+            }
         }
 
-        content.push({
-            type: 'horizontalRule'
-        });
+        if (scopeIndex < sowData.scopes.length - 1) {
+            chain.insertContent({ type: 'horizontalRule' });
+            chain.insertContent({ type: 'paragraph' });
+        }
     });
 
-    // Grand Total Summary
-    content.push({
-        type: 'heading',
-        attrs: { level: 2 },
-        content: [{ type: 'text', text: 'Financial Summary' }]
-    });
-
-    const summaryLines = [
-        `Subtotal: $${subtotal.toFixed(2)} AUD`,
-    ];
+    // Financial Summary
+    chain.insertContent({ type: 'horizontalRule' });
+    chain.insertContent({ type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Financial Summary' }] });
+    chain.insertContent({ type: 'paragraph', content: [{ type: 'text', text: `Subtotal: $${subtotal.toFixed(2)} AUD` }] });
 
     if (sowData.discount && sowData.discount > 0) {
-        summaryLines.push(`Discount (${sowData.discount}%): -$${discountAmount.toFixed(2)} AUD`);
-        summaryLines.push(`After Discount: $${afterDiscount.toFixed(2)} AUD`);
+        chain.insertContent({ type: 'paragraph', content: [{ type: 'text', text: `Discount (${sowData.discount}%): -$${discountAmount.toFixed(2)} AUD` }] });
+        chain.insertContent({ type: 'paragraph', content: [{ type: 'text', text: `After Discount: $${afterDiscount.toFixed(2)} AUD` }] });
     }
 
-    summaryLines.push(`GST (10%): +$${gst.toFixed(2)} AUD`);
-    summaryLines.push(`**Grand Total: $${total.toFixed(2)} AUD**`);
-
-    summaryLines.forEach(line => {
-        const isBold = line.includes('**');
-        const text = line.replace(/\*\*/g, '');
-        content.push({
-            type: 'paragraph',
-            content: [{
-                type: 'text',
-                text,
-                marks: isBold ? [{ type: 'bold' }] : []
-            }]
-        });
+    chain.insertContent({ type: 'paragraph', content: [{ type: 'text', text: `GST (10%): +$${gst.toFixed(2)} AUD` }] });
+    chain.insertContent({
+        type: 'paragraph',
+        content: [
+            { type: 'text', marks: [{ type: 'bold' }], text: 'Grand Total: ' },
+            { type: 'text', text: `$${total.toFixed(2)} AUD` }
+        ]
     });
 
     // Project Overview
     if (sowData.projectOverview) {
-        content.push({
-            type: 'horizontalRule'
-        });
-        content.push({
-            type: 'heading',
-            attrs: { level: 2 },
-            content: [{ type: 'text', text: 'Project Overview' }]
-        });
-        content.push({
-            type: 'paragraph',
-            content: [{ type: 'text', text: sowData.projectOverview }]
-        });
+        chain.insertContent({ type: 'horizontalRule' });
+        chain.insertContent({ type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Project Overview' }] });
+        chain.insertContent({ type: 'paragraph', content: [{ type: 'text', text: sowData.projectOverview }] });
     }
 
     // Budget Notes
     if (sowData.budgetNotes) {
-        content.push({
-            type: 'heading',
-            attrs: { level: 2 },
-            content: [{ type: 'text', text: 'Budget Notes' }]
-        });
-        content.push({
-            type: 'paragraph',
-            content: [{ type: 'text', text: sowData.budgetNotes }]
-        });
+        chain.insertContent({ type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Budget Notes' }] });
+        chain.insertContent({ type: 'paragraph', content: [{ type: 'text', text: sowData.budgetNotes }] });
     }
 
-    // Insert into editor
-    editor.commands.insertContent(content);
+    // Execute all commands
+    chain.run();
 
     // Scroll to bottom
     editor.commands.focus('end');

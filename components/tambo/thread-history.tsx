@@ -209,7 +209,7 @@ const ThreadHistoryHeader = React.forwardRef<
             : "opacity-100 max-w-none transition-all duration-300 delay-75",
         )}
       >
-        Tambo Conversations
+        Conversations
       </h2>
       <button
         onClick={() => setIsCollapsed(!isCollapsed)}
@@ -430,14 +430,22 @@ const ThreadHistoryList = React.forwardRef<
     if (!threads?.items) return [];
 
     const query = searchQuery.toLowerCase().trim();
-    if (!query) return threads.items;
+    let filtered = threads.items;
 
-    return threads.items.filter((thread: TamboThread) => {
-      const nameMatches = thread.name?.toLowerCase().includes(query) ?? false;
-      const idMatches = thread.id.toLowerCase().includes(query);
+    if (query) {
+      filtered = threads.items.filter((thread: TamboThread) => {
+        const nameMatches = thread.name?.toLowerCase().includes(query) ?? false;
+        const idMatches = thread.id.toLowerCase().includes(query);
+        return idMatches || nameMatches;
+      });
+    }
 
-      return idMatches || nameMatches;
-    });
+    // Deduplicate by thread ID to prevent React key errors
+    const uniqueThreads = Array.from(
+      new Map(filtered.map((thread: TamboThread) => [thread.id, thread])).values()
+    );
+
+    return uniqueThreads;
   }, [isCollapsed, threads, searchQuery]);
 
   const handleSwitchThread = async (threadId: string, e?: React.MouseEvent) => {
