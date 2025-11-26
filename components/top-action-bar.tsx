@@ -73,10 +73,6 @@ export function TopActionBar({ className, workspaceId, documentId }: TopActionBa
           {documentName || "Select Project"}
         </div>
       </div>
-
-      <div className="flex items-center gap-2">
-        <ThemeToggle />
-      </div>
     </div>
   );
 }

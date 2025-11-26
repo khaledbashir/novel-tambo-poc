@@ -124,6 +124,21 @@ export const MarkdownExtension = Extension.create<MarkdownOptions>({
                     listItem: (state: any, node: any) => {
                         state.renderContent(node);
                     },
+                    // Add table handlers to prevent "Token type `table` not supported" warnings
+                    table: (state: any, node: any) => {
+                        // Tables don't have a standard markdown representation
+                        // Convert to plain text or skip
+                        state.write("\n\n[Table content omitted in markdown export]\n\n");
+                    },
+                    tableRow: (state: any, node: any) => {
+                        // Skip table rows in markdown
+                    },
+                    tableCell: (state: any, node: any) => {
+                        // Skip table cells in markdown
+                    },
+                    tableHeader: (state: any, node: any) => {
+                        // Skip table headers in markdown
+                    },
                 };
                 const marks = {
                     ...((base && (base as any).marks) ||

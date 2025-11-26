@@ -130,12 +130,12 @@ export default function Page() {
         )}
       </button>
 
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col overflow-hidden">
         <TopActionBar
           workspaceId={selectedWorkspace}
           documentId={selectedDocument}
         />
-        <div className="relative flex-1 h-full overflow-y-auto p-4">
+        <div className="flex-1 overflow-hidden">
           <TailwindAdvancedEditor
             documentId={selectedDocument}
             workspaceId={selectedWorkspace}

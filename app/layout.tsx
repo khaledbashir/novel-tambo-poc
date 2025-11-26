@@ -6,13 +6,16 @@ import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import Providers from "./providers";
 
-const title = "Novel - Notion-style WYSIWYG editor with AI-powered autocompletions";
+const title = "Social Garden SOW Generator";
 const description =
-  "Novel is a Notion-style WYSIWYG editor with AI-powered autocompletions. Built with Tiptap, OpenAI, and Vercel AI SDK.";
+  "Professional Scope of Work generator with AI-powered assistance. Built for Social Garden.";
 
 export const metadata: Metadata = {
   title,
   description,
+  icons: {
+    icon: '/favicropped-Site-Icon-32x32.png',
+  },
   openGraph: {
     title,
     description,

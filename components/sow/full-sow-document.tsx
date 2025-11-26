@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Trash2, Plus, GripVertical, FileDown, ArrowDownToLine } from 'lucide-react';
+import { Trash2, Plus, GripVertical, FileDown, ArrowDownToLine, FileSpreadsheet } from 'lucide-react';
 import { z } from 'zod';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
@@ -1121,45 +1121,43 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                 </p>
             </div>
 
-            {/* Insert to Editor Button - Prominent at Bottom */}
-            <div className="border-t border-border pt-6 space-y-3">
-                <button
-                    onClick={insertToEditor}
-                    className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-primary-foreground rounded-lg transition-all hover:shadow-lg text-lg font-semibold"
-                    title="Insert SOW content directly into editor"
-                >
-                    <ArrowDownToLine size={22} />
-                    Insert to Editor
-                </button>
-                <p className="text-xs text-muted-foreground text-center">
-                    Click to insert this SOW directly into the Novel editor
-                </p>
+            {/* Actions Footer */}
+            <div className="border-t border-border pt-4 space-y-3">
+                {/* Insert Button - Minimal & Clean */}
+                <div className="flex flex-col gap-1">
+                    <button
+                        onClick={insertToEditor}
+                        className="w-full flex items-center justify-center gap-2 h-9 bg-primary text-primary-foreground hover:bg-primary/90 rounded-md transition-colors text-xs font-medium uppercase tracking-wide shadow-sm"
+                        title="Insert SOW content directly into editor"
+                    >
+                        <ArrowDownToLine size={14} />
+                        Insert to Editor
+                    </button>
+                    <p className="text-[10px] text-muted-foreground text-center opacity-70">
+                        Insert directly into the editor
+                    </p>
+                </div>
 
-                {/* Export Buttons Row */}
-                <div className="grid grid-cols-2 gap-3">
-                    {/* Export to PDF Button */}
+                {/* Export Buttons - Subtle Outline Style */}
+                <div className="grid grid-cols-2 gap-2">
                     <button
                         onClick={() => window.dispatchEvent(new CustomEvent('export-editor-pdf'))}
-                        className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-600 text-white rounded-lg transition-all hover:shadow-lg text-base font-semibold"
-                        title="Export SOW to PDF from Editor"
+                        className="flex items-center justify-center gap-2 h-8 border border-input bg-background hover:bg-accent hover:text-accent-foreground text-foreground rounded-md transition-colors text-xs font-medium"
+                        title="Export to PDF"
                     >
-                        <FileDown size={20} />
-                        Export to PDF
+                        <FileDown size={13} className="text-blue-500" />
+                        PDF
                     </button>
 
-                    {/* Export to Excel Button */}
                     <button
                         onClick={handleExportExcel}
-                        className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-600 text-white rounded-lg transition-all hover:shadow-lg text-base font-semibold"
-                        title="Export SOW to Excel for finance team"
+                        className="flex items-center justify-center gap-2 h-8 border border-input bg-background hover:bg-accent hover:text-accent-foreground text-foreground rounded-md transition-colors text-xs font-medium"
+                        title="Export to Excel"
                     >
-                        <FileDown size={20} />
-                        Export to Excel
+                        <FileSpreadsheet size={13} className="text-green-500" />
+                        Excel
                     </button>
                 </div>
-                <p className="text-xs text-muted-foreground text-center">
-                    PDF: Professional document | Excel: Multi-sheet workbook for finance
-                </p>
             </div>
 
             {/* Print-specific CSS */}

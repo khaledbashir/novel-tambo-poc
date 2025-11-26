@@ -13,6 +13,7 @@ import {
     handleCommandNavigation,
     handleImageDrop,
     handleImagePaste,
+    EditorBubble,
 } from "novel";
 import { useEffect, useState, useRef } from "react";
 import { useDebouncedCallback } from "use-debounce";
@@ -28,6 +29,9 @@ import { uploadFn } from "./image-upload";
 import { TextButtons } from "./selectors/text-buttons";
 import { TableSelector } from "./selectors/table-selector";
 import { slashCommand, suggestionItems } from "./slash-command";
+import Magic from "./ui/icons/magic";
+import { AISelector } from "./generative/ai-selector";
+import { removeAIHighlight } from "novel";
 import { insertSOWToEditor } from "@/lib/editor/insert-sow";
 
 const hljs = require("highlight.js");
@@ -230,11 +234,17 @@ const TailwindAdvancedEditor = ({
                     discount,
                 };
 
+                console.log('Inserting SOW data:', sowData);
+
                 // Use the proper insertSOWToEditor function
                 insertSOWToEditor(editorRef.current, sowData);
+
+                console.log('SOW insertion completed successfully');
             } catch (error) {
                 console.error("Error inserting SOW content:", error);
-                alert("Failed to insert SOW content. Please try again.");
+                console.error("Error stack:", error instanceof Error ? error.stack : 'No stack trace');
+                console.error("Error message:", error instanceof Error ? error.message : String(error));
+                alert(`Failed to insert SOW content: ${error instanceof Error ? error.message : String(error)}`);
             }
         };
 
@@ -338,12 +348,17 @@ const TailwindAdvancedEditor = ({
         };
     }, []);
 
+    useEffect(() => {
+        if (!openAI && editorRef.current) removeAIHighlight(editorRef.current);
+    }, [openAI, editorRef.current]);
+
     if (isLoading) return null;
+    if (!editorRef.current) return null;
 
     return (
-        <div className="relative w-full">
+        <div className="relative w-full h-full flex flex-col overflow-hidden">
             <EditorRoot>
-                <div className="sticky top-0 z-20 w-full bg-background border-b px-2 py-1 flex items-center gap-2">
+                <div className="sticky top-0 z-50 w-full bg-background border-b border-border px-3 py-2 flex items-center gap-2 flex-shrink-0 shadow-sm">
                     <NodeSelector open={openNode} onOpenChange={setOpenNode} />
                     <Separator orientation="vertical" />
                     <LinkSelector open={openLink} onOpenChange={setOpenLink} />
@@ -359,67 +374,103 @@ const TailwindAdvancedEditor = ({
                         onOpenChange={setOpenColor}
                     />
                 </div>
-                <EditorContent
-                    immediatelyRender={false}
-                    initialContent={initialContent ?? undefined}
-                    extensions={extensions}
-                    className="relative w-full border-muted bg-background sm:rounded-lg sm:border sm:shadow-lg"
-                    editorProps={{
-                        handleDOMEvents: {
-                            keydown: (_view, event) =>
-                                handleCommandNavigation(event),
-                        },
-                        handlePaste: (view, event) =>
-                            handleImagePaste(view, event, uploadFn),
-                        handleDrop: (view, event, _slice, moved) =>
-                            handleImageDrop(view, event, moved, uploadFn),
-                        attributes: {
-                            class: "prose prose-lg dark:prose-invert prose-headings:font-title font-default focus:outline-none max-w-full prose-a:text-sg-green hover:prose-a:text-sg-green-hover prose-blockquote:border-sg-green prose-strong:text-foreground prose-headings:text-foreground prose-p:text-foreground dark:prose-p:text-foreground",
-                        },
-                    }}
-                    onUpdate={({ editor }) => {
-                        debouncedUpdates(editor);
-                        setSaveStatus("Unsaved");
-                    }}
-                    onCreate={({ editor }) => {
-                        editorRef.current = editor;
-                    }}
-                    slotAfter={<ImageResizer />}
-                >
-                    <EditorCommand className="z-50 h-auto max-h-[330px] overflow-y-auto rounded-md border border-muted bg-background px-1 py-2 shadow-md transition-all">
-                        <EditorCommandEmpty className="px-2 text-muted-foreground">
-                            No results
-                        </EditorCommandEmpty>
-                        <EditorCommandList>
-                            {suggestionItems.map((item) => (
-                                <EditorCommandItem
-                                    value={item.title}
-                                    onCommand={item.command ?? (() => { })}
-                                    className="flex w-full items-center space-x-2 rounded-md px-2 py-1 text-left text-sm hover:bg-accent aria-selected:bg-accent"
-                                    key={item.title}
-                                >
-                                    <div className="flex h-10 w-10 items-center justify-center rounded-md border border-muted bg-background">
-                                        {item.icon}
-                                    </div>
-                                    <div>
-                                        <p className="font-medium">
-                                            {item.title}
-                                        </p>
-                                        <p className="text-xs text-muted-foreground">
-                                            {item.description}
-                                        </p>
-                                    </div>
-                                </EditorCommandItem>
-                            ))}
-                        </EditorCommandList>
-                    </EditorCommand>
-                    <GenerativeMenuSwitch
-                        open={openAI}
-                        onOpenChange={setOpenAI}
-                    >
-                        <Separator orientation="vertical" />
-                    </GenerativeMenuSwitch>
-                </EditorContent>
+                <div className="flex-1 overflow-y-auto p-8">
+                    <div className="max-w-[90%] mx-auto">
+                        <EditorContent
+                            immediatelyRender={false}
+                            initialContent={initialContent ?? undefined}
+                            extensions={extensions}
+                            className="min-h-full"
+                            onCreate={({ editor }) => {
+                                editorRef.current = editor;
+                            }}
+                            editorProps={{
+                                handleDOMEvents: {
+                                    keydown: (_view, event) =>
+                                        handleCommandNavigation(event),
+                                },
+                                handlePaste: (view, event) =>
+                                    handleImagePaste(view, event, uploadFn),
+                                handleDrop: (view, event, _slice, moved) =>
+                                    handleImageDrop(view, event, moved, uploadFn),
+                                attributes: {
+                                    class: `prose prose-lg dark:prose-invert prose-headings:font-title font-default focus:outline-none max-w-full prose-a:text-sg-green hover:prose-a:text-sg-green-hover prose-blockquote:border-sg-green prose-strong:text-foreground prose-headings:text-foreground prose-p:text-foreground dark:prose-p:text-foreground`,
+                                },
+                            }}
+                            onUpdate={({ editor }) => {
+                                debouncedUpdates(editor);
+                                setSaveStatus("Unsaved");
+                            }}
+                            onCreate={({ editor }) => {
+                                editorRef.current = editor;
+                            }}
+                            slotAfter={<ImageResizer />}
+                        >
+                            <EditorCommand className="z-50 h-auto max-h-[330px] overflow-y-auto rounded-md border border-muted bg-background px-1 py-2 shadow-md transition-all">
+                                <EditorCommandEmpty className="px-2 text-muted-foreground">
+                                    No results
+                                </EditorCommandEmpty>
+                                <EditorCommandList>
+                                    {suggestionItems.map((item) => (
+                                        <EditorCommandItem
+                                            value={item.title}
+                                            onCommand={(val) => item.command(val, editorRef.current)}
+                                            className={`flex w-full items-center space-x-2 rounded-md px-2 py-1 text-left text-sm hover:bg-accent aria-selected:bg-accent `}
+                                            key={item.title}
+                                        >
+                                            <div className="flex h-10 w-10 items-center justify-center rounded-md border border-muted bg-background">
+                                                {item.icon}
+                                            </div>
+                                            <div>
+                                                <p className="font-medium">
+                                                    {item.title}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    {item.description}
+                                                </p>
+                                            </div>
+                                        </EditorCommandItem>
+                                    ))}
+                                </EditorCommandList>
+                            </EditorCommand>
+                            <EditorBubble
+                                tippyOptions={{
+                                    placement: "top",
+                                    onHidden: () => {
+                                        setOpenAI(false);
+                                        editorRef.current?.chain().unsetHighlight().run();
+                                    },
+                                }}
+                                className="flex w-fit max-w-[90vw] overflow-hidden rounded-md border border-muted bg-background shadow-xl"
+                            >
+                                {openAI ? (
+                                    <AISelector open={openAI} onOpenChange={setOpenAI} />
+                                ) : (
+                                    <>
+                                        <Separator orientation="vertical" />
+                                        <NodeSelector open={openNode} onOpenChange={setOpenNode} />
+                                        <Separator orientation="vertical" />
+                                        <LinkSelector open={openLink} onOpenChange={setOpenLink} />
+                                        <Separator orientation="vertical" />
+                                        <TextButtons />
+                                        <Separator orientation="vertical" />
+                                        <TableSelector />
+                                        <Separator orientation="vertical" />
+                                        <ColorSelector open={openColor} onOpenChange={setOpenColor} />
+                                        <Separator orientation="vertical" />
+                                        <button
+                                            onClick={() => setOpenAI(true)}
+                                            className="flex items-center gap-1 px-2 py-1 text-sm font-medium text-emerald-600 hover:bg-accent hover:text-emerald-700 transition-colors"
+                                        >
+                                            <Magic className="h-4 w-4" />
+                                            Ask AI
+                                        </button>
+                                    </>
+                                )}
+                            </EditorBubble>
+                        </EditorContent>
+                    </div>
+                </div>
             </EditorRoot>
         </div>
     );

@@ -25,9 +25,11 @@ const onUpload = (file: File) => {
           };
           // No blob store configured
         } else if (res.status === 401) {
-          resolve(file);
-          throw new Error("`BLOB_READ_WRITE_TOKEN` environment variable not found, reading image locally instead.");
-          // Unknown error
+          if (!process.env.BLOB_READ_WRITE_TOKEN) {
+            console.warn("BLOB_READ_WRITE_TOKEN not found, using local image handling");
+            resolve(file); // Resolve the outer promise with the local file
+            return file; // Return the file for the toast.promise success handler
+          }  // Unknown error
         } else {
           throw new Error("Error uploading image. Please try again.");
         }

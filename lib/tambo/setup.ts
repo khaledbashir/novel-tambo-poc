@@ -198,6 +198,13 @@ export const tamboContextHelpers = {
       roundingTargets: [100, 1000, 5000],
     };
   },
+
+  // Force English Language
+  languageRule: () => {
+    return {
+      instruction: "You MUST always respond in English. Do not use Spanish or any other language unless explicitly requested by the user.",
+    };
+  },
 };
 
 /**

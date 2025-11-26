@@ -13,12 +13,24 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useTamboContextAttachment } from "@tambo-ai/react";
 
+export interface UploadedDocument {
+    id: string;
+    name: string;
+    size: number;
+    type: string;
+    url?: string;
+    uploadedAt: Date;
+    status: "uploading" | "success" | "error";
+    error?: string;
+}
+
 interface DocumentUploaderProps {
     maxFileSize?: number; // in MB
     maxFiles?: number;
     disabled?: boolean;
     className?: string;
     acceptedFileTypes?: string[];
+    onDocumentsChange?: (documents: UploadedDocument[]) => void;
 }
 
 export const DocumentUploader = React.memo(function DocumentUploader({
@@ -34,6 +46,7 @@ export const DocumentUploader = React.memo(function DocumentUploader({
         "application/msword",
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     ],
+    onDocumentsChange,
 }: DocumentUploaderProps) {
     const [isUploading, setIsUploading] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
@@ -64,6 +77,8 @@ export const DocumentUploader = React.memo(function DocumentUploader({
                 return;
             }
 
+            const newDocuments: UploadedDocument[] = [];
+
             for (const file of Array.from(fileList)) {
                 // Check file size
                 if (file.size > maxFileSize * 1024 * 1024) {
@@ -74,6 +89,22 @@ export const DocumentUploader = React.memo(function DocumentUploader({
                 }
 
                 setIsUploading(true);
+
+                const docId = Math.random().toString(36).substring(7);
+                const newDoc: UploadedDocument = {
+                    id: docId,
+                    name: file.name,
+                    size: file.size,
+                    type: file.type,
+                    uploadedAt: new Date(),
+                    status: "uploading",
+                };
+                newDocuments.push(newDoc);
+
+                // Notify parent about uploading start
+                if (onDocumentsChange) {
+                    onDocumentsChange([...newDocuments]);
+                }
 
                 try {
                     // Upload and parse the document
@@ -91,6 +122,12 @@ export const DocumentUploader = React.memo(function DocumentUploader({
                     }
 
                     const result = await response.json();
+
+                    // Update doc status to success
+                    const successDoc = newDocuments.find(d => d.id === docId);
+                    if (successDoc) {
+                        successDoc.status = "success";
+                    }
 
                     // Add as a context attachment with the extracted text
                     addContextAttachment({
@@ -115,12 +152,22 @@ export const DocumentUploader = React.memo(function DocumentUploader({
                     toast.error(
                         `Failed to upload "${file.name}": ${error.message}`,
                     );
+                    // Update doc status to error
+                    const errorDoc = newDocuments.find(d => d.id === docId);
+                    if (errorDoc) {
+                        errorDoc.status = "error";
+                        errorDoc.error = error.message;
+                    }
                 } finally {
                     setIsUploading(false);
+                    // Notify parent about completion (success or error)
+                    if (onDocumentsChange) {
+                        onDocumentsChange([...newDocuments]);
+                    }
                 }
             }
         },
-        [maxFiles, maxFileSize, disabled, addContextAttachment],
+        [maxFiles, maxFileSize, disabled, addContextAttachment, onDocumentsChange],
     );
 
     // Handle file selection via input

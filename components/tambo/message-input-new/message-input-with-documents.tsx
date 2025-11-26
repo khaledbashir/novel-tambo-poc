@@ -8,7 +8,6 @@ import { toast } from "sonner";
 import {
     DocumentUploader,
     DocumentPreview,
-    // @ts-ignore - Type export issue in file-upload-new
     UploadedDocument,
 } from "@/components/ui/file-upload-new";
 
@@ -116,14 +115,25 @@ export function MessageInputWithDocuments({
 
     // Add documents from the uploader
     const handleDocumentsChange = useCallback(
-        (newDocuments: UploadedDocument[]) => {
-            setDocuments(newDocuments);
+        (updatedDocuments: UploadedDocument[]) => {
+            setDocuments((prev) => {
+                const newDocs = [...prev];
+                updatedDocuments.forEach((updatedDoc) => {
+                    const index = newDocs.findIndex((d) => d.id === updatedDoc.id);
+                    if (index !== -1) {
+                        newDocs[index] = updatedDoc;
+                    } else {
+                        newDocs.push(updatedDoc);
+                    }
+                });
+                return newDocs;
+            });
 
             // Show a success toast when documents are added
-            const successCount = newDocuments.filter(
+            const successCount = updatedDocuments.filter(
                 (doc) => doc.status === "success",
             ).length;
-            const uploadingCount = newDocuments.filter(
+            const uploadingCount = updatedDocuments.filter(
                 (doc) => doc.status === "uploading",
             ).length;
 

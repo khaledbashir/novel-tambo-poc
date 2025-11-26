@@ -1,5 +1,6 @@
 .ProseMirror {
   @apply p-12 px-8 sm:px-12;
+  max-width: none !important;
 }
 
 .ProseMirror .is-editor-empty:first-child::before {
@@ -254,4 +255,53 @@ mark[style]>strong {
 .ProseMirror table p {
   margin: 0 !important;
   padding: 0 !important;
+}
+
+/* Branded Table Headers */
+.ProseMirror th {
+  background-color: #00D084;
+  color: white;
+  font-weight: bold;
+  text-align: left;
+}
+
+.ProseMirror th p {
+  color: white !important;
+}
+
+/* Center logo images */
+.ProseMirror img[src*="logogreendark"] {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  width: 400px;
+}
+
+/* Invert logo in dark mode */
+:global(.dark) .ProseMirror img[src*="logogreendark"] {
+  filter: brightness(0) invert(1);
+}
+
+/* Prevent table page breaks and force full width */
+.ProseMirror table {
+  width: 100% !important;
+  table-layout: fixed;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.ProseMirror tr {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+@media print {
+
+  .ProseMirror table,
+  .ProseMirror tr,
+  .ProseMirror td,
+  .ProseMirror th {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
 }

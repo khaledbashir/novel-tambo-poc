@@ -25,6 +25,8 @@ import { Table } from "@tiptap/extension-table";
 import TableRow from "@tiptap/extension-table-row";
 import TableCell from "@tiptap/extension-table-cell";
 import TableHeader from "@tiptap/extension-table-header";
+import { TextAlign } from "@tiptap/extension-text-align";
+import { BubbleMenu } from "@tiptap/extension-bubble-menu";
 
 import { MarkdownExtension } from "./markdown-extension";
 
@@ -193,6 +195,11 @@ const mathematics = Mathematics.configure({
 
 const characterCount = CharacterCount.configure();
 
+const textAlign = TextAlign.configure({
+    types: ["heading", "paragraph"],
+    defaultAlignment: "left",
+});
+
 const markdownExtension = MarkdownExtension.configure({
     html: true,
     tightLists: true,
@@ -229,4 +236,5 @@ export const defaultExtensions = [
     tableRow,
     tableCell,
     tableHeader,
+    textAlign,
 ];
