@@ -44,6 +44,7 @@
     "eventsource-parser": "^1.1.2",
     "framer-motion": "^12.23.24",
     "highlight.js": "^11.9.0",
+    "html2pdf.js": "^0.12.1",
     "json-stringify-pretty-compact": "^3.0.0",
     "jspdf": "^3.0.4",
     "jspdf-autotable": "^5.0.2",

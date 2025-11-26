@@ -246,50 +246,75 @@ const TailwindAdvancedEditor = ({
 
             try {
                 // Dynamically import html2pdf to avoid SSR issues
-                // @ts-ignore
-                const html2pdf = (await import('html2pdf.js')).default;
+                const html2pdf = (await import("html2pdf.js")).default;
 
                 const element = editorRef.current.view.dom;
-                
+
                 // Configure PDF options
                 const opt = {
                     margin: [10, 10, 20, 10], // Top, Left, Bottom, Right (mm)
-                    filename: 'SOW_Export.pdf',
-                    image: { type: 'jpeg', quality: 0.98 },
+                    filename: "SOW_Export.pdf",
+                    image: { type: "jpeg", quality: 0.98 },
                     html2canvas: { scale: 2, useCORS: true, logging: false },
-                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                    jsPDF: {
+                        unit: "mm",
+                        format: "a4",
+                        orientation: "portrait",
+                    },
                 };
 
                 // Generate PDF
-                html2pdf().from(element).set(opt).toPdf().get('pdf').then((pdf: any) => {
-                    // Add Green Footer Bar to every page
-                    const totalPages = pdf.internal.getNumberOfPages();
-                    for (let i = 1; i <= totalPages; i++) {
-                        pdf.setPage(i);
-                        pdf.setFillColor(0, 208, 132); // #00D084
-                        pdf.rect(0, 287, 210, 10, 'F'); // Green bar at bottom
-                        
-                        // Optional: Add legal text
-                        if (i === totalPages) {
-                             pdf.setFontSize(9);
-                             pdf.setTextColor(100, 100, 100);
-                             pdf.text('*** This concludes the Scope of Work document. ***', 105, 283, { align: 'center' });
-                        }
-                    }
-                }).save();
+                html2pdf()
+                    .from(element)
+                    .set(opt)
+                    .toPdf()
+                    .get("pdf")
+                    .then((pdf: any) => {
+                        // Add Green Footer Bar to every page
+                        const totalPages = pdf.internal.getNumberOfPages();
+                        for (let i = 1; i <= totalPages; i++) {
+                            pdf.setPage(i);
+                            pdf.setFillColor(0, 208, 132); // #00D084
+                            pdf.rect(0, 287, 210, 10, "F"); // Green bar at bottom
 
+                            // Optional: Add legal text
+                            if (i === totalPages) {
+                                pdf.setFontSize(9);
+                                pdf.setTextColor(100, 100, 100);
+                                pdf.text(
+                                    "*** This concludes the Scope of Work document. ***",
+                                    105,
+                                    283,
+                                    { align: "center" },
+                                );
+                            }
+                        }
+                    })
+                    .save();
             } catch (error) {
                 console.error("PDF Export failed:", error);
                 alert("Failed to export PDF. Please try again.");
             }
         };
 
-        window.addEventListener("insert-sow-content", handleInsertSOW as EventListener);
-        window.addEventListener("export-editor-pdf", handleExportPDF as EventListener);
-        
+        window.addEventListener(
+            "insert-sow-content",
+            handleInsertSOW as EventListener,
+        );
+        window.addEventListener(
+            "export-editor-pdf",
+            handleExportPDF as EventListener,
+        );
+
         return () => {
-            window.removeEventListener("insert-sow-content", handleInsertSOW as EventListener);
-            window.removeEventListener("export-editor-pdf", handleExportPDF as EventListener);
+            window.removeEventListener(
+                "insert-sow-content",
+                handleInsertSOW as EventListener,
+            );
+            window.removeEventListener(
+                "export-editor-pdf",
+                handleExportPDF as EventListener,
+            );
         };
     }, []);
 
@@ -349,7 +374,7 @@ const TailwindAdvancedEditor = ({
                             {suggestionItems.map((item) => (
                                 <EditorCommandItem
                                     value={item.title}
-                                    onCommand={item.command ?? (() => { })}
+                                    onCommand={item.command ?? (() => {})}
                                     className="flex w-full items-center space-x-2 rounded-md px-2 py-1 text-left text-sm hover:bg-accent aria-selected:bg-accent"
                                     key={item.title}
                                 >
