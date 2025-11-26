@@ -106,6 +106,24 @@ export const MarkdownExtension = Extension.create<MarkdownOptions>({
                         // Render as two spaces + newline (standard markdown line break)
                         state.write("  \n");
                     },
+                    // Add bulletList handler
+                    bulletList: (state: any, node: any) => {
+                        state.renderList(node, "  ", () => (node.attrs.bullet || "-") + " ");
+                    },
+                    // Add orderedList handler
+                    orderedList: (state: any, node: any) => {
+                        const start = node.attrs.start || 1;
+                        const maxW = String(start + node.childCount - 1).length;
+                        const space = maxW + 2;
+                        state.renderList(node, " ".repeat(space), (index: number) => {
+                            const n = start + index;
+                            return n + ". " + " ".repeat(maxW - String(n).length);
+                        });
+                    },
+                    // Add listItem handler
+                    listItem: (state: any, node: any) => {
+                        state.renderContent(node);
+                    },
                 };
                 const marks = {
                     ...((base && (base as any).marks) ||

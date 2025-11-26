@@ -69,7 +69,7 @@ export default function Providers({ children }: { children: ReactNode }) {
         <TamboProviderWrapper>
           <ToasterProvider />
           {children}
-          <Analytics />
+          {process.env.NODE_ENV === "production" && <Analytics />}
         </TamboProviderWrapper>
       </AppContext.Provider>
     </ThemeProvider>

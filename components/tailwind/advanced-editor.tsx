@@ -285,6 +285,7 @@ const TailwindAdvancedEditor = ({
                 // Generate PDF with custom modifications
                 worker
                     .toPdf()
+                    .get("pdf")
                     .then((pdf: any) => {
                         // Add Green Footer Bar to every page
                         const totalPages = pdf.internal.getNumberOfPages();
@@ -393,7 +394,7 @@ const TailwindAdvancedEditor = ({
                             {suggestionItems.map((item) => (
                                 <EditorCommandItem
                                     value={item.title}
-                                    onCommand={item.command ?? (() => {})}
+                                    onCommand={item.command ?? (() => { })}
                                     className="flex w-full items-center space-x-2 rounded-md px-2 py-1 text-left text-sm hover:bg-accent aria-selected:bg-accent"
                                     key={item.title}
                                 >
