@@ -35,6 +35,7 @@ const TamboProviderWrapper = ({ children }: { children: ReactNode }) => {
   return (
     <TamboProvider
       apiKey={config.apiKey}
+      projectId={config.projectId}
       tamboUrl={config.tamboUrl}
       components={config.components}
       tools={config.tools}
