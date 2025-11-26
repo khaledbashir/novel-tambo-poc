@@ -341,11 +341,7 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
             console.warn('Font loading issue, using default:', error);
         }
 
-        // GREEN BANNER HEADER - Full width
-        doc.setFillColor(brandGreen[0], brandGreen[1], brandGreen[2]);
-        doc.rect(0, 0, 210, 25, 'F'); // Full width green banner
-
-        // Try to load logo on green banner
+        // CENTERED LOGO - Clean white background
         try {
             const loadImage = (url: string): Promise<HTMLImageElement> => {
                 return new Promise((resolve, reject) => {
@@ -358,9 +354,10 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
 
             try {
                 const img = await loadImage(logoUrl);
-                const imgWidth = 30;
+                const imgWidth = 40; // Larger logo
                 const imgHeight = (img.height * imgWidth) / img.width;
-                doc.addImage(img, 'PNG', 14, 5, imgWidth, imgHeight);
+                const imgX = (210 - imgWidth) / 2; // Center horizontally
+                doc.addImage(img, 'PNG', imgX, 15, imgWidth, imgHeight);
             } catch (e) {
                 console.warn('Logo not found, skipping');
             }
@@ -368,19 +365,7 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
             console.error('Error loading logo:', error);
         }
 
-        // White text on green banner
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(18);
-        doc.setFont('helvetica', 'bold');
-        doc.text(projectTitle, 105, 12, { align: 'center' });
-        doc.setFontSize(11);
-        doc.setFont('helvetica', 'normal');
-        doc.text(`Client: ${clientName}`, 105, 19, { align: 'center' });
-
-        // Reset text color
-        doc.setTextColor(0, 0, 0);
-
-        let yPosition = 35; // Start after green banner
+        let yPosition = 45; // Start after logo with whitespace
 
         // Process each scope with NIDA UNIFIED TABLE structure
         scopes.forEach((scope, scopeIndex) => {
@@ -672,10 +657,22 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
         doc.text(`$${totals.total.toFixed(2)}`, 200, yPosition, { align: 'right' });
         doc.setTextColor(0, 0, 0);
 
-        // Legal Statement
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'normal');
-        doc.text('*** This concludes the Scope of Work document. ***', 105, 280, { align: 'center' }); // Fixed at bottom
+        // GREEN FOOTER BAR on every page
+        const pageCount = (doc as any).internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFillColor(brandGreen[0], brandGreen[1], brandGreen[2]);
+            doc.rect(0, 287, 210, 10, 'F'); // Green bar at bottom
+
+            // Optional legal text above the bar
+            if (i === pageCount) {
+                doc.setFontSize(9);
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(100, 100, 100);
+                doc.text('*** This concludes the Scope of Work document. ***', 105, 283, { align: 'center' });
+                doc.setTextColor(0, 0, 0);
+            }
+        }
 
         // Save
         doc.save(`${projectTitle.replace(/[^a-z0-9]/gi, '_')}_SOW.pdf`);
@@ -798,11 +795,15 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
     };
 
     return (
-        <div className="sow-print-container w-full max-w-7xl mx-auto p-6 bg-card rounded-lg border border-border shadow-sm space-y-8">
-            {/* Header */}
-            <div className="border-b border-border pb-4">
-                <h1 className="text-3xl font-bold text-foreground mb-2">{projectTitle}</h1>
-                <p className="text-muted-foreground">Client: {clientName}</p>
+        <div className="sow-print-container w-full max-w-7xl mx-auto p-8 bg-white dark:bg-white rounded-lg border border-gray-200 shadow-lg space-y-8">
+            {/* Header - Centered Logo */}
+            <div className="flex flex-col items-center border-b border-gray-200 pb-8 mb-8">
+                <img
+                    src="/images/logogreendark.png"
+                    alt="Social Garden"
+                    className="h-16 mb-6"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                />
             </div>
 
             {/* Scopes */}
@@ -814,27 +815,27 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                             <div className="overflow-x-auto">
                                 <table className="w-full border-collapse border border-border">
                                     <thead>
-                                        <tr className="bg-muted border-b-2 border-border">
-                                            <th className="px-4 py-3 text-left text-sm font-semibold text-foreground w-8"></th>
-                                            <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">TASK/DESCRIPTION</th>
-                                            <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">ROLE</th>
-                                            <th className="px-4 py-3 text-center text-sm font-semibold text-foreground w-24">HOURS</th>
-                                            <th className="px-4 py-3 text-center text-sm font-semibold text-foreground w-24">RATE</th>
-                                            <th className="px-4 py-3 text-right text-sm font-semibold text-foreground w-32">TOTAL COST + GST</th>
-                                            <th className="px-4 py-3 text-center text-sm font-semibold text-foreground w-16">ACTIONS</th>
+                                        <tr className="bg-emerald-600 border-b-2 border-emerald-700">
+                                            <th className="px-4 py-3 text-left text-sm font-semibold text-white w-8"></th>
+                                            <th className="px-4 py-3 text-left text-sm font-semibold text-white">ITEMS</th>
+                                            <th className="px-4 py-3 text-left text-sm font-semibold text-white">ROLE</th>
+                                            <th className="px-4 py-3 text-center text-sm font-semibold text-white w-24">HOURS</th>
+                                            <th className="px-4 py-3 text-center text-sm font-semibold text-white w-24">RATE</th>
+                                            <th className="px-4 py-3 text-right text-sm font-semibold text-white w-32">TOTAL COST + GST</th>
+                                            <th className="px-4 py-3 text-center text-sm font-semibold text-white w-16">ACTIONS</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {/* Scope Title Row - Full Width */}
-                                        <tr className="bg-muted/80 border-b border-border">
-                                            <td colSpan={7} className="px-4 py-3 text-xl font-bold text-foreground">
+                                        <tr className="bg-emerald-600 border-b border-emerald-700">
+                                            <td colSpan={7} className="px-4 py-3 text-xl font-bold text-white">
                                                 Scope {scopeIndex + 1}: {scope.title}
                                             </td>
                                         </tr>
 
                                         {/* Scope Description Row - Full Width */}
-                                        <tr className="border-b border-border">
-                                            <td colSpan={7} className="px-4 py-3 text-muted-foreground italic">
+                                        <tr className="border-b border-gray-200 bg-white">
+                                            <td colSpan={7} className="px-4 py-3 text-gray-700 italic">
                                                 {scope.description}
                                             </td>
                                         </tr>
