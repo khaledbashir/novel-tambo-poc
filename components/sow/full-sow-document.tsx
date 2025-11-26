@@ -319,7 +319,7 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
         setDragOverIndex(null);
     };
 
-    // Export SOW to PDF using jsPDF
+    // Export SOW to PDF using jsPDF - BBUBU Design Compliant
     const handleExportPDF = async () => {
         if (!scopes || scopes.length === 0) {
             alert('No SOW content to export yet!');
@@ -327,10 +327,24 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
         }
 
         const doc = new jsPDF();
-        const logoUrl = '/images/logogreendark.png'; // Actual uploaded logo filename
+        const brandGreen: [number, number, number] = [0, 208, 132]; // #00D084
+        const logoUrl = '/images/logogreendark.png';
 
+        // Load Plus Jakarta Sans font
         try {
-            // Helper to load image
+            // Note: For production, consider embedding font as Base64
+            // For now, using default font with custom styling
+            doc.setFont('helvetica'); // Fallback - Plus Jakarta Sans would need Base64 embedding
+        } catch (error) {
+            console.warn('Font loading issue, using default:', error);
+        }
+
+        // GREEN BANNER HEADER - Full width
+        doc.setFillColor(brandGreen[0], brandGreen[1], brandGreen[2]);
+        doc.rect(0, 0, 210, 25, 'F'); // Full width green banner
+
+        // Try to load logo on green banner
+        try {
             const loadImage = (url: string): Promise<HTMLImageElement> => {
                 return new Promise((resolve, reject) => {
                     const img = new Image();
@@ -340,13 +354,11 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                 });
             };
 
-            // Try to load logo
             try {
                 const img = await loadImage(logoUrl);
-                // Add logo (width: 40mm, aspect ratio preserved)
-                const imgWidth = 40;
+                const imgWidth = 30;
                 const imgHeight = (img.height * imgWidth) / img.width;
-                doc.addImage(img, 'PNG', 14, 10, imgWidth, imgHeight);
+                doc.addImage(img, 'PNG', 14, 5, imgWidth, imgHeight);
             } catch (e) {
                 console.warn('Logo not found, skipping');
             }
@@ -354,17 +366,21 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
             console.error('Error loading logo:', error);
         }
 
-        // Title (adjusted Y position if logo exists or not, but fixed for now)
-        doc.setFontSize(20);
+        // White text on green banner
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(18);
         doc.setFont('helvetica', 'bold');
-        doc.text(projectTitle, 14, 35); // Moved down to make room for logo
-        doc.setFontSize(12);
+        doc.text(projectTitle, 105, 12, { align: 'center' });
+        doc.setFontSize(11);
         doc.setFont('helvetica', 'normal');
-        doc.text(`Client: ${clientName}`, 14, 42);
+        doc.text(`Client: ${clientName}`, 105, 19, { align: 'center' });
 
-        let yPosition = 55; // Start content lower
+        // Reset text color
+        doc.setTextColor(0, 0, 0);
 
-        // Process each scope
+        let yPosition = 35; // Start after green banner
+
+        // Process each scope with UNIFIED TABLE structure
         scopes.forEach((scope, scopeIndex) => {
             // Check if we need a new page
             if (yPosition > 250) {
@@ -372,107 +388,252 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                 yPosition = 20;
             }
 
-            // Scope Title
-            doc.setFontSize(16);
-            doc.setFont('helvetica', 'bold');
-            doc.text(`Scope ${scopeIndex + 1}: ${scope.title}`, 14, yPosition);
-            yPosition += 8;
+            // Build unified table body array
+            const tableBody: any[] = [];
 
-            // Scope Description
-            doc.setFontSize(11);
-            doc.setFont('helvetica', 'italic');
-            const splitDescription = doc.splitTextToSize(scope.description, 180);
-            doc.text(splitDescription, 14, yPosition);
-            yPosition += splitDescription.length * 6 + 5;
+            // 1. Scope Title Row (Green background, white text, colspan)
+            tableBody.push([
+                {
+                    content: `Scope ${scopeIndex + 1}: ${scope.title}`,
+                    colSpan: 4,
+                    styles: {
+                        fillColor: brandGreen,
+                        textColor: [255, 255, 255],
+                        fontStyle: 'bold',
+                        fontSize: 14,
+                        cellPadding: 4
+                    }
+                }
+            ]);
 
-            // Deliverables
+            // 2. Description Row (Italic, colspan)
+            tableBody.push([
+                {
+                    content: scope.description,
+                    colSpan: 4,
+                    styles: {
+                        fontStyle: 'italic',
+                        fontSize: 10,
+                        cellPadding: 3
+                    }
+                }
+            ]);
+
+            // 3. Deliverables Header Row
             if (scope.deliverables && scope.deliverables.length > 0) {
-                doc.setFont('helvetica', 'bold');
-                doc.text('Deliverables:', 14, yPosition);
-                yPosition += 6;
-                doc.setFont('helvetica', 'normal');
-                scope.deliverables.forEach(item => {
-                    const splitItem = doc.splitTextToSize(`• ${item}`, 180);
-                    doc.text(splitItem, 18, yPosition);
-                    yPosition += splitItem.length * 5;
-                });
-                yPosition += 3;
+                tableBody.push([
+                    {
+                        content: 'Deliverables:',
+                        colSpan: 4,
+                        styles: {
+                            fontStyle: 'bold',
+                            fontSize: 10,
+                            fillColor: [245, 245, 245],
+                            cellPadding: 2
+                        }
+                    }
+                ]);
+
+                // 4. Deliverables Content Row
+                const deliverablesText = scope.deliverables.map(item => `• ${item}`).join('\n');
+                tableBody.push([
+                    {
+                        content: deliverablesText,
+                        colSpan: 4,
+                        styles: {
+                            fontSize: 9,
+                            cellPadding: 3
+                        }
+                    }
+                ]);
             }
 
-            // Pricing Table
-            const tableData = (scope.roles || []).map(row => {
+            // 5. Role Rows (Standard columns)
+            (scope.roles || []).forEach(row => {
                 const rowCost = (row.hours || 0) * (row.rate || 0);
                 const rowGST = rowCost * 0.1;
                 const rowTotal = rowCost + rowGST;
-                return [
+
+                tableBody.push([
                     row.task || '',
                     row.role || '',
-                    row.hours || 0,
+                    (row.hours || 0).toString(),
                     `$${(row.rate || 0).toFixed(2)}`,
                     `$${rowTotal.toFixed(2)}`
-                ];
+                ]);
             });
 
+            // 6. Assumptions Header Row
+            if (scope.assumptions && scope.assumptions.length > 0) {
+                tableBody.push([
+                    {
+                        content: 'Assumptions:',
+                        colSpan: 4,
+                        styles: {
+                            fontStyle: 'bold',
+                            fontSize: 10,
+                            fillColor: [245, 245, 245],
+                            cellPadding: 2
+                        }
+                    }
+                ]);
+
+                // 7. Assumptions Content Row
+                const assumptionsText = scope.assumptions.map(item => `• ${item}`).join('\n');
+                tableBody.push([
+                    {
+                        content: assumptionsText,
+                        colSpan: 4,
+                        styles: {
+                            fontSize: 9,
+                            cellPadding: 3
+                        }
+                    }
+                ]);
+            }
+
+            // 8. Scope Total Row (Gray background)
+            const scopeTotal = calculateScopeTotal(scope);
+            const scopeGST = scopeTotal * 0.1;
+            const scopeTotalWithGST = scopeTotal + scopeGST;
+
+            tableBody.push([
+                {
+                    content: 'Scope Total',
+                    colSpan: 4,
+                    styles: {
+                        fontStyle: 'bold',
+                        halign: 'right',
+                        fillColor: [220, 220, 220],
+                        fontSize: 11
+                    }
+                },
+                {
+                    content: `$${scopeTotalWithGST.toFixed(2)}`,
+                    styles: {
+                        fontStyle: 'bold',
+                        fillColor: [220, 220, 220],
+                        fontSize: 11
+                    }
+                }
+            ]);
+
+            // Render unified table
             autoTable(doc, {
                 startY: yPosition,
-                head: [['Task', 'Role', 'Hours', 'Rate', 'Total + GST']],
-                body: tableData,
+                head: [['ITEMS', 'ROLE', 'HOURS', 'RATE', 'TOTAL COST + GST']],
+                body: tableBody,
                 theme: 'grid',
                 styles: { fontSize: 9, font: 'helvetica' },
-                headStyles: { fillColor: [0, 208, 132], textColor: 255, fontStyle: 'bold' },
-                margin: { left: 14 },
+                headStyles: {
+                    fillColor: brandGreen,
+                    textColor: [255, 255, 255],
+                    fontStyle: 'bold',
+                    fontSize: 10
+                },
+                margin: { left: 14, right: 14 },
+                columnStyles: {
+                    2: { halign: 'center' },
+                    3: { halign: 'center' },
+                    4: { halign: 'right' }
+                }
             });
 
-            yPosition = (doc as any).lastAutoTable.finalY + 10;
-
-            // Assumptions
-            if (scope.assumptions && scope.assumptions.length > 0) {
-                doc.setFont('helvetica', 'bold');
-                doc.text('Assumptions:', 14, yPosition);
-                yPosition += 6;
-                doc.setFont('helvetica', 'normal');
-                scope.assumptions.forEach(item => {
-                    const splitItem = doc.splitTextToSize(`• ${item}`, 180);
-                    doc.text(splitItem, 18, yPosition);
-                    yPosition += splitItem.length * 5;
-                });
-                yPosition += 10;
-            }
+            yPosition = (doc as any).lastAutoTable.finalY + 15;
         });
 
-        // Financial Summary on new page
+        // SCOPE & PRICE OVERVIEW TABLE
         doc.addPage();
         doc.setFontSize(16);
         doc.setFont('helvetica', 'bold');
-        doc.text('Financial Summary', 14, 20);
+        doc.text('Scope & Price Overview', 105, 20, { align: 'center' });
 
-        const financialData = [
-            ['Subtotal', `$${totals.subtotal.toFixed(2)}`],
-        ];
+        const overviewData = scopes.map((scope, idx) => {
+            const scopeTotal = calculateScopeTotal(scope);
+            const scopeHours = (scope.roles || []).reduce((sum, row) => sum + (row.hours || 0), 0);
+            const scopeGST = scopeTotal * 0.1;
+            const scopeTotalWithGST = scopeTotal + scopeGST;
 
-        if (discount > 0) {
-            financialData.push(['Discount (' + discount + '%)', `-$${totals.discountAmount.toFixed(2)}`]);
-            financialData.push(['After Discount', `$${totals.afterDiscount.toFixed(2)}`]);
-        }
+            return [
+                `Scope ${idx + 1}: ${scope.title}`,
+                scopeHours.toString(),
+                `$${scopeTotalWithGST.toFixed(2)}`
+            ];
+        });
 
-        financialData.push(['GST (10%)', `$${totals.gst.toFixed(2)}`]);
-        financialData.push(['TOTAL (AUD)', `$${totals.total.toFixed(2)}`]);
+        // Add total row
+        const totalHours = scopes.reduce((sum, scope) =>
+            sum + (scope.roles || []).reduce((s, r) => s + (r.hours || 0), 0), 0
+        );
+        overviewData.push([
+            'TOTAL PROJECT',
+            totalHours.toString(),
+            `$${totals.total.toFixed(2)}`
+        ]);
 
         autoTable(doc, {
             startY: 30,
-            body: financialData,
-            theme: 'plain',
-            styles: { fontSize: 12 },
+            head: [['SCOPE', 'ESTIMATED TOTAL HOURS', 'TOTAL COST']],
+            body: overviewData,
+            theme: 'grid',
+            styles: { fontSize: 10 },
+            headStyles: {
+                fillColor: brandGreen,
+                textColor: [255, 255, 255],
+                fontStyle: 'bold'
+            },
             columnStyles: {
-                0: { fontStyle: 'bold' },
-                1: { halign: 'right', fontStyle: 'bold' }
+                1: { halign: 'center' },
+                2: { halign: 'right' }
+            },
+            // Make last row (total) bold
+            didParseCell: function (data) {
+                if (data.row.index === overviewData.length - 1) {
+                    data.cell.styles.fontStyle = 'bold';
+                    data.cell.styles.fontSize = 11;
+                }
             }
         });
+
+        yPosition = (doc as any).lastAutoTable.finalY + 20;
+
+        // PROJECT OVERVIEW & BUDGET NOTES with Green Bar Style
+        if (projectOverview) {
+            // Green bar
+            doc.setDrawColor(brandGreen[0], brandGreen[1], brandGreen[2]);
+            doc.setLineWidth(3);
+            doc.line(14, yPosition, 14, yPosition + 20);
+
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Project Overview', 20, yPosition + 5);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            const overviewLines = doc.splitTextToSize(projectOverview, 170);
+            doc.text(overviewLines, 20, yPosition + 12);
+            yPosition += 25 + (overviewLines.length * 5);
+        }
+
+        if (budgetNotes) {
+            // Green bar
+            doc.setDrawColor(brandGreen[0], brandGreen[1], brandGreen[2]);
+            doc.setLineWidth(3);
+            doc.line(14, yPosition, 14, yPosition + 20);
+
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Budget Notes', 20, yPosition + 5);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            const notesLines = doc.splitTextToSize(budgetNotes, 170);
+            doc.text(notesLines, 20, yPosition + 12);
+            yPosition += 25 + (notesLines.length * 5);
+        }
 
         // Legal Statement
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
-        doc.text('*** This concludes the Scope of Work document. ***', 105, (doc as any).lastAutoTable.finalY + 20, { align: 'center' });
+        doc.text('*** This concludes the Scope of Work document. ***', 105, yPosition + 10, { align: 'center' });
 
         // Save
         doc.save(`${projectTitle.replace(/[^a-z0-9]/gi, '_')}_SOW.pdf`);
