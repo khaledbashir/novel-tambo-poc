@@ -239,7 +239,7 @@ export function Sidebar({
         <>
             <div
                 className={cn(
-                    "w-64 bg-gradient-to-b from-card to-card/95 border-r border-border/50 flex flex-col shadow-lg",
+                    "w-64 h-full overflow-y-auto flex-shrink-0 bg-gradient-to-b from-card to-card/95 border-r border-border/50 flex flex-col shadow-lg",
                     className,
                 )}
             >

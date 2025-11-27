@@ -96,7 +96,7 @@ export default function Page() {
     <div className="fixed inset-0 flex" ref={containerRef}>
       {/* Navigation Sidebar with Toggle */}
       <div className={cn(
-        "relative flex-shrink-0 bg-card border-r border-border transition-all duration-300 ease-in-out overflow-hidden",
+        "relative flex-shrink-0 h-full bg-card border-r border-border transition-all duration-300 ease-in-out",
         isSidebarCollapsed ? "w-0 overflow-hidden" : "w-80"
       )}>
         <Sidebar
