@@ -1129,7 +1129,7 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                                                                 )
                                                             }
                                                             placeholder="e.g., Handle HubSpot setup..."
-                                                            className="w-full px-3 py-2 border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                                                            className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                                                         />
                                                     </td>
                                                     <td className="px-4 py-3">
@@ -1145,7 +1145,7 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                                                                         .value,
                                                                 )
                                                             }
-                                                            className="w-full px-3 py-2 border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                                                            className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                                                         >
                                                             <option value="">
                                                                 Select role...
@@ -1185,7 +1185,7 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                                                             }
                                                             min="0"
                                                             step="0.5"
-                                                            className="w-full px-3 py-2 border border-input rounded-md text-center bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                                                            className="w-full px-3 py-2 border border-input rounded-md text-center bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                                                         />
                                                     </td>
                                                     <td className="px-4 py-3">
@@ -1206,7 +1206,7 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                                                                 )
                                                             }
                                                             min="0"
-                                                            className="w-full px-3 py-2 border border-input rounded-md text-center bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                                                            className="w-full px-3 py-2 border border-input rounded-md text-center bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                                                         />
                                                     </td>
                                                     <td className="px-4 py-3 text-right font-semibold text-foreground">
@@ -1274,14 +1274,14 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                             </div>
 
                             {/* Add Role Button */}
-            <button
-                onClick={() => addRow(scope.id)}
-                className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition text-sm"
-            >
-                <Plus size={16} /> Add Role
-            </button>
-        </div>
-    ))}
+                            <button
+                                onClick={() => addRow(scope.id)}
+                                className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition text-sm"
+                            >
+                                <Plus size={16} /> Add Role
+                            </button>
+                        </div>
+                    ))}
                 </>
             ) : (
                 <div className="text-center p-8 bg-muted rounded-lg">
