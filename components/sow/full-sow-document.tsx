@@ -778,10 +778,31 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
             return;
         }
 
+        const toNumber = (v: unknown) => {
+            if (typeof v === "number" && Number.isFinite(v)) return v;
+            if (typeof v === "string") {
+                const cleaned = v.replace(/[^0-9.\-]/g, "");
+                const n = parseFloat(cleaned);
+                return Number.isFinite(n) ? n : 0;
+            }
+            return 0;
+        };
+
+        const normalizedScopes = scopes.map((s, idx) => ({
+            ...s,
+            id: s.id || `scope-${idx}`,
+            roles: (s.roles || []).map((r, rIdx) => ({
+                ...r,
+                id: r.id || `role-${idx}-${rIdx}`,
+                hours: toNumber(r.hours),
+                rate: toNumber(r.rate),
+            })),
+        }));
+
         // Dispatch custom event to insert content into editor
         const event = new CustomEvent("insert-sow-content", {
             detail: {
-                scopes,
+                scopes: normalizedScopes,
                 projectTitle,
                 clientName,
                 projectOverview,
@@ -948,14 +969,14 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
             {scopes && scopes.length > 0 ? (
                 <>
                     {scopes.map((scope, scopeIndex) => (
-                        <div key={scope.id} className="space-y-4 mb-8">
+                        <div key={scope.id} className="space-y-4 mb-8" style={{ marginBottom: "2rem" }}>
                             {/* Single Continuous Table - Gold Standard Format */}
                             <div className="overflow-x-auto">
                                 <table className="w-full border-collapse border border-border">
                                     <thead>
                                         <tr className="bg-emerald-600 border-b-2 border-emerald-700">
                                             <th className="px-4 py-3 text-left text-sm font-semibold text-white w-8"></th>
-                                            <th className="px-4 py-3 text-left text-sm font-semibold text-white min-w-[400px]">
+                                            <th className="px-4 py-3 text-left text-sm font-semibold text-white w-[400px] min-w-[400px]">
                                                 ITEMS
                                             </th>
                                             <th className="px-4 py-3 text-left text-sm font-semibold text-white whitespace-nowrap">
@@ -1253,14 +1274,14 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                             </div>
 
                             {/* Add Role Button */}
-                            <button
-                                onClick={() => addRow(scope.id)}
-                                className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition text-sm"
-                            >
-                                <Plus size={16} /> Add Role
-                            </button>
-                        </div>
-                    ))}
+            <button
+                onClick={() => addRow(scope.id)}
+                className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition text-sm"
+            >
+                <Plus size={16} /> Add Role
+            </button>
+        </div>
+    ))}
                 </>
             ) : (
                 <div className="text-center p-8 bg-muted rounded-lg">
@@ -1277,7 +1298,7 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                     Scope & Price Overview
                 </h2>
                 <div className="overflow-x-auto">
-                    <table className="w-full border-collapse">
+                    <table className="w-full border-collapse align-top">
                         <thead>
                             <tr className="bg-muted border-b-2 border-border">
                                 <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">

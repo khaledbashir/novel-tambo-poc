@@ -255,12 +255,12 @@ const SOWPricingTableBase: React.FC<SOWPricingProps> = ({
                 <table className="w-full">
                     <thead>
                         <tr className="bg-muted border-b-2 border-border">
-                            <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Role</th>
-                            <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Description</th>
-                            <th className="px-4 py-3 text-center text-sm font-semibold text-foreground">Hours</th>
-                            <th className="px-4 py-3 text-center text-sm font-semibold text-foreground">Rate/Hr (AUD)</th>
-                            <th className="px-4 py-3 text-right text-sm font-semibold text-foreground">Cost (AUD)</th>
-                            <th className="px-4 py-3 text-center text-sm font-semibold text-foreground">Action</th>
+                            <th className="px-4 py-3 text-left text-sm font-semibold text-foreground whitespace-nowrap">Role</th>
+                            <th className="px-4 py-3 text-left text-sm font-semibold text-foreground min-w-[400px]">Description</th>
+                            <th className="px-4 py-3 text-center text-sm font-semibold text-foreground whitespace-nowrap">Hours</th>
+                            <th className="px-4 py-3 text-center text-sm font-semibold text-foreground whitespace-nowrap">Rate/Hr (AUD)</th>
+                            <th className="px-4 py-3 text-right text-sm font-semibold text-foreground whitespace-nowrap">Cost (AUD)</th>
+                            <th className="px-4 py-3 text-center text-sm font-semibold text-foreground whitespace-nowrap">Action</th>
                         </tr>
                     </thead>
                     <tbody>

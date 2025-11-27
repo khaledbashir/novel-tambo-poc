@@ -282,6 +282,18 @@ const MessageContent = React.forwardRef<HTMLDivElement, MessageContentProps>(
 
     const showLoading = isLoading && !hasContent;
 
+    // 🔍 DEBUG: Log content rendering decisions
+    React.useEffect(() => {
+      console.log('[MessageContent] Render state:', {
+        messageId: message.id,
+        isLoading,
+        hasContent,
+        showLoading,
+        hasReasoning: !!message.reasoning?.length,
+        contentType: typeof contentToRender,
+      });
+    }, [message.id, isLoading, hasContent, showLoading, message.reasoning, contentToRender]);
+
     return (
       <div
         ref={ref}
@@ -540,7 +552,7 @@ const SamplingSubThread = ({
                   className={cn(
                     "whitespace-pre-wrap",
                     m.role === "assistant" &&
-                      "bg-muted/50 rounded-md p-2 inline-block w-fit",
+                    "bg-muted/50 rounded-md p-2 inline-block w-fit",
                   )}
                 >
                   {getSafeContent(m.content)}
@@ -576,9 +588,22 @@ const ReasoningInfo = React.forwardRef<HTMLDivElement, ReasoningInfoProps>(
     const [isExpanded, setIsExpanded] = useState(true);
     const scrollContainerRef = React.useRef<HTMLDivElement>(null);
 
+    // 🔍 DEBUG: Log reasoning data when component mounts or message changes
+    React.useEffect(() => {
+      console.log('[ReasoningInfo] Message data:', {
+        messageId: message.id,
+        hasReasoning: !!message.reasoning,
+        reasoningLength: message.reasoning?.length || 0,
+        reasoning: message.reasoning,
+        isLoading,
+        hasContent: checkHasContent(message.content),
+      });
+    }, [message, isLoading]);
+
     // Auto-collapse when content arrives and reasoning is not loading
     React.useEffect(() => {
       if (checkHasContent(message.content) && !isLoading) {
+        console.log('[ReasoningInfo] Auto-collapsing reasoning (content arrived)');
         setIsExpanded(false);
       }
     }, [message.content, isLoading]);
@@ -608,8 +633,19 @@ const ReasoningInfo = React.forwardRef<HTMLDivElement, ReasoningInfoProps>(
 
     // Only show if there's reasoning data
     if (!message.reasoning?.length) {
+      console.log('[ReasoningInfo] Not rendering - no reasoning data', {
+        messageId: message.id,
+        reasoning: message.reasoning,
+      });
       return null;
     }
+
+    console.log('[ReasoningInfo] Rendering reasoning accordion', {
+      messageId: message.id,
+      reasoningSteps: message.reasoning.length,
+      isExpanded,
+      isLoading,
+    });
 
     return (
       <div
@@ -626,7 +662,10 @@ const ReasoningInfo = React.forwardRef<HTMLDivElement, ReasoningInfoProps>(
             type="button"
             aria-expanded={isExpanded}
             aria-controls={reasoningDetailsId}
-            onClick={() => setIsExpanded(!isExpanded)}
+            onClick={() => {
+              console.log('[ReasoningInfo] Toggling accordion:', !isExpanded);
+              setIsExpanded(!isExpanded);
+            }}
             className={cn(
               "flex items-center gap-1 cursor-pointer hover:bg-muted-foreground/10 rounded-md px-3 py-1 select-none w-fit",
             )}

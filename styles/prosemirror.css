@@ -1,6 +1,6 @@
 .ProseMirror {
-  @apply p-12 px-8 sm:px-12;
-  max-width: none !important;
+  @apply p-8 px-6 sm:px-8;
+  width: 100%;
 }
 
 .ProseMirror .is-editor-empty:first-child::before {

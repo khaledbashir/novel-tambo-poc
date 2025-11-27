@@ -29,10 +29,24 @@ export function insertSOWToEditor(editor: Editor, sowData: {
         return;
     }
 
+    const toNumber = (v: unknown) => {
+        if (typeof v === "number" && Number.isFinite(v)) return v;
+        if (typeof v === "string") {
+            const cleaned = v.replace(/[^0-9.\-]/g, "");
+            const n = parseFloat(cleaned);
+            return Number.isFinite(n) ? n : 0;
+        }
+        return 0;
+    };
+
     // Calculate totals
     const calculateScopeTotal = (scope: typeof sowData.scopes[0]) => {
         if (!scope.roles || scope.roles.length === 0) return 0;
-        return scope.roles.reduce((sum, row) => sum + (row.hours * row.rate), 0);
+        return scope.roles.reduce((sum, row) => {
+            const hours = toNumber(row.hours);
+            const rate = toNumber(row.rate);
+            return sum + hours * rate;
+        }, 0);
     };
 
     const subtotal = sowData.scopes.reduce((sum, scope) => sum + calculateScopeTotal(scope), 0);
@@ -40,6 +54,12 @@ export function insertSOWToEditor(editor: Editor, sowData: {
     const afterDiscount = subtotal - discountAmount;
     const gst = afterDiscount * 0.1;
     const total = afterDiscount + gst;
+
+    const formatAUD = (n: number) =>
+        new Intl.NumberFormat("en-AU", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        }).format(n);
 
     // Start building content using TipTap commands
     // We use a single chain to ensure atomicity and prevent race conditions
@@ -96,15 +116,17 @@ export function insertSOWToEditor(editor: Editor, sowData: {
                 },
                 // Data rows
                 ...scope.roles.map(row => {
-                    const cost = (row.hours * row.rate * 1.1).toFixed(2);
+                    const hours = toNumber(row.hours);
+                    const rate = toNumber(row.rate);
+                    const cost = hours * rate * 1.1;
                     return {
                         type: 'tableRow',
                         content: [
                             { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: row.task }] }] },
                             { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: row.role }] }] },
-                            { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: String(row.hours) }] }] },
-                            { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: `$${row.rate.toFixed(2)} ` }] }] },
-                            { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: `$${cost} ` }] }] }
+                            { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: String(hours) }] }] },
+                            { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: `AUD $${formatAUD(rate)} ` }] }] },
+                            { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: `AUD $${formatAUD(cost)} ` }] }] }
                         ]
                     };
                 })
@@ -117,7 +139,7 @@ export function insertSOWToEditor(editor: Editor, sowData: {
             const scopeTotal = calculateScopeTotal(scope);
             const scopeGST = scopeTotal * 0.1;
             const scopeTotalWithGST = scopeTotal + scopeGST;
-            chain.insertContent({ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Scope Total: ' }, { type: 'text', text: `$${scopeTotalWithGST.toFixed(2)} AUD (inc. GST)` }] });
+            chain.insertContent({ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Scope Total: ' }, { type: 'text', text: `AUD $${formatAUD(scopeTotalWithGST)} (inc. GST)` }] });
         }
 
         // Assumptions
@@ -140,15 +162,15 @@ export function insertSOWToEditor(editor: Editor, sowData: {
     // Financial Summary
     chain.insertContent({ type: 'horizontalRule' });
     chain.insertContent({ type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Financial Summary' }] });
-    chain.insertContent({ type: 'paragraph', content: [{ type: 'text', text: `Subtotal: $${subtotal.toFixed(2)} AUD` }] });
+    chain.insertContent({ type: 'paragraph', content: [{ type: 'text', text: `Subtotal: AUD $${formatAUD(subtotal)}` }] });
 
     if (sowData.discount && sowData.discount > 0) {
-        chain.insertContent({ type: 'paragraph', content: [{ type: 'text', text: `Discount (${sowData.discount}%): -$${discountAmount.toFixed(2)} AUD` }] });
-        chain.insertContent({ type: 'paragraph', content: [{ type: 'text', text: `After Discount: $${afterDiscount.toFixed(2)} AUD` }] });
+        chain.insertContent({ type: 'paragraph', content: [{ type: 'text', text: `Discount (${sowData.discount}%): AUD -$${formatAUD(discountAmount)}` }] });
+        chain.insertContent({ type: 'paragraph', content: [{ type: 'text', text: `After Discount: AUD $${formatAUD(afterDiscount)}` }] });
     }
 
-    chain.insertContent({ type: 'paragraph', content: [{ type: 'text', text: `GST (10%): +$${gst.toFixed(2)} AUD` }] });
-    chain.insertContent({ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Grand Total: ' }, { type: 'text', text: `$${total.toFixed(2)} AUD` }] });
+    chain.insertContent({ type: 'paragraph', content: [{ type: 'text', text: `GST (10%): AUD +$${formatAUD(gst)}` }] });
+    chain.insertContent({ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Grand Total: ' }, { type: 'text', text: `AUD $${formatAUD(total)}` }] });
 
     // Project Overview
     if (sowData.projectOverview) {

@@ -152,14 +152,14 @@ const tableRow = TableRow.configure({
 
 const tableCell = TableCell.configure({
     HTMLAttributes: {
-        class: cx("border border-border px-4 py-2 text-foreground relative"),
+        class: cx("border border-border px-4 py-2 text-foreground relative align-top"),
     },
 });
 
 const tableHeader = TableHeader.configure({
     HTMLAttributes: {
         class: cx(
-            "border border-border px-4 py-2 bg-muted/50 font-semibold text-foreground relative",
+            "border border-border px-4 py-2 bg-muted/50 font-semibold text-foreground relative align-top",
         ),
     },
 });

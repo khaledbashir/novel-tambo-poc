@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 import type { VariantProps } from "class-variance-authority";
 import * as React from "react";
 import type { Suggestion } from "@tambo-ai/react";
+import { useTambo } from "@tambo-ai/react";
 
 export interface MessageThreadPanelProps
   extends React.HTMLAttributes<HTMLDivElement> {
@@ -35,6 +36,23 @@ export const MessageThreadPanel = React.forwardRef<
   HTMLDivElement,
   MessageThreadPanelProps
 >(({ className, contextKey, variant, ...props }, ref) => {
+  const { thread, isIdle } = useTambo();
+
+  // 🔍 DEBUG: Log thread state and reasoning data from Tambo
+  React.useEffect(() => {
+    console.log('[MessageThreadPanel] Tambo thread state:', {
+      threadId: thread?.id,
+      messageCount: thread?.messages?.length || 0,
+      isIdle,
+      messagesWithReasoning: thread?.messages?.filter((m: any) => m.reasoning?.length).map((m: any) => ({
+        id: m.id,
+        role: m.role,
+        reasoningSteps: m.reasoning?.length,
+        reasoning: m.reasoning,
+      })) || [],
+    });
+  }, [thread, isIdle]);
+
   const defaultSuggestions: Suggestion[] = [
     {
       id: "suggestion-1",

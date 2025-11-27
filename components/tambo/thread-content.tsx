@@ -132,6 +132,20 @@ const ThreadContentMessages = React.forwardRef<
     (message) => message.role !== "system" && !message.parentMessageId,
   );
 
+  // 🔍 DEBUG: Log all messages and their reasoning status
+  React.useEffect(() => {
+    console.log('[ThreadContent] Messages update:', {
+      totalMessages: messages.length,
+      filteredMessages: filteredMessages.length,
+      isGenerating,
+      messagesWithReasoning: filteredMessages.filter(m => m.reasoning?.length).map(m => ({
+        id: m.id,
+        role: m.role,
+        reasoningSteps: m.reasoning?.length,
+      })),
+    });
+  }, [messages, filteredMessages, isGenerating]);
+
   return (
     <div
       ref={ref}
@@ -140,6 +154,17 @@ const ThreadContentMessages = React.forwardRef<
       {...props}
     >
       {filteredMessages.map((message, index) => {
+        // 🔍 DEBUG: Log each message being rendered
+        console.log('[ThreadContent] Rendering message:', {
+          id: message.id,
+          role: message.role,
+          index,
+          isLastMessage: index === filteredMessages.length - 1,
+          isLoading: isGenerating && index === filteredMessages.length - 1,
+          hasReasoning: !!message.reasoning?.length,
+          reasoningSteps: message.reasoning?.length || 0,
+        });
+
         return (
           <div
             key={

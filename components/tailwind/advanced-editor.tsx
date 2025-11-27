@@ -409,13 +409,13 @@ const TailwindAdvancedEditor = ({
                         onOpenChange={setOpenColor}
                     />
                 </div>
-                <div className="flex-1 overflow-y-auto p-8">
-                    <div className="w-full max-w-none">
+                <div className="flex-1 min-h-0 overflow-y-auto [scrollbar-gutter:stable]">
+                    <div className="w-full">
                         <EditorContent
                             immediatelyRender={false}
                             initialContent={initialContent ?? undefined}
                             extensions={extensions}
-                            className="min-h-full"
+                            className="block mx-auto w-full max-w-[1000px] min-h-[500px]"
                             onCreate={({ editor }) => {
                                 editorRef.current = editor;
                                 console.log("Editor initialized successfully");
@@ -438,8 +438,10 @@ const TailwindAdvancedEditor = ({
                                         uploadFn,
                                     ),
                                 attributes: {
-                                    class: `prose prose-sm dark:prose-invert prose-headings:font-title font-default focus:outline-none max-w-full prose-a:text-sg-green hover:prose-a:text-sg-green-hover prose-blockquote:border-sg-green prose-strong:text-foreground prose-headings:text-foreground prose-p:text-foreground dark:prose-p:text-foreground prose-headings:mt-4 prose-headings:mb-2 prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-li:my-0`,
+                                    class: `prose prose-sm dark:prose-invert prose-headings:font-title font-default focus:outline-none max-w-full prose-a:text-sg-green hover:prose-a:text-sg-green-hover prose-blockquote:border-sg-green prose-strong:text-foreground prose-headings:text-foreground prose-p:text-foreground dark:prose-p:text-foreground prose-headings:mt-3 prose-headings:mb-2 prose-p:my-1 prose-ul:my-2 prose-ol:my-2 prose-li:my-0`,
+                                    style: 'min-height: 500px; overflow-anchor: auto;',
                                 },
+                                transformPastedHTML: (html) => html,
                             }}
                             onUpdate={({ editor }) => {
                                 debouncedUpdates(editor);
@@ -541,6 +543,7 @@ const TailwindAdvancedEditor = ({
                                     </>
                                 )}
                             </EditorBubble>
+                            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-background to-transparent" />
                         </EditorContent>
                     </div>
                 </div>
