@@ -138,7 +138,7 @@ const starterKit = StarterKit.configure({
 const table = Table.configure({
     HTMLAttributes: {
         class: cx(
-            "border-collapse table-auto w-full my-4 border border-border",
+            "block border-collapse table-fixed w-full max-w-full my-4 border border-border overflow-x-auto",
         ),
     },
     resizable: true,
@@ -152,7 +152,7 @@ const tableRow = TableRow.configure({
 
 const tableCell = TableCell.configure({
     HTMLAttributes: {
-        class: cx("border border-border px-4 py-2 text-foreground relative align-top"),
+        class: cx("border border-border px-4 py-2 text-foreground relative align-top break-words whitespace-normal"),
     },
 });
 

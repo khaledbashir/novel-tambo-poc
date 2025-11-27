@@ -409,13 +409,13 @@ const TailwindAdvancedEditor = ({
                         onOpenChange={setOpenColor}
                     />
                 </div>
-                <div className="flex-1 min-h-0 overflow-y-auto [scrollbar-gutter:stable] flex justify-center">
-                    <div className="w-full max-w-screen-lg">
+                <div className="flex-1 min-h-0 overflow-y-auto overflow-x-auto [scrollbar-gutter:stable]">
+                    <div className="w-full min-w-0 max-w-screen-lg mx-auto">
                         <EditorContent
                             immediatelyRender={false}
                             initialContent={initialContent ?? undefined}
                             extensions={extensions}
-                            className="w-full min-h-[500px] px-4 sm:px-12 py-8"
+                            className="w-full min-h-[500px] break-words"
                             onCreate={({ editor }) => {
                                 editorRef.current = editor;
                                 console.log("Editor initialized successfully");
@@ -438,7 +438,7 @@ const TailwindAdvancedEditor = ({
                                         uploadFn,
                                     ),
                                 attributes: {
-                                    class: `prose prose-sm dark:prose-invert prose-headings:font-title font-default focus:outline-none max-w-full prose-a:text-sg-green hover:prose-a:text-sg-green-hover prose-blockquote:border-sg-green prose-strong:text-foreground prose-headings:text-foreground prose-p:text-foreground dark:prose-p:text-foreground prose-headings:mt-3 prose-headings:mb-2 prose-p:my-1 prose-ul:my-2 prose-ol:my-2 prose-li:my-0`,
+                                    class: `prose prose-sm dark:prose-invert prose-headings:font-title font-default focus:outline-none max-w-full break-words prose-a:text-sg-green hover:prose-a:text-sg-green-hover prose-blockquote:border-sg-green prose-strong:text-foreground prose-headings:text-foreground prose-p:text-foreground dark:prose-p:text-foreground prose-headings:mt-3 prose-headings:mb-2 prose-p:my-1 prose-ul:my-2 prose-ol:my-2 prose-li:my-0`,
                                     style: 'min-height: 500px; overflow-anchor: auto;',
                                 },
                                 transformPastedHTML: (html) => html,
