@@ -1,9 +1,9 @@
 import { Editor } from '@tiptap/react';
 
 /**
- * Inserts SOW data into editor using TipTap commands to create real table nodes
+ * SOW Data Structure
  */
-export function insertSOWToEditor(editor: Editor, sowData: {
+interface SOWData {
     clientName: string;
     projectTitle: string;
     scopes: Array<{
@@ -23,165 +23,199 @@ export function insertSOWToEditor(editor: Editor, sowData: {
     projectOverview?: string;
     budgetNotes?: string;
     discount?: number;
-}) {
-    if (!editor) {
-        console.error('Editor not available');
-        return;
+}
+
+/**
+ * Utility: Convert unknown value to number
+ */
+const toNumber = (v: unknown): number => {
+    if (typeof v === "number" && Number.isFinite(v)) return v;
+    if (typeof v === "string") {
+        const cleaned = v.replace(/[^0-9.\-]/g, "");
+        const n = parseFloat(cleaned);
+        return Number.isFinite(n) ? n : 0;
     }
+    return 0;
+};
 
-    const toNumber = (v: unknown) => {
-        if (typeof v === "number" && Number.isFinite(v)) return v;
-        if (typeof v === "string") {
-            const cleaned = v.replace(/[^0-9.\-]/g, "");
-            const n = parseFloat(cleaned);
-            return Number.isFinite(n) ? n : 0;
-        }
-        return 0;
-    };
+/**
+ * Utility: Format number as AUD currency
+ */
+const formatAUD = (n: number): string =>
+    new Intl.NumberFormat("en-AU", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    }).format(n);
 
-    // Calculate totals
-    const calculateScopeTotal = (scope: typeof sowData.scopes[0]) => {
-        if (!scope.roles || scope.roles.length === 0) return 0;
-        return scope.roles.reduce((sum, row) => {
-            const hours = toNumber(row.hours);
-            const rate = toNumber(row.rate);
-            return sum + hours * rate;
-        }, 0);
-    };
+/**
+ * Calculate scope total (before GST)
+ */
+const calculateScopeTotal = (scope: SOWData['scopes'][0]): number => {
+    if (!scope.roles || scope.roles.length === 0) return 0;
+    return scope.roles.reduce((sum, row) => {
+        const hours = toNumber(row.hours);
+        const rate = toNumber(row.rate);
+        return sum + hours * rate;
+    }, 0);
+};
 
+/**
+ * Generate HTML string for entire SOW document
+ * TipTap can parse HTML directly, so we generate clean HTML instead of JSON nodes
+ */
+function generateSOWHTML(sowData: SOWData): string {
+    const html: string[] = [];
+
+    // Calculate financial totals
     const subtotal = sowData.scopes.reduce((sum, scope) => sum + calculateScopeTotal(scope), 0);
     const discountAmount = subtotal * ((sowData.discount || 0) / 100);
     const afterDiscount = subtotal - discountAmount;
     const gst = afterDiscount * 0.1;
     const total = afterDiscount + gst;
 
-    const formatAUD = (n: number) =>
-        new Intl.NumberFormat("en-AU", {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-        }).format(n);
-
-    // Start building content using TipTap commands
-    // We break the chain into smaller chunks to ensure proper rendering and avoid nested structures
-    // editor.state.doc.content.size gives the position at the end of the document
-    const endPos = editor.state.doc.content.size;
-    editor.chain().insertContentAt(endPos, { type: 'paragraph' }).run();
-    
-    // Now focus the end, which should be the new paragraph we just added
-    editor.commands.focus('end');
-
-    // Title
-    editor.chain().focus('end').insertContent({ type: 'heading', attrs: { level: 1 }, content: [{ type: 'text', text: sowData.projectTitle }] }).run();
-    editor.chain().focus('end').insertContent({ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Client: ' }, { type: 'text', text: sowData.clientName }] }).run();
+    // Document Title
+    html.push(`<h1>${sowData.projectTitle}</h1>`);
+    html.push(`<p><strong>Client:</strong> ${sowData.clientName}</p>`);
+    html.push(`<hr />`);
 
     // Each Scope
     sowData.scopes.forEach((scope, scopeIndex) => {
         // Scope heading
-        editor.chain().focus('end').insertContent({ type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Scope ' + (scopeIndex + 1) + ': ' + scope.title }] }).run();
-        editor.chain().focus('end').insertContent({ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'italic' }], text: scope.description }] }).run();
+        html.push(`<h2>Scope ${scopeIndex + 1}: ${scope.title}</h2>`);
+        html.push(`<p><em>${scope.description}</em></p>`);
 
         // Deliverables
         if (scope.deliverables && scope.deliverables.length > 0) {
-            editor.chain().focus('end').insertContent({ type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Deliverables' }] }).run();
-
-            // Create bullet list
-            const listItems = scope.deliverables.map(item => ({
-                type: 'listItem',
-                content: [{ type: 'paragraph', content: [{ type: 'text', text: item }] }]
-            }));
-            editor.chain().focus('end').insertContent({ type: 'bulletList', content: listItems }).run();
-            editor.chain().focus('end').insertContent({ type: 'paragraph' }).run(); // Add spacing
+            html.push(`<h3>Deliverables</h3>`);
+            html.push(`<ul>`);
+            scope.deliverables.forEach(item => {
+                html.push(`<li>${item}</li>`);
+            });
+            html.push(`</ul>`);
         }
 
         // Pricing Table
-        editor.chain().focus('end').insertContent({ type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Pricing' }] }).run();
+        html.push(`<h3>Pricing</h3>`);
 
         if (scope.roles && scope.roles.length > 0) {
-            // Create table
-            const tableRows = [
-                // Header row
-                {
-                    type: 'tableRow',
-                    content: [
-                        { type: 'tableHeader', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'TASK/DESCRIPTION' }] }] },
-                        { type: 'tableHeader', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'ROLE' }] }] },
-                        { type: 'tableHeader', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'HOURS' }] }] },
-                        { type: 'tableHeader', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'RATE' }] }] },
-                        { type: 'tableHeader', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'TOTAL COST + GST' }] }] }
-                    ]
-                },
-                // Data rows
-                ...scope.roles.map(row => {
-                    const hours = toNumber(row.hours);
-                    const rate = toNumber(row.rate);
-                    const cost = hours * rate * 1.1;
-                    return {
-                        type: 'tableRow',
-                        content: [
-                            { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: row.task }] }] },
-                            { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: row.role }] }] },
-                            { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: String(hours) }] }] },
-                            { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: `AUD $${formatAUD(rate)} ` }] }] },
-                            { type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: `AUD $${formatAUD(cost)} ` }] }] }
-                        ]
-                    };
-                })
-            ];
+            html.push(`<table>`);
 
-            editor.chain().focus('end').insertContent({ type: 'table', content: tableRows }).run();
-            editor.chain().focus('end').insertContent({ type: 'paragraph' }).run(); // Empty paragraph after table
+            // Table header
+            html.push(`<thead>`);
+            html.push(`<tr>`);
+            html.push(`<th>TASK/DESCRIPTION</th>`);
+            html.push(`<th>ROLE</th>`);
+            html.push(`<th>HOURS</th>`);
+            html.push(`<th>RATE</th>`);
+            html.push(`<th>TOTAL COST + GST</th>`);
+            html.push(`</tr>`);
+            html.push(`</thead>`);
+
+            // Table body
+            html.push(`<tbody>`);
+            scope.roles.forEach(row => {
+                const hours = toNumber(row.hours);
+                const rate = toNumber(row.rate);
+                const cost = hours * rate * 1.1; // Include GST
+
+                html.push(`<tr>`);
+                html.push(`<td>${row.task}</td>`);
+                html.push(`<td>${row.role}</td>`);
+                html.push(`<td>${hours}</td>`);
+                html.push(`<td>AUD $${formatAUD(rate)}</td>`);
+                html.push(`<td>AUD $${formatAUD(cost)}</td>`);
+                html.push(`</tr>`);
+            });
+            html.push(`</tbody>`);
+            html.push(`</table>`);
 
             // Scope total
             const scopeTotal = calculateScopeTotal(scope);
             const scopeGST = scopeTotal * 0.1;
             const scopeTotalWithGST = scopeTotal + scopeGST;
-            editor.chain().focus('end').insertContent({ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Scope Total: ' }, { type: 'text', text: `AUD $${formatAUD(scopeTotalWithGST)} (inc. GST)` }] }).run();
+            html.push(`<p><strong>Scope Total:</strong> AUD $${formatAUD(scopeTotalWithGST)} (inc. GST)</p>`);
         }
 
         // Assumptions
         if (scope.assumptions && scope.assumptions.length > 0) {
-            editor.chain().focus('end').insertContent({ type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Assumptions' }] }).run();
-
-            const assumptionItems = scope.assumptions.map(item => ({
-                type: 'listItem',
-                content: [{ type: 'paragraph', content: [{ type: 'text', text: item }] }]
-            }));
-            editor.chain().focus('end').insertContent({ type: 'bulletList', content: assumptionItems }).run();
-            editor.chain().focus('end').insertContent({ type: 'paragraph' }).run(); // Add spacing
+            html.push(`<h3>Assumptions</h3>`);
+            html.push(`<ul>`);
+            scope.assumptions.forEach(item => {
+                html.push(`<li>${item}</li>`);
+            });
+            html.push(`</ul>`);
         }
 
+        // Separator between scopes
         if (scopeIndex < sowData.scopes.length - 1) {
-            editor.chain().focus('end').insertContent({ type: 'horizontalRule' }).run();
-            editor.chain().focus('end').insertContent({ type: 'paragraph' }).run(); // Empty paragraph after separator
+            html.push(`<hr />`);
         }
     });
 
     // Financial Summary
-    editor.chain().focus('end').insertContent({ type: 'horizontalRule' }).run();
-    editor.chain().focus('end').insertContent({ type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Financial Summary' }] }).run();
-    editor.chain().focus('end').insertContent({ type: 'paragraph', content: [{ type: 'text', text: `Subtotal: AUD $${formatAUD(subtotal)}` }] }).run();
+    html.push(`<hr />`);
+    html.push(`<h2>Financial Summary</h2>`);
+    html.push(`<p>Subtotal: AUD $${formatAUD(subtotal)}</p>`);
 
     if (sowData.discount && sowData.discount > 0) {
-        editor.chain().focus('end').insertContent({ type: 'paragraph', content: [{ type: 'text', text: `Discount (${sowData.discount}%): AUD -$${formatAUD(discountAmount)}` }] }).run();
-        editor.chain().focus('end').insertContent({ type: 'paragraph', content: [{ type: 'text', text: `After Discount: AUD $${formatAUD(afterDiscount)}` }] }).run();
+        html.push(`<p>Discount (${sowData.discount}%): AUD -$${formatAUD(discountAmount)}</p>`);
+        html.push(`<p>After Discount: AUD $${formatAUD(afterDiscount)}</p>`);
     }
 
-    editor.chain().focus('end').insertContent({ type: 'paragraph', content: [{ type: 'text', text: `GST (10%): AUD +$${formatAUD(gst)}` }] }).run();
-    editor.chain().focus('end').insertContent({ type: 'paragraph', content: [{ type: 'text', marks: [{ type: 'bold' }], text: 'Grand Total: ' }, { type: 'text', text: `AUD $${formatAUD(total)}` }] }).run();
+    html.push(`<p>GST (10%): AUD +$${formatAUD(gst)}</p>`);
+    html.push(`<p><strong>Grand Total:</strong> AUD $${formatAUD(total)}</p>`);
 
     // Project Overview
     if (sowData.projectOverview) {
-        editor.chain().focus('end').insertContent({ type: 'horizontalRule' }).run();
-        editor.chain().focus('end').insertContent({ type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Project Overview' }] }).run();
-        editor.chain().focus('end').insertContent({ type: 'paragraph', content: [{ type: 'text', text: sowData.projectOverview }] }).run();
+        html.push(`<hr />`);
+        html.push(`<h2>Project Overview</h2>`);
+        html.push(`<p>${sowData.projectOverview}</p>`);
     }
 
     // Budget Notes
     if (sowData.budgetNotes) {
-        editor.chain().focus('end').insertContent({ type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Budget Notes' }] }).run();
-        editor.chain().focus('end').insertContent({ type: 'paragraph', content: [{ type: 'text', text: sowData.budgetNotes }] }).run();
+        html.push(`<h2>Budget Notes</h2>`);
+        html.push(`<p>${sowData.budgetNotes}</p>`);
     }
 
-    // Scroll to bottom
-    editor.commands.focus('end');
+    return html.join('');
+}
+
+/**
+ * Inserts SOW data into editor using HTML (Plan B - Revised)
+ * 
+ * This approach generates a clean HTML string and lets TipTap's native
+ * HTML parser convert it into proper nodes automatically, avoiding
+ * the fragile JSON node construction approach.
+ * 
+ * TipTap supports HTML insertion natively via insertContent(), which is
+ * simpler and more reliable than markdown parsing.
+ */
+export function insertSOWToEditor(editor: Editor, sowData: SOWData) {
+    if (!editor) {
+        console.error('Editor not available');
+        return;
+    }
+
+    try {
+        // Generate the complete HTML document
+        const htmlContent = generateSOWHTML(sowData);
+
+        console.log('Generated HTML for insertion');
+
+        // Insert the HTML at the end of the document
+        // TipTap will automatically parse and convert it to nodes
+        editor.chain()
+            .focus('end')
+            .insertContent(htmlContent)
+            .run();
+
+        // Scroll to the newly inserted content
+        editor.commands.focus('end');
+
+        console.log('✅ SOW content inserted successfully via HTML');
+    } catch (error) {
+        console.error('❌ Failed to insert SOW content:', error);
+        throw error;
+    }
 }
