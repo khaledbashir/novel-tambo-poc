@@ -255,14 +255,14 @@ const SOWPricingTableBase: React.FC<SOWPricingProps> = ({
             </div>
 
             {/* Scope details and Deliverables are handled by Tiptap text blocks in hybrid mode */}
-            {!isInEditor && scopeOverview && (
+            {!isInEditor && Array.isArray(scopeOverview) && (
                 <div className="mb-4 p-4 bg-muted rounded-lg">
                     <h3 className="text-lg font-semibold mb-2">Scope Overview</h3>
                     <p className="text-muted-foreground">{scopeOverview}</p>
                 </div>
             )}
 
-            {!isInEditor && deliverables && deliverables.length > 0 && (
+            {!isInEditor && Array.isArray(deliverables) && deliverables.length > 0 && (
                 <div className="mb-4 p-4 bg-muted rounded-lg">
                     <h3 className="text-lg font-semibold mb-2">Deliverables</h3>
                     <ul className="list-disc list-inside space-y-1 text-muted-foreground">
@@ -434,7 +434,7 @@ const SOWPricingTableBase: React.FC<SOWPricingProps> = ({
                 </div>
             )}
 
-            {!isInEditor && assumptions && assumptions.length > 0 && (
+            {!isInEditor && Array.isArray(assumptions) && assumptions.length > 0 && (
                 <div className="mt-4 p-4 bg-muted rounded-lg">
                     <h4 className="font-semibold text-sm mb-2">Assumptions:</h4>
                     <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
