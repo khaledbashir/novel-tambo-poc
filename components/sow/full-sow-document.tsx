@@ -1506,7 +1506,7 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
             )}
 
             {/* Project Objectives */}
-            {initialObjectives && initialObjectives.length > 0 && (
+            {Array.isArray(initialObjectives) && initialObjectives.length > 0 && (
                 <div className="border-t border-border pt-8 mb-8">
                     <h3 className="text-xl font-bold text-foreground mb-4">
                         Project Objectives:
