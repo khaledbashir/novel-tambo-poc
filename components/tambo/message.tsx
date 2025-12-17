@@ -7,6 +7,7 @@ import {
   getSafeContent,
 } from "@/lib/thread-hooks";
 import { cn } from "@/lib/utils";
+import { SOWMessageFooter } from "@/components/sow/sow-message-footer";
 import type { TamboThreadMessage } from "@tambo-ai/react";
 import { useTambo } from "@tambo-ai/react";
 import type TamboAI from "@tambo-ai/typescript-sdk";
@@ -339,6 +340,10 @@ const MessageContent = React.forwardRef<HTMLDivElement, MessageContentProps>(
             )}
             {message.isCancelled && (
               <span className="text-muted-foreground text-xs">cancelled</span>
+            )}
+            {/* SOW Detection Footer for Assistant Messages */}
+            {message.role === "assistant" && typeof safeContent === "string" && safeContent.length > 200 && (
+              <SOWMessageFooter messageContent={safeContent} />
             )}
           </div>
         )}
