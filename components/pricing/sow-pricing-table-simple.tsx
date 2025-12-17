@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { Trash2, Plus } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Trash2, Plus, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
 import { z } from 'zod';
+import { validateSOW, roundToCommercial, formatWithGST, type ValidationResult } from '@/lib/sow-validation';
 
 interface PricingRow {
     id: string;
@@ -54,6 +55,10 @@ export const SOWPricingTableBase: React.FC<SOWPricingProps> = ({
     const [discount, setDiscount] = useState(initialDiscount);
     const [budgetNotes] = useState(initialBudgetNotes);
     const [draggedRow, setDraggedRow] = useState<string | null>(null);
+    const [showValidation, setShowValidation] = useState(false);
+
+    // Validation
+    const validation: ValidationResult = useMemo(() => validateSOW(rows), [rows]);
 
     // Notify parent of changes
     useEffect(() => {
@@ -383,8 +388,8 @@ export const SOWPricingTableBase: React.FC<SOWPricingProps> = ({
 
                             {/* Subtotal */}
                             <div className="flex justify-between text-foreground">
-                                <span className="text-sm">Subtotal:</span>
-                                <span className="font-semibold">${subtotal.toFixed(2)}</span>
+                                <span className="text-sm">Subtotal (ex. GST):</span>
+                                <span className="font-semibold">${subtotal.toLocaleString('en-AU', { minimumFractionDigits: 2 })} +GST</span>
                             </div>
 
                             {/* Discount Amount */}
@@ -392,11 +397,11 @@ export const SOWPricingTableBase: React.FC<SOWPricingProps> = ({
                                 <>
                                     <div className="flex justify-between text-destructive text-sm">
                                         <span>Discount ({discount}%):</span>
-                                        <span>-${discountAmount.toFixed(2)}</span>
+                                        <span>-${discountAmount.toLocaleString('en-AU', { minimumFractionDigits: 2 })}</span>
                                     </div>
                                     <div className="flex justify-between text-foreground">
                                         <span className="text-sm">After Discount:</span>
-                                        <span className="font-semibold">${afterDiscount.toFixed(2)}</span>
+                                        <span className="font-semibold">${afterDiscount.toLocaleString('en-AU', { minimumFractionDigits: 2 })} +GST</span>
                                     </div>
                                 </>
                             )}
@@ -404,14 +409,19 @@ export const SOWPricingTableBase: React.FC<SOWPricingProps> = ({
                             {/* GST */}
                             <div className="flex justify-between text-foreground">
                                 <span className="text-sm">GST (10%):</span>
-                                <span className="font-semibold">+${gst.toFixed(2)}</span>
+                                <span className="font-semibold">+${gst.toLocaleString('en-AU', { minimumFractionDigits: 2 })}</span>
                             </div>
 
-                            {/* Total */}
+                            {/* Total - Commercial Rounded */}
                             <div className="flex justify-between items-center pt-3 border-t-2 border-border">
-                                <span className="font-bold text-foreground">Total (AUD):</span>
-                                <span className="text-2xl font-bold text-primary">${total.toFixed(2)}</span>
+                                <span className="font-bold text-foreground">Total (AUD inc. GST):</span>
+                                <span className="text-2xl font-bold text-primary">${roundToCommercial(total).toLocaleString('en-AU')}</span>
                             </div>
+                            {total !== roundToCommercial(total) && (
+                                <p className="text-xs text-muted-foreground text-right">
+                                    Rounded from ${total.toLocaleString('en-AU', { minimumFractionDigits: 2 })}
+                                </p>
+                            )}
 
                             {/* Budget Variance */}
                             {budgetTarget && (
@@ -443,6 +453,71 @@ export const SOWPricingTableBase: React.FC<SOWPricingProps> = ({
                     </ul>
                 </div>
             )}
+
+            {/* Validation Checklist */}
+            <div className="mt-6 border border-border rounded-lg overflow-hidden">
+                <button
+                    onClick={() => setShowValidation(!showValidation)}
+                    className={`w-full px-4 py-3 flex items-center justify-between text-sm font-medium transition ${validation.isValid
+                        ? 'bg-green-50 text-green-800 dark:bg-green-950 dark:text-green-200'
+                        : 'bg-destructive/10 text-destructive'
+                        }`}
+                >
+                    <span className="flex items-center gap-2">
+                        {validation.isValid ? (
+                            <CheckCircle className="w-4 h-4" />
+                        ) : (
+                            <XCircle className="w-4 h-4" />
+                        )}
+                        {validation.isValid
+                            ? 'SOW Validation Passed'
+                            : `${validation.errors.length} error${validation.errors.length !== 1 ? 's' : ''} found`
+                        }
+                        {validation.warnings.length > 0 && ` • ${validation.warnings.length} warning${validation.warnings.length !== 1 ? 's' : ''}`}
+                    </span>
+                    <span className="text-xs">{showValidation ? '▲ Hide' : '▼ Show'}</span>
+                </button>
+
+                {showValidation && (
+                    <div className="p-4 bg-card space-y-3">
+                        {/* Errors */}
+                        {validation.errors.length > 0 && (
+                            <div className="space-y-2">
+                                <h5 className="text-xs font-semibold uppercase text-destructive">Errors (Must Fix)</h5>
+                                {validation.errors.map((error, idx) => (
+                                    <div key={idx} className="flex items-start gap-2 text-sm text-destructive bg-destructive/5 p-2 rounded">
+                                        <XCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                                        <span>{error.message}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Warnings */}
+                        {validation.warnings.length > 0 && (
+                            <div className="space-y-2">
+                                <h5 className="text-xs font-semibold uppercase text-yellow-600 dark:text-yellow-400">Warnings</h5>
+                                {validation.warnings.map((warning, idx) => (
+                                    <div key={idx} className="flex items-start gap-2 text-sm text-yellow-700 dark:text-yellow-300 bg-yellow-50 dark:bg-yellow-950/30 p-2 rounded">
+                                        <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                                        <div>
+                                            <span>{warning.message}</span>
+                                            {warning.suggestion && (
+                                                <p className="text-xs text-muted-foreground mt-0.5">{warning.suggestion}</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* All Good */}
+                        {validation.isValid && validation.warnings.length === 0 && (
+                            <p className="text-sm text-green-600 dark:text-green-400">All mandatory checks passed. Ready for export.</p>
+                        )}
+                    </div>
+                )}
+            </div>
         </div>
     );
 };
