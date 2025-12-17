@@ -1,38 +1,86 @@
 "use client";
 
 import React from 'react';
-import { Table, PlusCircle, Check } from 'lucide-react';
+import { Table, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { notifications } from '@/lib/utils';
 
-interface SuggestedRole {
+// Rate card lookup for roles that don't have an explicit rate
+const RATE_CARD: Record<string, number> = {
+    "Account Management - (Senior Account Director)": 365.00,
+    "Account Management - (Account Director)": 295.00,
+    "Account Management - (Account Manager)": 180.00,
+    "Account Management - (Senior Account Manager)": 210.00,
+    "Tech - Head Of- Senior Project Management": 365.00,
+    "Tech - Head Of- Customer Experience Strategy": 365.00,
+    "Tech - Head Of- Program Strategy": 365.00,
+    "Tech - Head Of- System Setup": 365.00,
+    "Tech - Delivery - Project Coordination": 110.00,
+    "Tech - Delivery - Project Management": 150.00,
+    "Tech - Integrations": 170.00,
+    "Tech - Specialist - Integration Configuration": 180.00,
+    "Tech - Sr. Consultant - Advisory & Consultation": 295.00,
+    "Tech - Sr. Consultant - Strategy": 295.00,
+    "Tech - Producer - Landing Page Production": 120.00,
+    "Design - Landing Page (Onshore)": 190.00,
+    "Copywriting (Onshore)": 180.00,
+    // Add more as needed
+};
+
+interface RoleData {
     role: string;
     hours: number;
-    description?: string;
     rate?: number;
+    description?: string;
+    task?: string;
 }
 
 interface SOWProposalBridgeProps {
     data: {
-        suggestedRoles?: SuggestedRole[];
+        // From AI - various possible formats
+        suggestedRoles?: RoleData[];
+        roles?: RoleData[];
+        pricingTable?: RoleData[];
+        // SOW metadata
         projectTitle?: string;
         clientName?: string;
         projectOverview?: string;
+        deliverables?: string[];
+        assumptions?: string[];
+        budgetNotes?: string;
+        discount?: number;
     };
 }
 
 export const SOWProposalBridge: React.FC<SOWProposalBridgeProps> = ({ data }) => {
+    // Normalize roles from various possible keys
+    const rawRoles = data.suggestedRoles || data.roles || data.pricingTable || [];
+
+    // Enrich roles with rates from rate card if not provided
+    const enrichedRoles = rawRoles.map(role => ({
+        ...role,
+        rate: role.rate || RATE_CARD[role.role] || 150, // Fallback to $150 if not found
+    }));
+
     const {
-        suggestedRoles = [],
         projectTitle = "Project Proposal",
         clientName = "Client",
-        projectOverview = "Proposed investment based on our discussion."
+        projectOverview = "Proposed investment based on our discussion.",
+        deliverables = [],
+        assumptions = [],
+        budgetNotes = "Rates are based on standard rate card.",
+        discount = 0,
     } = data;
+
+    // Calculate totals for preview
+    const subtotal = enrichedRoles.reduce((sum, r) => sum + (r.hours * (r.rate || 0)), 0);
+    const gst = subtotal * 0.1;
+    const total = subtotal + gst;
 
     const handleInsert = () => {
         try {
-            // Map the suggested roles to the structure expected by insert-sow-content event
+            // Map the roles to the structure expected by insert-sow-content event
             const event = new CustomEvent("insert-sow-content", {
                 detail: {
                     projectTitle,
@@ -42,18 +90,19 @@ export const SOWProposalBridge: React.FC<SOWProposalBridgeProps> = ({ data }) =>
                         {
                             title: "Phase 1: Delivery",
                             description: "Key deliverables and roles for this phase.",
-                            roles: suggestedRoles.map(role => ({
+                            roles: enrichedRoles.map((role, idx) => ({
+                                id: `role-${Date.now()}-${idx}`,
                                 role: role.role,
-                                task: role.description || "Implementation",
+                                task: role.description || role.task || "Implementation",
                                 hours: role.hours,
-                                rate: role.rate || 0, // Editor will use default rates if not specified
+                                rate: role.rate,
                             })),
-                            deliverables: ["Project Implementation"],
-                            assumptions: ["Standard delivery terms apply"]
+                            deliverables: deliverables.length > 0 ? deliverables : ["Project Implementation"],
+                            assumptions: assumptions.length > 0 ? assumptions : ["Standard delivery terms apply"],
                         }
                     ],
-                    budgetNotes: "Rates are based on standard rate card.",
-                    discount: 0,
+                    budgetNotes,
+                    discount,
                 },
             });
 
@@ -68,7 +117,7 @@ export const SOWProposalBridge: React.FC<SOWProposalBridgeProps> = ({ data }) =>
         }
     };
 
-    if (suggestedRoles.length === 0) return null;
+    if (enrichedRoles.length === 0) return null;
 
     return (
         <Card className="my-4 border-sg-green/30 bg-sg-green/5 shadow-sm overflow-hidden border-2">
@@ -77,28 +126,49 @@ export const SOWProposalBridge: React.FC<SOWProposalBridgeProps> = ({ data }) =>
                     <Table className="w-4 h-4 text-sg-green" />
                     Investment Proposal Detected
                 </CardTitle>
+                <span className="text-xs text-muted-foreground">
+                    {enrichedRoles.length} role{enrichedRoles.length !== 1 ? 's' : ''}
+                </span>
             </CardHeader>
             <CardContent className="p-4">
                 <div className="space-y-3">
                     <div className="text-xs text-muted-foreground uppercase font-medium tracking-wider">
-                        Suggested Roles & Hours
+                        Pricing Summary
                     </div>
                     <div className="border rounded-md overflow-hidden bg-background">
                         <table className="w-full text-xs">
                             <thead>
                                 <tr className="bg-muted border-b">
                                     <th className="px-3 py-2 text-left font-semibold">Role</th>
-                                    <th className="px-3 py-2 text-right font-semibold">Hours</th>
+                                    <th className="px-3 py-2 text-center font-semibold">Hours</th>
+                                    <th className="px-3 py-2 text-right font-semibold">Rate</th>
+                                    <th className="px-3 py-2 text-right font-semibold">Total</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {suggestedRoles.map((role, idx) => (
+                                {enrichedRoles.map((role, idx) => (
                                     <tr key={idx} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
-                                        <td className="px-3 py-2 text-foreground font-medium">{role.role}</td>
-                                        <td className="px-3 py-2 text-right text-muted-foreground">{role.hours}h</td>
+                                        <td className="px-3 py-2 text-foreground font-medium max-w-[200px] truncate">{role.role}</td>
+                                        <td className="px-3 py-2 text-center text-muted-foreground">{role.hours}h</td>
+                                        <td className="px-3 py-2 text-right text-muted-foreground">${role.rate?.toFixed(2)}</td>
+                                        <td className="px-3 py-2 text-right font-semibold">${(role.hours * (role.rate || 0)).toFixed(2)}</td>
                                     </tr>
                                 ))}
                             </tbody>
+                            <tfoot className="bg-muted/50">
+                                <tr className="border-t">
+                                    <td colSpan={3} className="px-3 py-2 text-right font-semibold">Subtotal:</td>
+                                    <td className="px-3 py-2 text-right font-semibold">${subtotal.toFixed(2)}</td>
+                                </tr>
+                                <tr>
+                                    <td colSpan={3} className="px-3 py-2 text-right text-muted-foreground">GST (10%):</td>
+                                    <td className="px-3 py-2 text-right text-muted-foreground">+${gst.toFixed(2)}</td>
+                                </tr>
+                                <tr className="border-t-2 border-border">
+                                    <td colSpan={3} className="px-3 py-2 text-right font-bold">Total (AUD):</td>
+                                    <td className="px-3 py-2 text-right font-bold text-sg-green">${total.toFixed(2)}</td>
+                                </tr>
+                            </tfoot>
                         </table>
                     </div>
                 </div>
