@@ -1,6 +1,6 @@
 import { mergeAttributes, Node } from '@tiptap/core';
 import { ReactNodeViewRenderer, NodeViewProps, NodeViewWrapper } from '@tiptap/react';
-import SOWPricingTable, { SOWPricingProps } from '@/components/pricing/sow-pricing-table';
+import { SOWPricingTableBase, SOWPricingProps } from '@/components/pricing/sow-pricing-table';
 
 const PricingTableNodeView = (props: NodeViewProps) => {
     // Extract attributes from the node
@@ -14,7 +14,7 @@ const PricingTableNodeView = (props: NodeViewProps) => {
 
     return (
         <NodeViewWrapper className="sow-pricing-wrapper my-4">
-            <SOWPricingTable
+            <SOWPricingTableBase
                 // Pass props individually or spread them
                 rows={rows}
                 discount={discount}
@@ -112,7 +112,7 @@ export const PricingTableExtension = Node.create({
         ]);
 
         // Add summary rows to body (simpler than tfoot for some PDF renderers)
-        const summaryRows = [
+        const summaryRows: any[] = [
             // Subtotal
             ['tr',
                 ['td', { colspan: '4', style: 'padding: 12px; text-align: right; font-weight: 600;' }, 'Subtotal:'],

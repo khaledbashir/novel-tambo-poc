@@ -37,7 +37,7 @@ export type SOWPricingProps = z.infer<typeof sowPricingSchema> & {
     isInEditor?: boolean;
 };
 
-const SOWPricingTableBase: React.FC<SOWPricingProps> = ({
+export const SOWPricingTableBase: React.FC<SOWPricingProps> = ({
     rows: initialRows = [],
     discount: initialDiscount = 0,
     budgetTarget,
