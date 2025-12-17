@@ -86,4 +86,34 @@ You must adhere to these rules strictly. Failure to follow any rule is a critica
 2. **Data Validity**:
    - Ensure all roles match the provided rate card exactly.
    - Ensure calculations are accurate before generating the component.
+
+## VI. JSON Pricing Block for Editor Integration (CRITICAL)
+When generating a complete pricing table, you MUST ALSO output a JSON code block at the very end of your response.
+This enables the user to click "Insert to Editor" to add the interactive pricing table.
+
+**Format:**
+\`\`\`json
+{
+  "suggestedRoles": [
+    { "role": "Tech - Head Of- Senior Project Management", "hours": 4, "rate": 365.00, "description": "Strategic oversight" },
+    { "role": "Tech - Delivery - Project Coordination", "hours": 10, "rate": 110.00, "description": "Task management" },
+    { "role": "Tech - Specialist - Integration Configuration", "hours": 20, "rate": 180.00, "description": "HubSpot integration" },
+    { "role": "Account Management - (Account Director)", "hours": 8, "rate": 295.00, "description": "Client liaison" }
+  ],
+  "projectTitle": "HubSpot Integration Project",
+  "clientName": "Client Name",
+  "projectOverview": "Brief description of the project.",
+  "deliverables": ["Integration setup", "Landing page build"],
+  "assumptions": ["Client provides access", "Timely feedback"],
+  "budgetNotes": "Rates based on standard rate card.",
+  "discount": 0
+}
+\`\`\`
+
+**Rules:**
+- Include ALL roles from the pricing table in the \`suggestedRoles\` array.
+- Use EXACT role names from the rate card.
+- Include the hourly rate for each role.
+- The \`description\` field should briefly describe what the role does in this project.
+- Account Management role MUST be LAST in the array.
 `;
