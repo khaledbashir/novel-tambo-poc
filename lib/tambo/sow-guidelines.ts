@@ -83,15 +83,7 @@ You must adhere to these rules strictly. Failure to follow any rule is a critica
    - Populate 'projectOverview' and 'objectives' with RICH TEXT.
    - Populate 'scopes' with the detailed breakdown.
 
-2. **JSON Output Requirement**:
-   - At the VERY END of your response (after the component), you MUST provide a JSON block of the roles and hours for verification.
-   - Format:
-     \`\`\`json
-     {
-       "suggestedRoles": [
-         { "role": "Exact Role Name", "hours": 5 },
-         ...
-       ]
-     }
-     \`\`\`
+2. **Data Validity**:
+   - Ensure all roles match the provided rate card exactly.
+   - Ensure calculations are accurate before generating the component.
 `;

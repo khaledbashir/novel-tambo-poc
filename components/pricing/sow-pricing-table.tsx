@@ -48,8 +48,8 @@ const SOWPricingTableBase: React.FC<SOWPricingProps> = ({
     onDataChange,
     isInEditor = false,
 }) => {
-    // Use initial values directly
-    const [rows, setRows] = useState<PricingRow[]>(initialRows.length > 0 ? initialRows : [
+    // PROTECTED INITIALIZATION: Ensure rows is always an array
+    const [rows, setRows] = useState<PricingRow[]>(Array.isArray(initialRows) && initialRows.length > 0 ? initialRows : [
         { id: 'row-1', role: '', description: '', hours: 0, rate: 0 }
     ]);
     const [discount, setDiscount] = useState(initialDiscount);
@@ -167,6 +167,8 @@ const SOWPricingTableBase: React.FC<SOWPricingProps> = ({
 
     // Calculations
     const calculateSubtotal = () => {
+        // DEFENSIVE CHECK: Ensure rows is array before reduce
+        if (!Array.isArray(rows)) return 0;
         return rows.reduce((sum, row) => sum + (row.hours * row.rate), 0);
     };
 
@@ -285,7 +287,7 @@ const SOWPricingTableBase: React.FC<SOWPricingProps> = ({
                         </tr>
                     </thead>
                     <tbody>
-                        {rows.map((row) => (
+                        {Array.isArray(rows) && rows.map((row) => (
                             <tr
                                 key={row.id}
                                 draggable
