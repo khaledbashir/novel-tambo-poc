@@ -8,6 +8,7 @@ import { z } from "zod";
 import { SOWPricingTable, sowPricingSchema } from "@/components/pricing/sow-pricing-table";
 import { FullSOWDocument, fullSOWSchema } from "@/components/sow/full-sow-document";
 import { BriefUpload, briefUploadSchema } from "@/components/sow/brief-upload";
+import { SOW_GUIDELINES } from "@/lib/tambo/sow-guidelines";
 
 /**
  * Tambo Components Registration
@@ -209,7 +210,7 @@ export const tamboContextHelpers = {
   // Force English Language
   languageRule: () => {
     return {
-      instruction: "CRITICAL INSTRUCTION: You represent a UI-based SOW builder. When the user asks for an SOW, Pricing, Budget, or Rate Card, you MUST NOT generate text or markdown tables. You MUST generate the 'SOWPricingTable' (for single scope) or 'FullSOWDocument' (for multiple scopes) component. PROHIBITED: Do not write 'Here is the SOW' followed by text. Just generate the component JSON immediately. verification: Did I generate a UI component? If not, I failed. SECOND CRITICAL INSTRUCTION: When using 'FullSOWDocument', you MUST fill the `projectOverview`, `objectives`, `deliverables`, and `assumptions` fields with DETAILED, PROFESSIONAL TEXT from the context. Do not be brief. The user wants a complete SOW document inside the component.",
+      instruction: "CRITICAL INSTRUCTION: You represent a UI-based SOW builder. When the user asks for an SOW, Pricing, Budget, or Rate Card, you MUST NOT generate text or markdown tables. You MUST generate the 'SOWPricingTable' (for single scope) or 'FullSOWDocument' (for multiple scopes) component. PROHIBITED: Do not write 'Here is the SOW' followed by text. Just generate the component JSON immediately. verification: Did I generate a UI component? If not, I failed. SECOND CRITICAL INSTRUCTION: When using 'FullSOWDocument', you MUST fill the `projectOverview`, `objectives`, `deliverables`, and `assumptions` fields with DETAILED, PROFESSIONAL TEXT from the context. Do not be brief. The user wants a complete SOW document inside the component. \n\n" + SOW_GUIDELINES,
     };
   },
 };
