@@ -70,7 +70,11 @@ export function Sidebar({
             if (Array.isArray(data)) {
                 setWorkspaces(data);
             } else {
-                console.error("API returned non-array data:", data);
+                if (data.error) {
+                    console.error("Failed to fetch workspaces:", data.error);
+                } else {
+                    console.error("API returned non-array data:", data);
+                }
                 setWorkspaces([]);
             }
         } catch (error) {

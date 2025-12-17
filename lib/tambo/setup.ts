@@ -17,14 +17,14 @@ export const tamboComponents: TamboComponent[] = [
   {
     name: "FullSOWDocument",
     description:
-      "YOU MUST USE THIS COMPONENT for any request involving a full Statement of Work (SOW) with multiple scopes (e.g., 'integration and landing pages', 'project A and project B'). This creates a complete document with interactive pricing tables. Each scope includes: title, description, pricing table (roles, hours, rates, discount), deliverables, and assumptions. Supports drag-and-drop, GST (10%), and budget tracking. Account Management roles MUST be placed at the bottom. NEVER generate a text-based SOW when this component can be used.",
+      "YOU MUST USE THIS COMPONENT for any request involving a full Statement of Work (SOW) with multiple scopes (e.g., 'integration and landing pages', 'project A and project B'). This creates a complete document with interactive pricing tables. Each scope includes: title, description, pricing table (roles, hours, rates, discount), deliverables, and assumptions. Supports drag-and-drop, GST (10%), and budget tracking. Account Management roles MUST be placed at the bottom. NEVER generate a text-based SOW when this component can be used. IMPORTANT: You MUST generate a unique 'id' for every scope (e.g., 'scope-1') and every role (e.g., 'role-1-1').",
     component: FullSOWDocument,
     propsSchema: fullSOWSchema,
   },
   {
     name: "SOWPricingTable",
     description:
-      "YOU MUST USE THIS COMPONENT for any request involving specific pricing, budget calculation, or a single-scope SOW. Includes roles, hours, rates, discounts, GST, and budget tracking. For multi-scope SOWs, use FullSOWDocument instead. NEVER generate a text/markdown table for pricing; YOU MUST use this interactive component.",
+      "YOU MUST USE THIS COMPONENT for any request involving specific pricing, budget calculation, or a single-scope SOW. Includes roles, hours, rates, discounts, GST, and budget tracking. For multi-scope SOWs, use FullSOWDocument instead. NEVER generate a text/markdown table for pricing; YOU MUST use this interactive component. IMPORTANT: You MUST generate a unique 'id' for every row (e.g., 'row-1', 'row-2').",
     component: SOWPricingTable,
     propsSchema: sowPricingSchema,
   },

@@ -20,11 +20,11 @@ export const sowPricingSchema = z.object({
             id: z.string(),
             role: z.string(),
             description: z.string(),
-            hours: z.number(),
-            rate: z.number(),
+            hours: z.union([z.number(), z.string(), z.null(), z.undefined()]).transform((val) => Number(val) || 0),
+            rate: z.union([z.number(), z.string(), z.null(), z.undefined()]).transform((val) => Number(val) || 0),
         })
     ),
-    discount: z.number().default(0),
+    discount: z.union([z.number(), z.string(), z.null(), z.undefined()]).transform((val) => Number(val) || 0),
     budgetTarget: z.number().optional(),
     budgetNotes: z.string().optional(),
     deliverables: z.array(z.string()).optional(),
@@ -300,7 +300,9 @@ const SOWPricingTableBase: React.FC<SOWPricingProps> = ({
                                 <td className="px-4 py-3">
                                     <input
                                         type="number"
-                                        value={row.hours}
+                                        value={
+                                            row.hours ?? 0
+                                        }
                                         onChange={(e) => updateRow(row.id, 'hours', parseFloat(e.target.value) || 0)}
                                         min="0"
                                         step="0.5"
@@ -310,7 +312,9 @@ const SOWPricingTableBase: React.FC<SOWPricingProps> = ({
                                 <td className="px-4 py-3">
                                     <input
                                         type="number"
-                                        value={row.rate}
+                                        value={
+                                            row.rate ?? 0
+                                        }
                                         onChange={(e) => updateRow(row.id, 'rate', parseFloat(e.target.value) || 0)}
                                         min="0"
                                         className="w-full px-3 py-2 border border-input rounded-md text-center bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
@@ -345,7 +349,9 @@ const SOWPricingTableBase: React.FC<SOWPricingProps> = ({
                                 <label className="text-sm font-medium text-foreground">Discount (%):</label>
                                 <input
                                     type="number"
-                                    value={discount}
+                                    value={
+                                        discount ?? 0
+                                    }
                                     onChange={(e) => setDiscount(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)))}
                                     min="0"
                                     max="100"

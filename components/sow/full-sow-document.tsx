@@ -47,8 +47,8 @@ export const fullSOWSchema = z.object({
                     id: z.string(),
                     task: z.string(),
                     role: z.string(),
-                    hours: z.number(),
-                    rate: z.number(),
+                    hours: z.union([z.number(), z.string(), z.null(), z.undefined()]).transform((val) => Number(val) || 0),
+                    rate: z.union([z.number(), z.string(), z.null(), z.undefined()]).transform((val) => Number(val) || 0),
                 }),
             ),
             deliverables: z.array(z.string()),
@@ -57,7 +57,7 @@ export const fullSOWSchema = z.object({
     ),
     projectOverview: z.string().optional(),
     budgetNotes: z.string().optional(),
-    discount: z.number().default(0),
+    discount: z.union([z.number(), z.string(), z.null(), z.undefined()]).transform((val) => Number(val) || 0),
 });
 
 export type FullSOWProps = z.infer<typeof fullSOWSchema>;
@@ -1117,7 +1117,7 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                                                         <input
                                                             type="text"
                                                             value={
-                                                                row.task || ""
+                                                                row.task ?? ""
                                                             }
                                                             onChange={(e) =>
                                                                 updateRow(
@@ -1135,7 +1135,7 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                                                     <td className="px-4 py-3">
                                                         <select
                                                             value={
-                                                                row.role || ""
+                                                                row.role ?? ""
                                                             }
                                                             onChange={(e) =>
                                                                 handleRoleSelect(
@@ -1170,7 +1170,7 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                                                         <input
                                                             type="number"
                                                             value={
-                                                                row.hours || 0
+                                                                row.hours ?? 0
                                                             }
                                                             onChange={(e) =>
                                                                 updateRow(
@@ -1192,7 +1192,7 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                                                         <input
                                                             type="number"
                                                             value={
-                                                                row.rate || 0
+                                                                row.rate ?? 0
                                                             }
                                                             onChange={(e) =>
                                                                 updateRow(
