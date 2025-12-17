@@ -1030,7 +1030,7 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                                         </tr>
 
                                         {/* Deliverables Section - Full Width */}
-                                        {scope.deliverables &&
+                                        {Array.isArray(scope.deliverables) &&
                                             scope.deliverables.length > 0 && (
                                                 <React.Fragment
                                                     key={`${scope.id}-deliverables-section`}
@@ -1049,7 +1049,7 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                                                             className="px-4 py-3"
                                                         >
                                                             <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                                                                {scope.deliverables.map(
+                                                                {(scope.deliverables || []).map(
                                                                     (
                                                                         item,
                                                                         idx,
@@ -1070,7 +1070,7 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                                             )}
 
                                         {/* Role/Task Rows */}
-                                        {(scope.roles || []).map((row) => {
+                                        {(Array.isArray(scope.roles) ? scope.roles : []).map((row) => {
                                             const rowCost =
                                                 (row.hours || 0) *
                                                 (row.rate || 0);
@@ -1242,7 +1242,7 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                                         })}
 
                                         {/* Assumptions Section - Full Width */}
-                                        {scope.assumptions &&
+                                        {Array.isArray(scope.assumptions) &&
                                             scope.assumptions.length > 0 && (
                                                 <React.Fragment
                                                     key={`${scope.id}-assumptions-section`}
@@ -1261,7 +1261,7 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                                                             className="px-4 py-3"
                                                         >
                                                             <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                                                                {scope.assumptions.map(
+                                                                {(scope.assumptions || []).map(
                                                                     (
                                                                         item,
                                                                         idx,
@@ -1329,9 +1329,7 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                                 scopes.map((scope, idx) => {
                                     const scopeTotal =
                                         calculateScopeTotal(scope);
-                                    const scopeHours = (
-                                        scope.roles || []
-                                    ).reduce(
+                                    const scopeHours = (Array.isArray(scope.roles) ? scope.roles : []).reduce(
                                         (sum, row) => sum + (row.hours || 0),
                                         0,
                                     );
