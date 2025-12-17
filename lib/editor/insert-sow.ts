@@ -1,4 +1,5 @@
 import { Editor } from '@tiptap/react';
+import { sanitizeClientName } from '@/lib/sow-validation';
 
 /**
  * SOW Data Structure
@@ -39,12 +40,12 @@ export function insertSOWToEditor(editor: Editor, sowData: SOWData) {
     try {
         console.log('Inserting SOW Content (Hybrid Mode)');
 
-        // Clear selection to avoid nesting issues (optional but safer)
-        // editor.commands.focus('end'); 
+        // Sanitize client name (auto-replace "Acme" etc with "Client")
+        const clientName = sanitizeClientName(sowData.clientName);
 
         // 1. Header
         editor.chain().focus().insertContent(`<h1>${sowData.projectTitle}</h1>`).run();
-        editor.chain().focus().insertContent(`<p><strong>Prepared For:</strong> ${sowData.clientName}</p>`).run();
+        editor.chain().focus().insertContent(`<p><strong>Prepared For:</strong> ${clientName}</p>`).run();
         editor.chain().focus().insertContent(`<hr>`).run();
 
         // 2. Project Overview
