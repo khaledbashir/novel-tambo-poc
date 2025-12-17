@@ -29,11 +29,33 @@ export async function POST(req: NextRequest) {
                 browserWSEndpoint: browserlessUrl,
             });
         } catch (connError: any) {
-            console.error("Puppeteer Connection Error:", connError);
-            return NextResponse.json(
-                { error: "Failed to connect to Browserless", details: connError.message },
-                { status: 502 }
-            );
+            console.error("Puppeteer Connection Error (Attempt 1):", connError);
+
+            // Retry with default token if 401 and no token specified
+            if (connError.message.includes("401") && !browserlessUrl.includes("token=")) {
+                try {
+                    console.log("Retrying with default Browserless token...");
+                    const retryUrl = `${browserlessUrl}?token=6R0W53R1355`;
+                    browser = await puppeteer.connect({
+                        browserWSEndpoint: retryUrl,
+                    });
+                    console.log("Connected successfully with default token!");
+                } catch (retryError: any) {
+                    console.error("Retry failed:", retryError);
+                    return NextResponse.json(
+                        {
+                            error: "Failed to connect to Browserless (Auth Error)",
+                            details: "Service returned 401 Forbidden. Please check if your BROWSERLESS_URL needs a valid '?token=' parameter."
+                        },
+                        { status: 502 }
+                    );
+                }
+            } else {
+                return NextResponse.json(
+                    { error: "Failed to connect to Browserless", details: connError.message },
+                    { status: 502 }
+                );
+            }
         }
 
         const page = await browser.newPage();

@@ -27,6 +27,7 @@ const SOWNodeView = (props: NodeViewProps) => {
                 budgetNotes={budgetNotes}
                 discount={discount}
                 onDataChange={handleDataChange}
+                isInEditor={true}
             />
         </NodeViewWrapper>
     );
