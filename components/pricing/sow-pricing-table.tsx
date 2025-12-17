@@ -32,7 +32,10 @@ export const sowPricingSchema = z.object({
     assumptions: z.array(z.string()).optional(),
 });
 
-export type SOWPricingProps = z.infer<typeof sowPricingSchema>;
+export type SOWPricingProps = z.infer<typeof sowPricingSchema> & {
+    onDataChange?: (data: z.infer<typeof sowPricingSchema>) => void;
+    isInEditor?: boolean;
+};
 
 const SOWPricingTableBase: React.FC<SOWPricingProps> = ({
     rows: initialRows = [],
@@ -42,14 +45,31 @@ const SOWPricingTableBase: React.FC<SOWPricingProps> = ({
     deliverables = [],
     scopeOverview = '',
     assumptions = [],
+    onDataChange,
+    isInEditor = false,
 }) => {
-    // Use initial values directly - no useEffect needed
+    // Use initial values directly
     const [rows, setRows] = useState<PricingRow[]>(initialRows.length > 0 ? initialRows : [
         { id: 'row-1', role: '', description: '', hours: 0, rate: 0 }
     ]);
     const [discount, setDiscount] = useState(initialDiscount);
     const [budgetNotes] = useState(initialBudgetNotes);
     const [draggedRow, setDraggedRow] = useState<string | null>(null);
+
+    // Notify parent of changes
+    useEffect(() => {
+        if (onDataChange) {
+            onDataChange({
+                rows,
+                discount,
+                budgetTarget,
+                budgetNotes,
+                deliverables,
+                scopeOverview,
+                assumptions
+            });
+        }
+    }, [rows, discount, budgetTarget, budgetNotes, deliverables, scopeOverview, assumptions, onDataChange]);
 
     // Available roles from your rate card
     const availableRoles = [
@@ -232,14 +252,15 @@ const SOWPricingTableBase: React.FC<SOWPricingProps> = ({
                 </button>
             </div>
 
-            {scopeOverview && (
+            {/* Scope details and Deliverables are handled by Tiptap text blocks in hybrid mode */}
+            {!isInEditor && scopeOverview && (
                 <div className="mb-4 p-4 bg-muted rounded-lg">
                     <h3 className="text-lg font-semibold mb-2">Scope Overview</h3>
                     <p className="text-muted-foreground">{scopeOverview}</p>
                 </div>
             )}
 
-            {deliverables && deliverables.length > 0 && (
+            {!isInEditor && deliverables && deliverables.length > 0 && (
                 <div className="mb-4 p-4 bg-muted rounded-lg">
                     <h3 className="text-lg font-semibold mb-2">Deliverables</h3>
                     <ul className="list-disc list-inside space-y-1 text-muted-foreground">
@@ -403,14 +424,15 @@ const SOWPricingTableBase: React.FC<SOWPricingProps> = ({
                 </div>
             </div>
 
-            {budgetNotes && (
+            {/* In hybrid mode, assumptions are standard text blocks so we hide them here */}
+            {!isInEditor && budgetNotes && (
                 <div className="mt-4 p-3 bg-muted rounded">
                     <h4 className="font-semibold text-sm mb-1">Budget Notes:</h4>
                     <p className="text-sm text-muted-foreground">{budgetNotes}</p>
                 </div>
             )}
 
-            {assumptions && assumptions.length > 0 && (
+            {!isInEditor && assumptions && assumptions.length > 0 && (
                 <div className="mt-4 p-4 bg-muted rounded-lg">
                     <h4 className="font-semibold text-sm mb-2">Assumptions:</h4>
                     <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
