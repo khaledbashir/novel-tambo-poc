@@ -236,9 +236,9 @@ export function getTamboConfig() {
   }
 
   return {
-    apiKey: apiKey || "",
+    apiKey: apiKey || "tambo_h3+0/8KsuYnv6rysb5B2t8xQZ4Ey3ucZ8Ia3JMMwUhKXBNYahmdHNJ8Nl08JKGeQW/7gS09OP04+Y8VI8wMEc/PGXlZUR67XnTzgDNTDq1c=",
     tamboUrl,
-    projectId: projectId || "",
+    projectId: projectId || "p_OKGBSNDp.60d984",
     components: tamboComponents,
     tools: tamboTools,
     contextHelpers: tamboContextHelpers,
