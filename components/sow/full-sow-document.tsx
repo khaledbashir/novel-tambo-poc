@@ -80,13 +80,7 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
     // Sync state with props when they change (critical for streaming/updates)
     React.useEffect(() => {
         if (initialScopes) {
-            setScopes((prev) => {
-                // Deep compare to prevent infinite loops from new array references
-                if (JSON.stringify(prev) !== JSON.stringify(initialScopes)) {
-                    return initialScopes;
-                }
-                return prev;
-            });
+            setScopes(initialScopes);
         }
     }, [initialScopes]);
 
