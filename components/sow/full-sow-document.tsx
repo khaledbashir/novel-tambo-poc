@@ -58,7 +58,6 @@ export const fullSOWSchema = z.object({
     projectOverview: z.string().optional(),
     objectives: z.array(z.string()).optional(),
     budgetNotes: z.string().optional(),
-    budgetNotes: z.string().optional(),
     discount: z.union([z.number(), z.string(), z.null(), z.undefined()]).transform((val) => Number(val) || 0),
 });
 
