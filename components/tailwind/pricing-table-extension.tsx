@@ -1,6 +1,6 @@
 import { mergeAttributes, Node } from '@tiptap/core';
 import { ReactNodeViewRenderer, NodeViewProps, NodeViewWrapper } from '@tiptap/react';
-import { SOWPricingTableBase, SOWPricingProps } from '@/components/pricing/sow-pricing-table';
+import { SOWPricingTableBase, SOWPricingProps } from '@/components/pricing/sow-pricing-table-simple';
 
 const PricingTableNodeView = (props: NodeViewProps) => {
     // Extract attributes from the node
