@@ -160,10 +160,6 @@ const TailwindAdvancedEditor = ({
                 // Fallback to localStorage if database load fails
                 const content = window.localStorage.getItem("novel-content");
                 if (content) setInitialContent(JSON.parse(content));
-            } else {
-                // Load from localStorage if no documentId
-                const content = window.localStorage.getItem("novel-content");
-                if (content) setInitialContent(JSON.parse(content));
             }
 
             setIsLoading(false);

@@ -17,21 +17,21 @@ export const tamboComponents: TamboComponent[] = [
   {
     name: "FullSOWDocument",
     description:
-      "Complete multi-scope Statement of Work document with interactive pricing tables. Use this for generating COMPLETE SOWs from client requirements. Each scope includes: title, description, interactive pricing table with role dropdowns (92 roles from rate card), hours, rates, deliverables (bullet list), and assumptions (bullet list). Supports drag-and-drop row reordering, real-time GST calculations (10%), discount application, and budget tracking. Account Management roles MUST be placed at the bottom of each scope. Use when client requests a full SOW with multiple scopes (e.g., 'HubSpot integration and 2 landing pages').",
+      "YOU MUST USE THIS COMPONENT for any request involving a full Statement of Work (SOW) with multiple scopes (e.g., 'integration and landing pages', 'project A and project B'). This creates a complete document with interactive pricing tables. Each scope includes: title, description, pricing table (roles, hours, rates, discount), deliverables, and assumptions. Supports drag-and-drop, GST (10%), and budget tracking. Account Management roles MUST be placed at the bottom. NEVER generate a text-based SOW when this component can be used.",
     component: FullSOWDocument,
     propsSchema: fullSOWSchema,
   },
   {
     name: "SOWPricingTable",
     description:
-      "Single-scope interactive SOW pricing table with roles, hours, rates, discounts, GST calculations, budget tracking, and drag-and-drop reordering. Use for simple, single-scope pricing. For multi-scope SOWs, use FullSOWDocument instead. MUST include deliverables, scope overview, and assumptions. Account Management roles MUST be placed at the bottom.",
+      "YOU MUST USE THIS COMPONENT for any request involving specific pricing, budget calculation, or a single-scope SOW. Includes roles, hours, rates, discounts, GST, and budget tracking. For multi-scope SOWs, use FullSOWDocument instead. NEVER generate a text/markdown table for pricing; YOU MUST use this interactive component.",
     component: SOWPricingTable,
     propsSchema: sowPricingSchema,
   },
   {
     name: "BriefUpload",
     description:
-      "Displays metadata and preview for an uploaded and parsed client brief PDF. Use after successfully ingesting a PDF brief with the ingest_client_brief tool. Shows file name, page count, word count, and brief preview.",
+      "Displays metadata and preview for an uploaded and parsed client brief PDF. Use after successfully ingesting a PDF brief with the ingest_client_brief tool.",
     component: BriefUpload,
     propsSchema: briefUploadSchema,
   },
@@ -196,6 +196,13 @@ export const tamboContextHelpers = {
       gstRate: 0.10,
       currency: 'AUD',
       roundingTargets: [100, 1000, 5000],
+    };
+  },
+
+  // Enforce Component Strategy
+  componentRules: () => {
+    return {
+      instruction: "CRITICAL: When the user asks for an SOW, Pricing, Budget, or Rate Card, you MUST generate the 'SOWPricingTable' (for single scope) or 'FullSOWDocument' (for multiple scopes) component. DO NOT generate text-based tables or markdown lists for pricing. The UI component is REQUIRED for functionality.",
     };
   },
 

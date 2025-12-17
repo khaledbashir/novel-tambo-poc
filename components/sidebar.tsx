@@ -243,16 +243,8 @@ export function Sidebar({
                     className,
                 )}
             >
-                {/* Header */}
-                <div className="p-6 border-b border-border/50 bg-gradient-to-r from-primary/5 to-primary/10">
-                    <div className="flex items-center justify-center">
-                        <img
-                            src="/images/footer-logo.svg"
-                            alt="Logo"
-                            className="h-8 w-auto invert hue-rotate-180 dark:invert-0 dark:hue-rotate-0"
-                        />
-                    </div>
-                </div>
+                {/* Header removed from here, moved to Left Panel in page.tsx */}
+
 
                 {/* Quick Actions */}
                 <div className="p-4 border-b border-border/50">

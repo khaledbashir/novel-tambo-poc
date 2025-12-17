@@ -6,8 +6,16 @@ export async function GET() {
   try {
     console.log('Fetching workspaces...');
     const workspaces = await getAllWorkspaces();
-    console.log('Workspaces fetched:', workspaces);
-    return NextResponse.json(workspaces);
+    console.log('Workspaces fetched type:', typeof workspaces);
+    console.log('Workspaces is array:', Array.isArray(workspaces));
+    console.log('Workspaces content:', JSON.stringify(workspaces, null, 2));
+
+    const result = Array.isArray(workspaces) ? workspaces : [];
+    if (!Array.isArray(workspaces)) {
+      console.warn('WARNING: getAllWorkspaces returned non-array data. Defaulting to empty array.');
+    }
+
+    return NextResponse.json(result);
   } catch (error: any) {
     console.error('Error fetching workspaces:', error);
     return NextResponse.json({

@@ -73,10 +73,11 @@ export default function Page() {
     if (!isResizing || !containerRef.current) return;
 
     const containerRect = containerRef.current.getBoundingClientRect();
-    const newWidth = containerRect.right - e.clientX;
+    // For LEFT panel: New width is simply the mouse X position relative to container left
+    const newWidth = e.clientX - containerRect.left;
 
     // Clamp width between min and max, ensuring we don't exceed container bounds
-    const maxAllowedWidth = containerRect.width - 64; // Account for sidebar
+    const maxAllowedWidth = containerRect.width - 64; // Account for sidebar (now on right)
     const clampedWidth = Math.max(MIN_PANEL_WIDTH, Math.min(Math.min(MAX_PANEL_WIDTH, maxAllowedWidth), newWidth));
     setChatPanelWidth(clampedWidth);
   }, [isResizing]);
@@ -94,9 +95,125 @@ export default function Page() {
 
   return (
     <div className="fixed inset-0 flex" ref={containerRef}>
-      {/* Navigation Sidebar with Toggle */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Header Row: Logo (Fixed) | Chat Toggle | Top Bar */}
+        <div className="flex-none h-16 flex border-b border-border bg-card">
+          {/* Logo Area - Fixed Width matching desired sidebar look */}
+          <div className="w-[280px] flex-none border-r border-border/50 bg-gradient-to-r from-primary/5 to-primary/10 flex items-center justify-between px-4">
+            <div className="flex items-center">
+              <img
+                src="/images/footer-logo.svg"
+                alt="Logo"
+                className="h-8 w-auto invert hue-rotate-180 dark:invert-0 dark:hue-rotate-0"
+              />
+            </div>
+
+            {/* Chat Toggle Button - Inside Logo Area (Right Side) */}
+            <button
+              onClick={() => {
+                setIsChatPanelCollapsed(!isChatPanelCollapsed);
+                localStorage.setItem('chatPanelCollapsed', (!isChatPanelCollapsed).toString());
+              }}
+              className={cn(
+                "p-1.5 rounded-md hover:bg-accent/50 transition-all duration-200 focus:outline-none",
+                "text-muted-foreground hover:text-foreground"
+              )}
+              aria-label={isChatPanelCollapsed ? "Expand chat panel" : "Collapse chat panel"}
+            >
+              {isChatPanelCollapsed ? (
+                <PanelRightOpen className="h-4 w-4 rotate-180" />
+              ) : (
+                <PanelRightClose className="h-4 w-4 rotate-180" />
+              )}
+            </button>
+          </div>
+
+          {/* Top Action Bar */}
+          <div className="flex-1 min-w-0">
+            <TopActionBar
+              className="h-full border-b-0"
+              workspaceId={selectedWorkspace}
+              documentId={selectedDocument}
+            />
+          </div>
+        </div>
+
+        {/* Body Row: Chat (Resizable) | Editor */}
+        <div className="flex-1 flex min-h-0 relative">
+
+          {/* Chat Panel */}
+          {!isChatPanelCollapsed && (
+            <div
+              className={cn(
+                "relative flex flex-col flex-shrink-0 transition-all duration-300 ease-in-out border-r-2 border-border bg-card shadow-lg",
+                isResizing && "transition-none"
+              )}
+              style={{ width: `${chatPanelWidth}px` }}
+            >
+              {/* Chat Content: Thread List (Left) + Message Area (Right) */}
+              <div className="flex-1 flex flex-row min-h-0 relative">
+                <ThreadHistory contextKey="editor-assistant" position="left" defaultCollapsed={false}>
+                  <ThreadHistoryHeader />
+                  <ThreadHistoryNewButton />
+                  <ThreadHistorySearch />
+                  <ThreadHistoryList />
+                </ThreadHistory>
+                <div className="flex-1 flex flex-col bg-card border-l-2 border-border min-w-0">
+                  <MessageThreadPanel contextKey="editor-assistant" className="flex-1 min-h-0" />
+                </div>
+              </div>
+
+              {/* Resize Handle */}
+              <div
+                className={cn(
+                  "w-1.5 cursor-col-resize absolute top-0 right-0 h-full z-10",
+                  "bg-[var(--resizable-handle-hex)] hover:bg-[var(--resizable-handle-hover-hex)]",
+                  isResizing && "bg-[var(--resizable-handle-active-hex)] transition-none"
+                )}
+                onMouseDown={handleMouseDown}
+                role="separator"
+                aria-orientation="vertical"
+                aria-label="Resize chat panel"
+                style={{ transition: isResizing ? 'none' : 'background-color 0.2s ease' }}
+              />
+            </div>
+          )}
+
+          {/* Editor Area */}
+          <div className="flex-1 flex flex-col min-w-0 bg-background overflow-hidden relative">
+            <TailwindAdvancedEditor
+              documentId={selectedDocument}
+              workspaceId={selectedWorkspace}
+            />
+
+            {/* Sidebar Toggle Button (Inside Editor Area, Top Right) */}
+            <button
+              onClick={() => {
+                setIsSidebarCollapsed(!isSidebarCollapsed);
+                localStorage.setItem('sidebarCollapsed', (!isSidebarCollapsed).toString());
+              }}
+              className={cn(
+                "absolute top-4 right-4 z-50 p-2 rounded-md bg-card border border-border shadow-md",
+                "hover:bg-accent transition-all duration-300 ease-in-out",
+                "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
+                "transform transition-transform duration-300"
+              )}
+              aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              aria-expanded={!isSidebarCollapsed}
+            >
+              {isSidebarCollapsed ? (
+                <ChevronLeft className="h-4 w-4 transition-transform duration-300" />
+              ) : (
+                <ChevronRight className="h-4 w-4 transition-transform duration-300" />
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Navigation Sidebar (Right) */}
       <div className={cn(
-        "relative flex-shrink-0 h-full bg-card border-r border-border transition-all duration-300 ease-in-out",
+        "relative flex-shrink-0 h-full bg-card border-l border-border transition-all duration-300 ease-in-out",
         isSidebarCollapsed ? "w-0 overflow-hidden" : "w-80"
       )}>
         <Sidebar
@@ -106,98 +223,6 @@ export default function Page() {
           onWorkspaceSelect={setSelectedWorkspace}
         />
       </div>
-
-      {/* Sidebar Toggle Button */}
-      <button
-        onClick={() => {
-          setIsSidebarCollapsed(!isSidebarCollapsed);
-          localStorage.setItem('sidebarCollapsed', (!isSidebarCollapsed).toString());
-        }}
-        className={cn(
-          "absolute top-4 z-50 p-2 rounded-md bg-card border border-border shadow-md",
-          "hover:bg-accent transition-all duration-300 ease-in-out",
-          "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
-          "transform transition-transform duration-300",
-          isSidebarCollapsed ? "left-2" : "left-[320px]"
-        )}
-        aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-        aria-expanded={!isSidebarCollapsed}
-      >
-        {isSidebarCollapsed ? (
-          <ChevronRight className="h-4 w-4 transition-transform duration-300" />
-        ) : (
-          <ChevronLeft className="h-4 w-4 transition-transform duration-300" />
-        )}
-      </button>
-
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <TopActionBar
-          workspaceId={selectedWorkspace}
-          documentId={selectedDocument}
-        />
-        <div className="flex-1 overflow-hidden">
-          <TailwindAdvancedEditor
-            documentId={selectedDocument}
-            workspaceId={selectedWorkspace}
-          />
-        </div>
-      </div>
-
-      {/* Chat Panel with Thread History on the right */}
-      {!isChatPanelCollapsed && (
-        <div
-          className={cn(
-            "relative flex flex-shrink-0 transition-all duration-300 ease-in-out",
-            isResizing && "transition-none"
-          )}
-          style={{ width: `${chatPanelWidth}px` }}
-        >
-          <div
-            className={cn(
-              "w-1.5 cursor-col-resize absolute top-0 left-0 h-full z-10",
-              "bg-[var(--resizable-handle-hex)] hover:bg-[var(--resizable-handle-hover-hex)]",
-              isResizing && "bg-[var(--resizable-handle-active-hex)] transition-none"
-            )}
-            onMouseDown={handleMouseDown}
-            role="separator"
-            aria-orientation="vertical"
-            aria-label="Resize chat panel"
-            style={{ transition: isResizing ? 'none' : 'background-color 0.2s ease' }}
-          />
-          <div className="flex-1 flex flex-col bg-card border-l-2 border-border shadow-lg min-w-0">
-            <MessageThreadPanel contextKey="editor-assistant" className="flex-1 min-h-0" />
-          </div>
-          <ThreadHistory contextKey="editor-assistant" position="right" defaultCollapsed={false}>
-            <ThreadHistoryHeader />
-            <ThreadHistoryNewButton />
-            <ThreadHistorySearch />
-            <ThreadHistoryList />
-          </ThreadHistory>
-        </div>
-      )}
-
-      {/* Chat Panel Toggle Button */}
-      <button
-        onClick={() => {
-          setIsChatPanelCollapsed(!isChatPanelCollapsed);
-          localStorage.setItem('chatPanelCollapsed', (!isChatPanelCollapsed).toString());
-        }}
-        className={cn(
-          "absolute top-4 z-50 p-2 rounded-md bg-card border border-border shadow-md",
-          "hover:bg-accent transition-all duration-300 ease-in-out",
-          "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
-          "transform transition-transform duration-300"
-        )}
-        style={isChatPanelCollapsed ? { right: '8px' } : { right: `${chatPanelWidth + 8}px` }}
-        aria-label={isChatPanelCollapsed ? "Expand chat panel" : "Collapse chat panel"}
-        aria-expanded={!isChatPanelCollapsed}
-      >
-        {isChatPanelCollapsed ? (
-          <PanelRightOpen className="h-4 w-4 transition-transform duration-300" />
-        ) : (
-          <PanelRightClose className="h-4 w-4 transition-transform duration-300" />
-        )}
-      </button>
     </div>
   );
 }

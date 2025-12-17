@@ -4,87 +4,33 @@ export const defaultEditorContent = {
     {
       type: "heading",
       attrs: { level: 2 },
-      content: [{ type: "text", text: "Introducing Novel" }],
+      content: [{ type: "text", text: "SOW Compliance Workbench" }],
     },
     {
       type: "paragraph",
       content: [
         {
           type: "text",
-          marks: [
-            {
-              type: "link",
-              attrs: {
-                href: "https://github.com/steven-tey/novel",
-                target: "_blank",
-              },
-            },
-          ],
-          text: "Novel",
+          text: "Draft, validate and export Statements of Work (SOW) with AI-assisted authoring, document uploads, and one-click PDF export. This workspace connects to the SOW database and Tambo AI services for intelligent suggestions.",
         },
-        {
-          type: "text",
-          text: " is a Notion-style WYSIWYG editor with AI-powered autocompletion. Built with ",
-        },
-        {
-          type: "text",
-          marks: [
-            {
-              type: "link",
-              attrs: {
-                href: "https://tiptap.dev/",
-                target: "_blank",
-              },
-            },
-          ],
-          text: "Tiptap",
-        },
-        { type: "text", text: " + " },
-        {
-          type: "text",
-          marks: [
-            {
-              type: "link",
-              attrs: {
-                href: "https://sdk.vercel.ai/docs",
-                target: "_blank",
-              },
-            },
-          ],
-          text: "Vercel AI SDK",
-        },
-        { type: "text", text: "." },
       ],
     },
     {
       type: "heading",
       attrs: { level: 3 },
-      content: [{ type: "text", text: "Installation" }],
-    },
-    {
-      type: "codeBlock",
-      attrs: { language: null },
-      content: [{ type: "text", text: "npm i novel" }],
-    },
-    {
-      type: "heading",
-      attrs: { level: 3 },
-      content: [{ type: "text", text: "Usage" }],
+      content: [{ type: "text", text: "Quick Start" }],
     },
     {
       type: "codeBlock",
       attrs: { language: null },
       content: [
-        {
-          type: "text",
-          text: 'import { Editor } from "novel";\n\nexport default function App() {\n  return (\n     <Editor />\n  )\n}',
-        },
+        { type: "text", text: "Open a new SOW → use the slash menu to insert sections and AI suggestions." },
       ],
     },
     {
       type: "heading",
       attrs: { level: 3 },
-      content: [{ type: "text", text: "Features" }],
+      content: [{ type: "text", text: "Key Features" }],
     },
     {
       type: "orderedList",
@@ -95,7 +41,7 @@ export const defaultEditorContent = {
           content: [
             {
               type: "paragraph",
-              content: [{ type: "text", text: "Slash menu & bubble menu" }],
+              content: [{ type: "text", text: "SOW templates and section blocks (Milestones, Deliverables, Pricing)" }],
             },
           ],
         },
@@ -104,14 +50,7 @@ export const defaultEditorContent = {
           content: [
             {
               type: "paragraph",
-              content: [
-                { type: "text", text: "AI autocomplete (type " },
-                { type: "text", marks: [{ type: "code" }], text: "++" },
-                {
-                  type: "text",
-                  text: " to activate, or select from slash menu)",
-                },
-              ],
+              content: [{ type: "text", text: "AI authoring and compliance hints (type ++ to get suggestions)" }],
             },
           ],
         },
@@ -120,12 +59,7 @@ export const defaultEditorContent = {
           content: [
             {
               type: "paragraph",
-              content: [
-                {
-                  type: "text",
-                  text: "Image uploads (drag & drop / copy & paste, or select from slash menu) ",
-                },
-              ],
+              content: [{ type: "text", text: "Upload and attach supporting documents (PDFs) to SOW entries" }],
             },
           ],
         },
@@ -134,18 +68,7 @@ export const defaultEditorContent = {
           content: [
             {
               type: "paragraph",
-              content: [
-                {
-                  type: "text",
-                  text: "Add tweets from the command slash menu:",
-                },
-              ],
-            },
-            {
-              type: "twitter",
-              attrs: {
-                src: "https://x.com/elonmusk/status/1800759252224729577",
-              },
+              content: [{ type: "text", text: "Save drafts to the project database and export final SOW as PDF" }],
             },
           ],
         },
@@ -154,202 +77,34 @@ export const defaultEditorContent = {
           content: [
             {
               type: "paragraph",
-              content: [
-                {
-                  type: "text",
-                  text: "Mathematical symbols with LaTeX expression:",
-                },
-              ],
-            },
-            {
-              type: "orderedList",
-              attrs: {
-                tight: true,
-                start: 1,
-              },
-              content: [
-                {
-                  type: "listItem",
-                  content: [
-                    {
-                      type: "paragraph",
-                      content: [
-                        {
-                          type: "math",
-                          attrs: {
-                            latex: "E = mc^2",
-                          },
-                        },
-                      ],
-                    },
-                  ],
-                },
-                {
-                  type: "listItem",
-                  content: [
-                    {
-                      type: "paragraph",
-                      content: [
-                        {
-                          type: "math",
-                          attrs: {
-                            latex: "a^2 = \\sqrt{b^2 + c^2}",
-                          },
-                        },
-                      ],
-                    },
-                  ],
-                },
-                {
-                  type: "listItem",
-                  content: [
-                    {
-                      type: "paragraph",
-                      content: [
-                        {
-                          type: "math",
-                          attrs: {
-                            latex:
-                              "\\hat{f} (\\xi)=\\int_{-\\infty}^{\\infty}f(x)e^{-2\\pi ix\\xi}dx",
-                          },
-                        },
-                      ],
-                    },
-                  ],
-                },
-                {
-                  type: "listItem",
-                  content: [
-                    {
-                      type: "paragraph",
-                      content: [
-                        {
-                          type: "math",
-                          attrs: {
-                            latex:
-                              "A=\\begin{bmatrix}a&b\\\\c&d \\end{bmatrix}",
-                          },
-                        },
-                      ],
-                    },
-                  ],
-                },
-                {
-                  type: "listItem",
-                  content: [
-                    {
-                      type: "paragraph",
-                      content: [
-                        {
-                          type: "math",
-                          attrs: {
-                            latex: "\\sum_{i=0}^n x_i",
-                          },
-                        },
-                      ],
-                    },
-                  ],
-                },
-              ],
+              content: [{ type: "text", text: "Integration with Tambo AI for contextual recommendations" }],
             },
           ],
         },
       ],
     },
-    {
-      type: "image",
-      attrs: {
-        src: "https://public.blob.vercel-storage.com/pJrjXbdONOnAeZAZ/banner-2wQk82qTwyVgvlhTW21GIkWgqPGD2C.png",
-        alt: "banner.png",
-        title: "banner.png",
-        width: null,
-        height: null,
-      },
-    },
     { type: "horizontalRule" },
     {
       type: "heading",
       attrs: { level: 3 },
-      content: [{ type: "text", text: "Learn more" }],
+      content: [{ type: "text", text: "Tips" }],
     },
     {
-      type: "taskList",
+      type: "paragraph",
       content: [
-        {
-          type: "taskItem",
-          attrs: { checked: false },
-          content: [
-            {
-              type: "paragraph",
-              content: [
-                { type: "text", text: "Star us on " },
-                {
-                  type: "text",
-                  marks: [
-                    {
-                      type: "link",
-                      attrs: {
-                        href: "https://github.com/steven-tey/novel",
-                        target: "_blank",
-                      },
-                    },
-                  ],
-                  text: "GitHub",
-                },
-              ],
-            },
-          ],
-        },
-        {
-          type: "taskItem",
-          attrs: { checked: false },
-          content: [
-            {
-              type: "paragraph",
-              content: [
-                { type: "text", text: "Install the " },
-                {
-                  type: "text",
-                  marks: [
-                    {
-                      type: "link",
-                      attrs: {
-                        href: "https://www.npmjs.com/package/novel",
-                        target: "_blank",
-                      },
-                    },
-                  ],
-                  text: "NPM package",
-                },
-              ],
-            },
-          ],
-        },
-        {
-          type: "taskItem",
-          attrs: { checked: false },
-          content: [
-            {
-              type: "paragraph",
-              content: [
-                {
-                  type: "text",
-                  marks: [
-                    {
-                      type: "link",
-                      attrs: {
-                        href: "https://vercel.com/templates/next.js/novel",
-                        target: "_blank",
-                      },
-                    },
-                  ],
-                  text: "Deploy your own",
-                },
-                { type: "text", text: " to Vercel" },
-              ],
-            },
-          ],
-        },
+        { type: "text", text: "- Use the slash menu to insert standard SOW blocks quickly." },
+      ],
+    },
+    {
+      type: "paragraph",
+      content: [
+        { type: "text", text: "- Press ++ to trigger AI suggestions for wording and compliance notes." },
+      ],
+    },
+    {
+      type: "paragraph",
+      content: [
+        { type: "text", text: "- Attach supporting PDFs using drag & drop, then export the SOW when ready." },
       ],
     },
   ],
