@@ -1541,30 +1541,7 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                     </p>
                 </div>
 
-                {/* Export Buttons - Subtle Outline Style */}
-                <div className="grid grid-cols-2 gap-2">
-                    <button
-                        onClick={() =>
-                            window.dispatchEvent(
-                                new CustomEvent("export-editor-pdf"),
-                            )
-                        }
-                        className="flex items-center justify-center gap-2 h-8 border border-input bg-background hover:bg-accent hover:text-accent-foreground text-foreground rounded-md transition-colors text-xs font-medium"
-                        title="Export to PDF"
-                    >
-                        <FileDown size={13} className="text-blue-500" />
-                        PDF
-                    </button>
 
-                    <button
-                        onClick={handleExportExcel}
-                        className="flex items-center justify-center gap-2 h-8 border border-input bg-background hover:bg-accent hover:text-accent-foreground text-foreground rounded-md transition-colors text-xs font-medium"
-                        title="Export to Excel"
-                    >
-                        <FileSpreadsheet size={13} className="text-green-500" />
-                        Excel
-                    </button>
-                </div>
             </div>
 
             {/* Print-specific CSS */}

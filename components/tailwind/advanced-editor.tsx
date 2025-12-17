@@ -15,6 +15,7 @@ import {
     handleImagePaste,
     EditorBubble,
 } from "novel";
+import { Download } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { useDebouncedCallback } from "use-debounce";
 import { defaultExtensions } from "./extensions";
@@ -272,135 +273,63 @@ const TailwindAdvancedEditor = ({
                 return;
             }
 
+            const htmlContent = editorRef.current.getHTML();
+
+            // Add a print stylesheet to the HTML content for proper rendering
+            const styles = `
+                <style>
+                    @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+                    body { font-family: 'Inter', sans-serif; padding: 2cm; }
+                    table { width: 100%; border-collapse: collapse; margin: 1em 0; }
+                    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                    th { background-color: #f5f5f5; }
+                    img { max-width: 100%; height: auto; }
+                    .sow-component-wrapper { margin: 2em 0; page-break-inside: avoid; }
+                    h1 { font-size: 24pt; margin-bottom: 0.5em; }
+                    h2 { font-size: 18pt; margin-top: 1em; margin-bottom: 0.5em; }
+                </style>
+            `;
+
+            const fullHtml = `
+                <!DOCTYPE html>
+                <html>
+                <head>${styles}</head>
+                <body>${htmlContent}</body>
+                </html>
+            `;
+
+            notifications.loading("Generating PDF...");
+
             try {
-                // Dynamically import html2pdf to avoid SSR issues
-                const html2pdf = (await import("html2pdf.js")).default;
-
-                // Target the live editor element directly
-                const element = editorRef.current.view.dom;
-
-                // Configure PDF options with onclone callback for style overrides
-                type Html2PdfOptions = {
-                    margin: [number, number, number, number];
-                    filename: string;
-                    image: { type: "jpeg" | "png" | "webp"; quality: number };
-                    html2canvas: {
-                        scale: number;
-                        useCORS: boolean;
-                        logging: boolean;
-                        backgroundColor: string;
-                        onclone: (clonedDoc: Document) => void;
-                    };
-                    jsPDF: {
-                        unit: "mm";
-                        format: "a4" | "letter" | "legal" | "tabloid";
-                        orientation: "portrait" | "landscape";
-                    };
-                };
-
-                const opt: Html2PdfOptions = {
-                    margin: [10, 10, 20, 10], // Top, Left, Bottom, Right (mm)
-                    filename: "SOW_Export.pdf",
-                    image: { type: "jpeg", quality: 0.98 },
-                    html2canvas: {
-                        scale: 2,
-                        useCORS: true,
-                        logging: false,
-                        backgroundColor: "#ffffff", // Force white background
-                        onclone: (clonedDoc: Document) => {
-                            // Find the editor element in the cloned virtual DOM
-                            const editorElement = clonedDoc.querySelector('.ProseMirror') as HTMLElement;
-
-                            if (editorElement) {
-                                // Force light mode styling on the cloned editor
-                                editorElement.style.backgroundColor = 'white';
-                                editorElement.style.color = 'black';
-
-                                // Force all child elements to have black text and light borders
-                                const allElements = editorElement.querySelectorAll('*');
-                                allElements.forEach((el) => {
-                                    const htmlEl = el as HTMLElement;
-                                    htmlEl.style.color = 'black';
-                                    htmlEl.style.borderColor = '#e5e7eb'; // Light gray borders
-
-                                    // Force table cells to white background
-                                    if (htmlEl.tagName === 'TD' || htmlEl.tagName === 'TH') {
-                                        htmlEl.style.backgroundColor = 'white';
-                                    }
-
-                                    // Force table backgrounds
-                                    if (htmlEl.tagName === 'TABLE') {
-                                        htmlEl.style.backgroundColor = 'white';
-                                    }
-                                });
-                            }
-
-                            // CRITICAL: Force input values to appear in PDF
-                            // html2canvas sometimes ignores input values, so we explicitly set them
-                            const inputs = clonedDoc.querySelectorAll('input');
-                            inputs.forEach((input) => {
-                                const htmlInput = input as HTMLInputElement;
-                                // Force the value to appear as text for the PDF
-                                htmlInput.style.color = 'black';
-                                htmlInput.style.backgroundColor = 'white';
-                                // HTML2Canvas quirk: sometimes needs value explicitly set as attribute
-                                htmlInput.setAttribute('value', htmlInput.value || '');
-                            });
-
-                            // Also handle select/dropdown values
-                            const selects = clonedDoc.querySelectorAll('select');
-                            selects.forEach((select) => {
-                                const htmlSelect = select as HTMLSelectElement;
-                                htmlSelect.style.color = 'black';
-                                htmlSelect.style.backgroundColor = 'white';
-                            });
-                        }
+                const response = await fetch('/api/export/pdf', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
                     },
-                    jsPDF: {
-                        unit: "mm",
-                        format: "a4",
-                        orientation: "portrait",
-                    },
-                };
+                    body: JSON.stringify({ html: fullHtml }),
+                });
 
-                // Generate PDF from the live element (html2canvas will clone internally)
-                const worker = html2pdf().set(opt).from(element);
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.details || errorData.error || 'Export failed');
+                }
 
-                // Generate PDF with custom modifications
-                await worker
-                    .toPdf()
-                    .get("pdf")
-                    .then((pdf: any) => {
-                        // Add Green Footer Bar to every page
-                        const totalPages = pdf.internal.getNumberOfPages();
-                        for (let i = 1; i <= totalPages; i++) {
-                            pdf.setPage(i);
-                            pdf.setFillColor(0, 208, 132); // #00D084
-                            pdf.rect(0, 287, 210, 10, "F"); // Green bar at bottom
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `SOW_Document_${new Date().toISOString().split('T')[0]}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
 
-                            // Optional: Add legal text
-                            if (i === totalPages) {
-                                pdf.setFontSize(9);
-                                pdf.setTextColor(100, 100, 100);
-                                pdf.text(
-                                    "*** This concludes the Scope of Work document. ***",
-                                    105,
-                                    283,
-                                    { align: "center" },
-                                );
-                            }
-                        }
-                    })
-                    .then(() => {
-                        // Save the PDF after modifications
-                        worker.save();
-                    });
-
-            } catch (error) {
+                notifications.success("PDF Exported", "Your document has been downloaded.");
+            } catch (error: any) {
                 console.error("PDF Export failed:", error);
                 notifications.error(
                     "PDF export failed",
-                    "Failed to export PDF. Please try again.",
+                    error.message || "Failed to export PDF. Please try again.",
                 );
             }
         };
@@ -461,6 +390,15 @@ const TailwindAdvancedEditor = ({
                         open={openColor}
                         onOpenChange={setOpenColor}
                     />
+                    <Separator orientation="vertical" />
+                    <button
+                        onClick={() => window.dispatchEvent(new CustomEvent("export-editor-pdf"))}
+                        className="flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                        title="Export PDF"
+                    >
+                        <Download className="h-4 w-4" />
+                        Export
+                    </button>
                 </div>
                 <div className="flex-1 min-h-0 overflow-y-auto overflow-x-auto [scrollbar-gutter:stable] p-4">
                     <div className="w-full min-w-0 max-w-[900px] xl:max-w-[1200px] mx-auto bg-card p-6 md:p-12 rounded-lg border border-border shadow-sm">
