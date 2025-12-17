@@ -75,7 +75,6 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
     objectives: initialObjectives = [],
     budgetNotes = "",
     discount: initialDiscount = 0,
-    discount: initialDiscount = 0,
     onDataChange,
     isInEditor = false,
 }) => {
