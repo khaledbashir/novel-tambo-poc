@@ -6,6 +6,7 @@ import { Copy, Check, ExternalLink } from "lucide-react";
 import hljs from "highlight.js";
 import "highlight.js/styles/github.css";
 import DOMPurify from "dompurify";
+import { SOWProposalBridge } from "@/components/sow/sow-proposal-bridge";
 
 /**
  * Markdown Components for Streamdown
@@ -108,6 +109,35 @@ export const createMarkdownComponents = (): Record<
     }, [deferredContent, match]);
 
     if (match && looksLikeCode(content)) {
+      // Check for SOW Proposal JSON
+      if (match[1] === "json" || match[1] === "js") {
+        try {
+          const parsed = JSON.parse(content);
+          if (parsed && (parsed.suggestedRoles || parsed.roles)) {
+            return (
+              <div className="my-4">
+                <SOWProposalBridge data={parsed} />
+                {/* Still show the code block but collapsed or as an option if needed, 
+                    but for now, we replace it for a cleaner UI if it's strictly a proposal */}
+                <details className="mt-2">
+                  <summary className="text-xs text-muted-foreground cursor-pointer hover:underline">
+                    View raw JSON
+                  </summary>
+                  <div className="relative border border-border rounded-md bg-muted max-w-[80ch] text-sm my-2">
+                    <CodeHeader language={match[1]} code={content} />
+                    <div className="overflow-x-auto rounded-b-md bg-background p-4">
+                      <pre><code className={className}>{content}</code></pre>
+                    </div>
+                  </div>
+                </details>
+              </div>
+            );
+          }
+        } catch (e) {
+          // Fallback to regular code block if parsing fails
+        }
+      }
+
       return (
         <div className="relative border border-border rounded-md bg-muted max-w-[80ch] text-sm my-4">
           <CodeHeader language={match[1]} code={content} />
