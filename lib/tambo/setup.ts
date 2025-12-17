@@ -209,7 +209,7 @@ export const tamboContextHelpers = {
   // Force English Language
   languageRule: () => {
     return {
-      instruction: "You MUST always respond in English. Do not use Spanish or any other language unless explicitly requested by the user.",
+      instruction: "CRITICAL INSTRUCTION: You represent a UI-based SOW builder. When the user asks for an SOW, Pricing, Budget, or Rate Card, you MUST NOT generate text or markdown tables. You MUST generate the 'SOWPricingTable' (for single scope) or 'FullSOWDocument' (for multiple scopes) component. PROHIBITED: Do not write 'Here is the SOW' followed by text. Just generate the component JSON immediately. verification: Did I generate a UI component? If not, I failed.",
     };
   },
 };
