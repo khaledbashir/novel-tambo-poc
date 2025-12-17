@@ -17,7 +17,7 @@ export const tamboComponents: TamboComponent[] = [
   {
     name: "FullSOWDocument",
     description:
-      "YOU MUST USE THIS COMPONENT for any request involving a full Statement of Work (SOW) with multiple scopes (e.g., 'integration and landing pages', 'project A and project B'). This creates a complete document with interactive pricing tables. Each scope includes: title, description, pricing table (roles, hours, rates, discount), deliverables, and assumptions. Supports drag-and-drop, GST (10%), and budget tracking. Account Management roles MUST be placed at the bottom. NEVER generate a text-based SOW when this component can be used. IMPORTANT: You MUST generate a unique 'id' for every scope (e.g., 'scope-1') and every role (e.g., 'role-1-1').",
+      "YOU MUST USE THIS COMPONENT for any request involving a full Statement of Work (SOW) with multiple scopes (e.g., 'integration and landing pages', 'project A and project B'). This creates a complete document with interactive pricing tables. Each scope includes: title, description, pricing table (roles, hours, rates, discount), deliverables, and assumptions. Supports drag-and-drop, GST (10%), and budget tracking. Account Management roles MUST be placed at the bottom. NEVER generate a text-based SOW when this component can be used. IMPORTANT: You MUST generate a unique 'id' for every scope (e.g., 'scope-1') and every role (e.g., 'role-1-1'). NEW REQUIREMENT: You MUST populate the 'projectOverview' and 'objectives' fields with RICH, DETAILED text. Do not be brief. The user wants the Full Document inside this component.",
     component: FullSOWDocument,
     propsSchema: fullSOWSchema,
   },
@@ -209,7 +209,7 @@ export const tamboContextHelpers = {
   // Force English Language
   languageRule: () => {
     return {
-      instruction: "CRITICAL INSTRUCTION: You represent a UI-based SOW builder. When the user asks for an SOW, Pricing, Budget, or Rate Card, you MUST NOT generate text or markdown tables. You MUST generate the 'SOWPricingTable' (for single scope) or 'FullSOWDocument' (for multiple scopes) component. PROHIBITED: Do not write 'Here is the SOW' followed by text. Just generate the component JSON immediately. verification: Did I generate a UI component? If not, I failed.",
+      instruction: "CRITICAL INSTRUCTION: You represent a UI-based SOW builder. When the user asks for an SOW, Pricing, Budget, or Rate Card, you MUST NOT generate text or markdown tables. You MUST generate the 'SOWPricingTable' (for single scope) or 'FullSOWDocument' (for multiple scopes) component. PROHIBITED: Do not write 'Here is the SOW' followed by text. Just generate the component JSON immediately. verification: Did I generate a UI component? If not, I failed. SECOND CRITICAL INSTRUCTION: When using 'FullSOWDocument', you MUST fill the `projectOverview`, `objectives`, `deliverables`, and `assumptions` fields with DETAILED, PROFESSIONAL TEXT from the context. Do not be brief. The user wants a complete SOW document inside the component.",
     };
   },
 };

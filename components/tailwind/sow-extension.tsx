@@ -5,7 +5,7 @@ import { FullSOWProps } from '@/components/sow/full-sow-document';
 
 const SOWNodeView = (props: NodeViewProps) => {
     // Extract attributes from the node
-    const { clientName, projectTitle, scopes, projectOverview, budgetNotes, discount } = props.node.attrs;
+    const { clientName, projectTitle, scopes, projectOverview, objectives, budgetNotes, discount } = props.node.attrs;
 
     // Handler to sync data changes back to the Tiptap node
     const handleDataChange = (data: FullSOWProps) => {
@@ -24,6 +24,7 @@ const SOWNodeView = (props: NodeViewProps) => {
                 projectTitle={projectTitle}
                 scopes={scopes}
                 projectOverview={projectOverview}
+                objectives={objectives}
                 budgetNotes={budgetNotes}
                 discount={discount}
                 onDataChange={handleDataChange}
@@ -55,6 +56,9 @@ export const SOWExtension = Node.create({
             },
             projectOverview: {
                 default: '',
+            },
+            objectives: {
+                default: [],
             },
             budgetNotes: {
                 default: '',

@@ -56,12 +56,15 @@ export const fullSOWSchema = z.object({
         }),
     ),
     projectOverview: z.string().optional(),
+    objectives: z.array(z.string()).optional(),
+    budgetNotes: z.string().optional(),
     budgetNotes: z.string().optional(),
     discount: z.union([z.number(), z.string(), z.null(), z.undefined()]).transform((val) => Number(val) || 0),
 });
 
 export type FullSOWProps = z.infer<typeof fullSOWSchema> & {
     onDataChange?: (data: z.infer<typeof fullSOWSchema>) => void;
+    isInEditor?: boolean;
 };
 
 const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
@@ -69,9 +72,12 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
     projectTitle,
     scopes: initialScopes = [],
     projectOverview = "",
+    objectives: initialObjectives = [],
     budgetNotes = "",
     discount: initialDiscount = 0,
+    discount: initialDiscount = 0,
     onDataChange,
+    isInEditor = false,
 }) => {
     const [scopes, setScopes] = useState<Scope[]>(initialScopes || []);
     const [discount, setDiscount] = useState(initialDiscount);
@@ -96,11 +102,12 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                 projectTitle,
                 scopes,
                 projectOverview,
+                objectives: initialObjectives,
                 budgetNotes,
                 discount,
             });
         }
-    }, [scopes, discount, clientName, projectTitle, projectOverview, budgetNotes, onDataChange]);
+    }, [scopes, discount, clientName, projectTitle, projectOverview, initialObjectives, budgetNotes, onDataChange]);
 
     // Available roles from rate card
     const availableRoles = [
@@ -817,6 +824,7 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                 projectTitle,
                 clientName,
                 projectOverview,
+                objectives: initialObjectives,
                 budgetNotes,
                 totals,
                 discount,
@@ -1499,6 +1507,20 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
                 </div>
             )}
 
+            {/* Project Objectives */}
+            {initialObjectives && initialObjectives.length > 0 && (
+                <div className="border-t border-border pt-8 mb-8">
+                    <h3 className="text-xl font-bold text-foreground mb-4">
+                        Project Objectives:
+                    </h3>
+                    <ul className="list-disc list-inside space-y-2 text-muted-foreground">
+                        {initialObjectives.map((obj, idx) => (
+                            <li key={`objective-${idx}`}>{obj}</li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+
             {/* Budget Notes */}
             {budgetNotes && (
                 <div className="border-t border-border pt-8 mb-8">
@@ -1517,24 +1539,24 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
             </div>
 
             {/* Actions Footer */}
-            <div className="border-t border-border pt-8 space-y-4">
-                {/* Insert Button - Minimal & Clean */}
-                <div className="flex flex-col gap-1">
-                    <button
-                        onClick={insertToEditor}
-                        className="w-full flex items-center justify-center gap-2 h-9 bg-primary text-primary-foreground hover:bg-primary/90 rounded-md transition-colors text-xs font-medium uppercase tracking-wide shadow-sm"
-                        title="Insert SOW content directly into editor"
-                    >
-                        <ArrowDownToLine size={14} />
-                        Insert to Editor
-                    </button>
-                    <p className="text-[10px] text-muted-foreground text-center opacity-70">
-                        Insert directly into the editor
-                    </p>
+            {!isInEditor && (
+                <div className="border-t border-border pt-8 space-y-4">
+                    {/* Insert Button - Minimal & Clean */}
+                    <div className="flex flex-col gap-1">
+                        <button
+                            onClick={insertToEditor}
+                            className="w-full flex items-center justify-center gap-2 h-9 bg-primary text-primary-foreground hover:bg-primary/90 rounded-md transition-colors text-xs font-medium uppercase tracking-wide shadow-sm"
+                            title="Insert SOW content directly into editor"
+                        >
+                            <ArrowDownToLine size={14} />
+                            Insert to Editor
+                        </button>
+                        <p className="text-[10px] text-muted-foreground text-center opacity-70">
+                            Insert directly into the editor
+                        </p>
+                    </div>
                 </div>
-
-
-            </div>
+            )}
 
             {/* Print-specific CSS */}
             <style jsx global>{`
