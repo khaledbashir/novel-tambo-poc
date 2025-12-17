@@ -22,11 +22,19 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        console.log(`Connecting to Browserless at ${browserlessUrl}...`);
-
-        const browser = await puppeteer.connect({
-            browserWSEndpoint: browserlessUrl,
-        });
+        let browser;
+        try {
+            console.log(`Connecting to Browserless at ${browserlessUrl}...`);
+            browser = await puppeteer.connect({
+                browserWSEndpoint: browserlessUrl,
+            });
+        } catch (connError: any) {
+            console.error("Puppeteer Connection Error:", connError);
+            return NextResponse.json(
+                { error: "Failed to connect to Browserless", details: connError.message },
+                { status: 502 }
+            );
+        }
 
         const page = await browser.newPage();
         await page.setContent(html, { waitUntil: "networkidle0" });
