@@ -1,4 +1,4 @@
-import { MergeAttributes, Node } from '@tiptap/core';
+import { mergeAttributes, Node } from '@tiptap/core';
 import { ReactNodeViewRenderer, NodeViewProps, NodeViewWrapper } from '@tiptap/react';
 import { FullSOWDocument } from '@/components/sow/full-sow-document';
 import { FullSOWProps } from '@/components/sow/full-sow-document';
@@ -73,7 +73,7 @@ export const SOWExtension = Node.create({
     },
 
     renderHTML({ HTMLAttributes }) {
-        return ['full-sow-document', MergeAttributes(HTMLAttributes)];
+        return ['full-sow-document', mergeAttributes(HTMLAttributes)];
     },
 
     addNodeView() {
