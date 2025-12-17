@@ -18,7 +18,7 @@ export const AppContext = createContext<{
     setFont: Dispatch<SetStateAction<string>>;
 }>({
     font: "Default",
-    setFont: () => {},
+    setFont: () => { },
 });
 
 const ToasterProvider = () => {
@@ -30,6 +30,12 @@ const ToasterProvider = () => {
 
 const TamboProviderWrapper = ({ children }: { children: ReactNode }) => {
     const config = React.useMemo(() => getTamboConfig(), []);
+    console.log("[Tambo Debug] Config Loaded:", {
+        projectId: config.projectId,
+        apiKeyLength: config.apiKey?.length,
+        apiKeyStart: config.apiKey?.substring(0, 10),
+        apiKeyEnd: config.apiKey?.substring(config.apiKey.length - 10)
+    });
 
     // Only render TamboProvider if API key is configured
     // Note: projectId is handled internally by the SDK, not passed as a prop
