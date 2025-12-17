@@ -60,7 +60,9 @@ export const fullSOWSchema = z.object({
     discount: z.union([z.number(), z.string(), z.null(), z.undefined()]).transform((val) => Number(val) || 0),
 });
 
-export type FullSOWProps = z.infer<typeof fullSOWSchema>;
+export type FullSOWProps = z.infer<typeof fullSOWSchema> & {
+    onDataChange?: (data: z.infer<typeof fullSOWSchema>) => void;
+};
 
 const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
     clientName,
@@ -69,6 +71,7 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
     projectOverview = "",
     budgetNotes = "",
     discount: initialDiscount = 0,
+    onDataChange,
 }) => {
     const [scopes, setScopes] = useState<Scope[]>(initialScopes || []);
     const [discount, setDiscount] = useState(initialDiscount);
@@ -90,6 +93,20 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
     React.useEffect(() => {
         setDiscount(initialDiscount);
     }, [initialDiscount]);
+
+    // Notify parent of data changes
+    React.useEffect(() => {
+        if (onDataChange) {
+            onDataChange({
+                clientName,
+                projectTitle,
+                scopes,
+                projectOverview,
+                budgetNotes,
+                discount,
+            });
+        }
+    }, [scopes, discount, clientName, projectTitle, projectOverview, budgetNotes, onDataChange]);
 
     // Available roles from rate card
     const availableRoles = [

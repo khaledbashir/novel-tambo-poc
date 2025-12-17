@@ -28,6 +28,7 @@ import TableHeader from "@tiptap/extension-table-header";
 import { TextAlign } from "@tiptap/extension-text-align";
 import { BubbleMenu } from "@tiptap/extension-bubble-menu";
 
+import { SOWExtension } from "./sow-extension";
 import { MarkdownExtension } from "./markdown-extension";
 
 import { cx } from "class-variance-authority";
@@ -237,4 +238,5 @@ export const defaultExtensions = [
     tableCell,
     tableHeader,
     textAlign,
+    SOWExtension,
 ];
