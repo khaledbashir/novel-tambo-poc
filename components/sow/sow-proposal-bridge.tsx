@@ -192,7 +192,7 @@ export const SOWProposalBridge: React.FC<SOWProposalBridgeProps> = ({ data }) =>
     if (enrichedRoles.length === 0) return null;
 
     return (
-        <Card className="my-4 border-sg-green/30 bg-sg-green/5 shadow-sm overflow-hidden border-2">
+        <Card className="my-4 border-sg-green/30 bg-sg-green/5 shadow-sm overflow-hidden border-2 flex flex-col">
             <CardHeader className="bg-sg-green/10 py-3 px-4 flex flex-row items-center justify-between space-y-0">
                 <CardTitle className="text-sm font-semibold flex items-center gap-2">
                     <Table className="w-4 h-4 text-sg-green" />
@@ -202,7 +202,7 @@ export const SOWProposalBridge: React.FC<SOWProposalBridgeProps> = ({ data }) =>
                     {enrichedRoles.length} role{enrichedRoles.length !== 1 ? 's' : ''}
                 </span>
             </CardHeader>
-            <CardContent className="p-4">
+            <CardContent className="p-4 flex-1">
                 <div className="space-y-3">
                     <div className="text-xs text-muted-foreground uppercase font-medium tracking-wider">
                         Pricing Summary
@@ -245,7 +245,7 @@ export const SOWProposalBridge: React.FC<SOWProposalBridgeProps> = ({ data }) =>
                     </div>
                 </div>
             </CardContent>
-            <CardFooter className="bg-muted/50 p-3 flex justify-end">
+            <CardFooter className="bg-muted/50 p-3 flex justify-end mt-auto">
                 <Button
                     variant="outline"
                     size="sm"

@@ -21,6 +21,8 @@ export const AppContext = createContext<{
     setFont: () => { },
 });
 
+export const TamboEnabledContext = createContext<boolean>(true);
+
 const ToasterProvider = () => {
     const { theme } = useTheme() as {
         theme: "light" | "dark" | "system";
@@ -30,31 +32,35 @@ const ToasterProvider = () => {
 
 const TamboProviderWrapper = ({ children }: { children: ReactNode }) => {
     const config = React.useMemo(() => getTamboConfig(), []);
-    console.log("[Tambo Debug] ProjectID:", config.projectId);
-    console.log("[Tambo Debug] API Key Start:", config.apiKey?.substring(0, 15));
-    console.log("[Tambo Debug] API Key End:", config.apiKey?.substring(config.apiKey.length - 15));
-    console.log("[Tambo Debug] API Key Full Length:", config.apiKey?.length);
 
     // Only render TamboProvider if API key is configured
     // Note: projectId is handled internally by the SDK, not passed as a prop
-    if (!config.apiKey) {
+    const tamboEnabled = Boolean(config.apiKey && config.projectId);
+
+    if (!tamboEnabled) {
         console.warn("Tambo provider not initialized - missing API key");
-        return <>{children}</>;
+        return (
+            <TamboEnabledContext.Provider value={false}>
+                {children}
+            </TamboEnabledContext.Provider>
+        );
     }
 
     return (
-        <TamboProvider
-            apiKey={config.apiKey}
-            tamboUrl={config.tamboUrl}
-            components={config.components}
-            tools={config.tools}
-            contextHelpers={config.contextHelpers}
-            streaming={true}
-            autoGenerateThreadName={true}
-            autoGenerateNameThreshold={3}
-        >
-            {children}
-        </TamboProvider>
+        <TamboEnabledContext.Provider value={true}>
+            <TamboProvider
+                apiKey={config.apiKey!}
+                tamboUrl={config.tamboUrl}
+                components={config.components}
+                tools={config.tools}
+                contextHelpers={config.contextHelpers}
+                streaming={true}
+                autoGenerateThreadName={false}
+                autoGenerateNameThreshold={3}
+            >
+                {children}
+            </TamboProvider>
+        </TamboEnabledContext.Provider>
     );
 };
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useContext } from "react";
 import { Sidebar } from "@/components/sidebar";
 import { TopActionBar } from "@/components/top-action-bar";
 import TailwindAdvancedEditor from "@/components/tailwind/advanced-editor";
@@ -8,11 +8,13 @@ import { MessageThreadPanel } from "@/components/tambo/message-thread-panel";
 import { ThreadHistory, ThreadHistoryHeader, ThreadHistoryNewButton, ThreadHistorySearch, ThreadHistoryList } from "@/components/tambo/thread-history";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight, PanelRightClose, PanelRightOpen } from "lucide-react";
+import { TamboEnabledContext } from "./providers";
 
 const MIN_PANEL_WIDTH = 300;
 const MAX_PANEL_WIDTH = 800;
 
 export default function Page() {
+  const tamboEnabled = useContext(TamboEnabledContext);
   const [selectedDocument, setSelectedDocument] = useState<string | null>(null);
   const [selectedWorkspace, setSelectedWorkspace] = useState<string | null>(null);
   const [isResizing, setIsResizing] = useState(false);
@@ -152,15 +154,23 @@ export default function Page() {
             >
               {/* Chat Content: Thread List (Left) + Message Area (Right) */}
               <div className="flex-1 flex flex-row min-h-0 relative">
-                <ThreadHistory contextKey="editor-assistant" position="left" defaultCollapsed={false}>
-                  <ThreadHistoryHeader />
-                  <ThreadHistoryNewButton />
-                  <ThreadHistorySearch />
-                  <ThreadHistoryList />
-                </ThreadHistory>
-                <div className="flex-1 flex flex-col bg-card border-l-2 border-border min-w-0">
-                  <MessageThreadPanel contextKey="editor-assistant" className="flex-1 min-h-0" />
-                </div>
+                {tamboEnabled ? (
+                  <>
+                    <ThreadHistory contextKey="editor-assistant" position="left" defaultCollapsed={false}>
+                      <ThreadHistoryHeader />
+                      <ThreadHistoryNewButton />
+                      <ThreadHistorySearch />
+                      <ThreadHistoryList />
+                    </ThreadHistory>
+                    <div className="flex-1 flex flex-col bg-card border-l-2 border-border min-w-0">
+                      <MessageThreadPanel contextKey="editor-assistant" className="flex-1 min-h-0" />
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex-1 flex items-center justify-center p-6 text-sm text-muted-foreground">
+                    AI panel unavailable (missing Tambo env).
+                  </div>
+                )}
               </div>
 
               {/* Resize Handle */}

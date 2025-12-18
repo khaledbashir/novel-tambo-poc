@@ -8,8 +8,6 @@ const PricingTableNodeView = (props: NodeViewProps) => {
     const { rows, discount } = props.node.attrs;
     const rowsArray = Array.isArray(rows) ? rows : [];
 
-    console.log('[PricingTableNodeView] Rendering inline:', { rowCount: rowsArray.length });
-
     // Calculate totals
     const subtotal = rowsArray.reduce((sum, row: any) => sum + ((row.hours || 0) * (row.rate || 0)), 0);
     const discountAmount = subtotal * ((discount || 0) / 100);
@@ -18,54 +16,75 @@ const PricingTableNodeView = (props: NodeViewProps) => {
     const total = afterDiscount + gst;
 
     return (
-        <NodeViewWrapper className="react-component not-prose my-4">
-            <div
-                style={{
-                    border: '2px solid #20e28f',
-                    borderRadius: '8px',
-                    padding: '16px',
-                    backgroundColor: '#f0fdf4',
-                }}
-            >
-                <h4 style={{ margin: '0 0 12px 0', color: '#166534' }}>
-                    💰 Interactive Pricing Table ({rowsArray.length} roles)
-                </h4>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead>
-                        <tr style={{ backgroundColor: '#dcfce7', borderBottom: '2px solid #22c55e' }}>
-                            <th style={{ padding: '8px', textAlign: 'left' }}>Role</th>
-                            <th style={{ padding: '8px', textAlign: 'left' }}>Description</th>
-                            <th style={{ padding: '8px', textAlign: 'center' }}>Hours</th>
-                            <th style={{ padding: '8px', textAlign: 'center' }}>Rate</th>
-                            <th style={{ padding: '8px', textAlign: 'right' }}>Cost</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {rowsArray.map((row: any, idx: number) => (
-                            <tr key={row.id || idx} style={{ borderBottom: '1px solid #bbf7d0' }}>
-                                <td style={{ padding: '8px' }}>{row.role || '-'}</td>
-                                <td style={{ padding: '8px' }}>{row.description || '-'}</td>
-                                <td style={{ padding: '8px', textAlign: 'center' }}>{row.hours}</td>
-                                <td style={{ padding: '8px', textAlign: 'center' }}>${(row.rate || 0).toFixed(2)}</td>
-                                <td style={{ padding: '8px', textAlign: 'right', fontWeight: 500 }}>
-                                    ${((row.hours || 0) * (row.rate || 0)).toFixed(2)} +GST
-                                </td>
+        <NodeViewWrapper className="not-prose my-4 w-full">
+            <div className="w-full overflow-hidden rounded-lg border-2 border-sg-green/30 bg-sg-green/5">
+                <div className="flex items-center justify-between bg-sg-green/10 px-4 py-3 border-b border-border">
+                    <div className="text-sm font-semibold text-foreground">
+                        Pricing Table
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                        {rowsArray.length} role{rowsArray.length !== 1 ? "s" : ""}
+                    </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                    <table className="w-full text-xs">
+                        <thead>
+                            <tr className="bg-muted border-b">
+                                <th className="px-3 py-2 text-left font-semibold">Role</th>
+                                <th className="px-3 py-2 text-left font-semibold">Description</th>
+                                <th className="px-3 py-2 text-center font-semibold">Hours</th>
+                                <th className="px-3 py-2 text-center font-semibold">Rate</th>
+                                <th className="px-3 py-2 text-right font-semibold">Cost</th>
                             </tr>
-                        ))}
-                        <tr style={{ backgroundColor: '#f0fdf4' }}>
-                            <td colSpan={4} style={{ padding: '8px', textAlign: 'right', fontWeight: 600 }}>Subtotal:</td>
-                            <td style={{ padding: '8px', textAlign: 'right', fontWeight: 600 }}>${subtotal.toFixed(2)} +GST</td>
-                        </tr>
-                        <tr>
-                            <td colSpan={4} style={{ padding: '8px', textAlign: 'right', fontWeight: 600 }}>GST (10%):</td>
-                            <td style={{ padding: '8px', textAlign: 'right', fontWeight: 600 }}>+${gst.toFixed(2)}</td>
-                        </tr>
-                        <tr style={{ backgroundColor: '#22c55e', color: 'white' }}>
-                            <td colSpan={4} style={{ padding: '8px', textAlign: 'right', fontWeight: 700, fontSize: '1.1em' }}>Total (AUD inc. GST):</td>
-                            <td style={{ padding: '8px', textAlign: 'right', fontWeight: 700, fontSize: '1.1em' }}>${total.toFixed(2)}</td>
-                        </tr>
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {rowsArray.map((row: any, idx: number) => (
+                                <tr key={row.id || idx} className="border-b last:border-0">
+                                    <td className="px-3 py-2 text-foreground font-medium max-w-[240px] truncate">
+                                        {row.role || "-"}
+                                    </td>
+                                    <td className="px-3 py-2 text-muted-foreground max-w-[360px] truncate">
+                                        {row.description || "-"}
+                                    </td>
+                                    <td className="px-3 py-2 text-center text-muted-foreground">
+                                        {row.hours ?? 0}
+                                    </td>
+                                    <td className="px-3 py-2 text-center text-muted-foreground">
+                                        ${(row.rate || 0).toFixed(2)}
+                                    </td>
+                                    <td className="px-3 py-2 text-right font-semibold text-foreground">
+                                        ${((row.hours || 0) * (row.rate || 0)).toFixed(2)}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                        <tfoot className="bg-muted/50">
+                            {discount > 0 && (
+                                <tr>
+                                    <td colSpan={4} className="px-3 py-2 text-right text-muted-foreground">
+                                        Discount ({discount}%):
+                                    </td>
+                                    <td className="px-3 py-2 text-right text-muted-foreground">
+                                        -${discountAmount.toFixed(2)}
+                                    </td>
+                                </tr>
+                            )}
+                            <tr className="border-t">
+                                <td colSpan={4} className="px-3 py-2 text-right font-semibold">Subtotal:</td>
+                                <td className="px-3 py-2 text-right font-semibold">${afterDiscount.toFixed(2)}</td>
+                            </tr>
+                            <tr>
+                                <td colSpan={4} className="px-3 py-2 text-right text-muted-foreground">GST (10%):</td>
+                                <td className="px-3 py-2 text-right text-muted-foreground">+${gst.toFixed(2)}</td>
+                            </tr>
+                            <tr className="border-t-2 border-border">
+                                <td colSpan={4} className="px-3 py-2 text-right font-bold">Total (AUD):</td>
+                                <td className="px-3 py-2 text-right font-bold text-sg-green">${total.toFixed(2)}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
             </div>
         </NodeViewWrapper>
     );

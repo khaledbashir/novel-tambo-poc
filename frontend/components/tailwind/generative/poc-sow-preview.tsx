@@ -99,7 +99,7 @@ export const POCSOWPreview: React.FC<SOWPreviewProps> = ({
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto my-4 p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
+    <div className="w-full max-w-4xl mx-auto my-4 p-6 bg-white border border-gray-200 rounded-lg shadow-sm flex flex-col">
       {/* Header */}
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-900 mb-2">{title}</h2>
@@ -168,7 +168,7 @@ export const POCSOWPreview: React.FC<SOWPreviewProps> = ({
       )}
 
       {/* Action Buttons */}
-      <div className="flex flex-wrap gap-2 pt-4 border-t border-gray-200">
+      <div className="flex flex-wrap gap-2 pt-4 border-t border-gray-200 mt-auto">
         {onInsert && (
           <button
             onClick={handleInsert}

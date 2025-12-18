@@ -140,22 +140,48 @@ const FullSOWDocumentBase: React.FC<FullSOWProps | (z.infer<typeof aiSOWSchema> 
 
     // Notify parent of data changes (Debounced to prevent 500 errors and loops)
     React.useEffect(() => {
+        if (!onDataChange) return;
+
+        // In the Novel/Tiptap editor, the document model is the source of truth.
+        // If we debounce too aggressively here, ProseMirror attrs lag behind UI edits,
+        // which can look like "refresh required" when the NodeView re-syncs.
+        if (isInEditor) {
+            onDataChange({
+                clientName,
+                projectTitle,
+                scopes,
+                projectOverview,
+                objectives: initialObjectives,
+                budgetNotes,
+                discount,
+            });
+            return;
+        }
+
         const handler = setTimeout(() => {
-            if (onDataChange) {
-                onDataChange({
-                    clientName,
-                    projectTitle,
-                    scopes,
-                    projectOverview,
-                    objectives: initialObjectives,
-                    budgetNotes,
-                    discount,
-                });
-            }
-        }, 1000); // 1s debounce
+            onDataChange({
+                clientName,
+                projectTitle,
+                scopes,
+                projectOverview,
+                objectives: initialObjectives,
+                budgetNotes,
+                discount,
+            });
+        }, 1000); // 1s debounce for chat/streaming mode
 
         return () => clearTimeout(handler);
-    }, [scopes, discount, clientName, projectTitle, projectOverview, initialObjectives, budgetNotes, onDataChange]);
+    }, [
+        scopes,
+        discount,
+        clientName,
+        projectTitle,
+        projectOverview,
+        initialObjectives,
+        budgetNotes,
+        onDataChange,
+        isInEditor,
+    ]);
 
     // Available roles from rate card
     const availableRoles = [

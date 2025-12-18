@@ -95,6 +95,77 @@ const MessageSuggestions = React.forwardRef<
     ref,
   ) => {
     const { thread } = useTambo();
+    const isMac =
+      typeof navigator !== "undefined" && navigator.platform.startsWith("Mac");
+
+    const hasMessages = Boolean(thread?.messages?.length);
+    const hasInitial = initialSuggestions.length > 0;
+
+    // If thread is empty, avoid calling useTamboSuggestions (it hits /suggestions).
+    // This prevents startup hangs/spam when the backend is returning 500s.
+    if (!hasMessages && hasInitial) {
+      const suggestions = initialSuggestions.slice(0, maxSuggestions);
+      const contextValue: MessageSuggestionsContextValue = {
+        suggestions,
+        selectedSuggestionId: null,
+        accept: () => {},
+        isGenerating: false,
+        error: null,
+        thread: thread as TamboThread,
+        isMac,
+      };
+
+      return (
+        <MessageSuggestionsContext.Provider value={contextValue}>
+          <TooltipProvider>
+            <div
+              ref={ref}
+              className={cn("px-4 pb-2", className)}
+              data-slot="message-suggestions-container"
+              {...props}
+            >
+              {children}
+            </div>
+          </TooltipProvider>
+        </MessageSuggestionsContext.Provider>
+      );
+    }
+
+    // If we have no messages yet and no initial suggestions, render nothing
+    if (!hasMessages && !hasInitial) {
+      return null;
+    }
+
+    return (
+      <MessageSuggestionsGenerated
+        ref={ref}
+        className={className}
+        maxSuggestions={maxSuggestions}
+        initialSuggestions={initialSuggestions}
+        {...props}
+      >
+        {children}
+      </MessageSuggestionsGenerated>
+    );
+  },
+);
+MessageSuggestions.displayName = "MessageSuggestions";
+
+const MessageSuggestionsGenerated = React.forwardRef<
+  HTMLDivElement,
+  MessageSuggestionsProps
+>(
+  (
+    {
+      children,
+      className,
+      maxSuggestions = 3,
+      initialSuggestions = [],
+      ...props
+    },
+    ref,
+  ) => {
+    const { thread } = useTambo();
     const {
       suggestions: generatedSuggestions,
       selectedSuggestionId,
@@ -104,11 +175,9 @@ const MessageSuggestions = React.forwardRef<
 
     // Combine initial and generated suggestions, but only use initial ones when thread is empty
     const suggestions = React.useMemo(() => {
-      // Only use pre-seeded suggestions if thread is empty
       if (!thread?.messages?.length && initialSuggestions.length > 0) {
         return initialSuggestions.slice(0, maxSuggestions);
       }
-      // Otherwise use generated suggestions
       return generatedSuggestions;
     }, [
       thread?.messages?.length,
@@ -119,10 +188,6 @@ const MessageSuggestions = React.forwardRef<
 
     const isMac =
       typeof navigator !== "undefined" && navigator.platform.startsWith("Mac");
-
-    // Track the last AI message ID to detect new messages
-    const lastAiMessageIdRef = useRef<string | null>(null);
-    const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const contextValue = React.useMemo(
       () => ({
@@ -144,30 +209,6 @@ const MessageSuggestions = React.forwardRef<
         isMac,
       ],
     );
-
-    // Find the last AI message
-    const lastAiMessage = thread?.messages
-      ? [...thread.messages].reverse().find((msg) => msg.role === "assistant")
-      : null;
-
-    // When a new AI message appears, update the reference
-    useEffect(() => {
-      if (lastAiMessage && lastAiMessage.id !== lastAiMessageIdRef.current) {
-        lastAiMessageIdRef.current = lastAiMessage.id;
-
-        if (loadingTimeoutRef.current) {
-          clearTimeout(loadingTimeoutRef.current);
-        }
-
-        loadingTimeoutRef.current = setTimeout(() => {}, 5000);
-      }
-
-      return () => {
-        if (loadingTimeoutRef.current) {
-          clearTimeout(loadingTimeoutRef.current);
-        }
-      };
-    }, [lastAiMessage, suggestions.length]);
 
     // Handle keyboard shortcuts for selecting suggestions
     useEffect(() => {
@@ -195,11 +236,6 @@ const MessageSuggestions = React.forwardRef<
       };
     }, [suggestions, accept, isMac]);
 
-    // If we have no messages yet and no initial suggestions, render nothing
-    if (!thread?.messages?.length && initialSuggestions.length === 0) {
-      return null;
-    }
-
     return (
       <MessageSuggestionsContext.Provider value={contextValue}>
         <TooltipProvider>
@@ -216,7 +252,7 @@ const MessageSuggestions = React.forwardRef<
     );
   },
 );
-MessageSuggestions.displayName = "MessageSuggestions";
+MessageSuggestionsGenerated.displayName = "MessageSuggestionsGenerated";
 
 /**
  * Props for the MessageSuggestionsStatus component.
