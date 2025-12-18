@@ -1,70 +1,70 @@
 import { mergeAttributes, Node } from '@tiptap/core';
 import { ReactNodeViewRenderer, NodeViewProps, NodeViewWrapper } from '@tiptap/react';
-import { SOWPricingTableBase, SOWPricingProps } from '@/components/pricing/sow-pricing-table-simple';
-import React from 'react';
 
+// Simplified inline render - not using external component
 const PricingTableNodeView = (props: NodeViewProps) => {
-    // Extract attributes from the node
-    const { rows, discount, budgetTarget, budgetNotes, deliverables, scopeOverview, assumptions } = props.node.attrs;
-
-    // Ensure rows is always an array
+    const { rows, discount } = props.node.attrs;
     const rowsArray = Array.isArray(rows) ? rows : [];
 
-    // Debug logging - expanded
-    console.log('[PricingTableNodeView] Rendering:', {
-        rowCount: rowsArray.length,
-        discount,
-        rowsType: typeof rows,
-        isArray: Array.isArray(rows),
-        firstRow: rowsArray[0],
-    });
+    console.log('[PricingTableNodeView] Rendering inline:', { rowCount: rowsArray.length });
 
-    // Handler to sync data changes back to the Tiptap node
-    const handleDataChange = (data: SOWPricingProps) => {
-        props.updateAttributes(data);
-    };
+    // Calculate totals
+    const subtotal = rowsArray.reduce((sum, row: any) => sum + ((row.hours || 0) * (row.rate || 0)), 0);
+    const discountAmount = subtotal * ((discount || 0) / 100);
+    const afterDiscount = subtotal - discountAmount;
+    const gst = afterDiscount * 0.1;
+    const total = afterDiscount + gst;
 
     return (
-        <NodeViewWrapper
-            as="section"
-            className="sow-pricing-wrapper not-prose my-4"
-            contentEditable={false}
-            data-pricing-table="true"
-            data-row-count={rowsArray.length}
-            style={{
-                display: 'block',
-                minHeight: '200px',
-                border: '3px solid #20e28f',
-                padding: '8px',
-                borderRadius: '8px',
-                backgroundColor: 'rgba(32, 226, 143, 0.1)',
-                position: 'relative',
-            }}
-        >
-            <div style={{ padding: '8px', background: '#ecfdf5', borderRadius: '4px', marginBottom: '8px' }}>
-                <strong>🔧 DEBUG: Pricing Table Node</strong>
-                <span style={{ marginLeft: '8px', fontSize: '12px' }}>
-                    Rows: {rowsArray.length} | Node Type: {props.node.type.name}
-                </span>
+        <NodeViewWrapper className="react-component not-prose my-4">
+            <div
+                style={{
+                    border: '2px solid #20e28f',
+                    borderRadius: '8px',
+                    padding: '16px',
+                    backgroundColor: '#f0fdf4',
+                }}
+            >
+                <h4 style={{ margin: '0 0 12px 0', color: '#166534' }}>
+                    💰 Interactive Pricing Table ({rowsArray.length} roles)
+                </h4>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                        <tr style={{ backgroundColor: '#dcfce7', borderBottom: '2px solid #22c55e' }}>
+                            <th style={{ padding: '8px', textAlign: 'left' }}>Role</th>
+                            <th style={{ padding: '8px', textAlign: 'left' }}>Description</th>
+                            <th style={{ padding: '8px', textAlign: 'center' }}>Hours</th>
+                            <th style={{ padding: '8px', textAlign: 'center' }}>Rate</th>
+                            <th style={{ padding: '8px', textAlign: 'right' }}>Cost</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {rowsArray.map((row: any, idx: number) => (
+                            <tr key={row.id || idx} style={{ borderBottom: '1px solid #bbf7d0' }}>
+                                <td style={{ padding: '8px' }}>{row.role || '-'}</td>
+                                <td style={{ padding: '8px' }}>{row.description || '-'}</td>
+                                <td style={{ padding: '8px', textAlign: 'center' }}>{row.hours}</td>
+                                <td style={{ padding: '8px', textAlign: 'center' }}>${(row.rate || 0).toFixed(2)}</td>
+                                <td style={{ padding: '8px', textAlign: 'right', fontWeight: 500 }}>
+                                    ${((row.hours || 0) * (row.rate || 0)).toFixed(2)} +GST
+                                </td>
+                            </tr>
+                        ))}
+                        <tr style={{ backgroundColor: '#f0fdf4' }}>
+                            <td colSpan={4} style={{ padding: '8px', textAlign: 'right', fontWeight: 600 }}>Subtotal:</td>
+                            <td style={{ padding: '8px', textAlign: 'right', fontWeight: 600 }}>${subtotal.toFixed(2)} +GST</td>
+                        </tr>
+                        <tr>
+                            <td colSpan={4} style={{ padding: '8px', textAlign: 'right', fontWeight: 600 }}>GST (10%):</td>
+                            <td style={{ padding: '8px', textAlign: 'right', fontWeight: 600 }}>+${gst.toFixed(2)}</td>
+                        </tr>
+                        <tr style={{ backgroundColor: '#22c55e', color: 'white' }}>
+                            <td colSpan={4} style={{ padding: '8px', textAlign: 'right', fontWeight: 700, fontSize: '1.1em' }}>Total (AUD inc. GST):</td>
+                            <td style={{ padding: '8px', textAlign: 'right', fontWeight: 700, fontSize: '1.1em' }}>${total.toFixed(2)}</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
-            {rowsArray.length === 0 ? (
-                <div style={{ padding: '16px', background: '#fef3c7', borderRadius: '4px' }}>
-                    <p style={{ fontWeight: 'bold', color: '#92400e' }}>⚠️ Pricing Table - No Rows Data</p>
-                    <p style={{ fontSize: '12px', color: '#78350f' }}>Raw rows value: {JSON.stringify(rows)}</p>
-                </div>
-            ) : (
-                <SOWPricingTableBase
-                    rows={rowsArray}
-                    discount={discount || 0}
-                    budgetTarget={budgetTarget}
-                    budgetNotes={budgetNotes || ''}
-                    deliverables={Array.isArray(deliverables) ? deliverables : []}
-                    scopeOverview={scopeOverview || ''}
-                    assumptions={Array.isArray(assumptions) ? assumptions : []}
-                    onDataChange={handleDataChange}
-                    isInEditor={true}
-                />
-            )}
         </NodeViewWrapper>
     );
 };
