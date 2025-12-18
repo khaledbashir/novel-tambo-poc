@@ -278,8 +278,7 @@ const TailwindAdvancedEditor = ({
             // Add a print stylesheet to the HTML content for proper rendering
             const styles = `
                 <style>
-                    @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
-                    body { font-family: 'Inter', sans-serif; padding: 2cm; }
+                    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; padding: 2cm; }
                     table { width: 100%; border-collapse: collapse; margin: 1em 0; }
                     th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
                     th { background-color: #f5f5f5; }
@@ -310,8 +309,31 @@ const TailwindAdvancedEditor = ({
                 });
 
                 if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.details || errorData.error || 'Export failed');
+                    const contentType = response.headers.get('content-type') || '';
+                    let message = `Export failed (HTTP ${response.status})`;
+
+                    try {
+                        if (contentType.includes('application/json')) {
+                            const errorData = await response.json();
+                            message =
+                                errorData?.details ||
+                                errorData?.error ||
+                                message;
+                        } else {
+                            const errorText = await response.text();
+                            if (errorText) {
+                                // Avoid dumping full HTML error pages into the UI
+                                const snippet = errorText
+                                    .replace(/\s+/g, ' ')
+                                    .slice(0, 200);
+                                message = `${message}: ${snippet}`;
+                            }
+                        }
+                    } catch {
+                        // If parsing fails, fall back to status only
+                    }
+
+                    throw new Error(message);
                 }
 
                 const blob = await response.blob();

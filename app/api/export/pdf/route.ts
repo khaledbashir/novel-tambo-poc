@@ -1,7 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
 import puppeteer from 'puppeteer-core';
 
+const withTimeout = async <T>(promise: Promise<T>, ms: number, label: string) => {
+    let timeoutId: NodeJS.Timeout | undefined;
+    const timeoutPromise = new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms);
+    });
+
+    try {
+        return await Promise.race([promise, timeoutPromise]);
+    } finally {
+        if (timeoutId) clearTimeout(timeoutId);
+    }
+};
+
+const buildBrowserWSEndpoint = (baseUrl: string, token?: string) => {
+    // Prefer explicit token passed via env var rather than hard-coded fallbacks.
+    // If the baseUrl already includes token=, do not modify it.
+    if (!token) return baseUrl;
+    if (baseUrl.includes('token=')) return baseUrl;
+
+    const separator = baseUrl.includes('?') ? '&' : '?';
+    return `${baseUrl}${separator}token=${encodeURIComponent(token)}`;
+};
+
 export async function POST(req: NextRequest) {
+    let browser: any;
+    let page: any;
+
     try {
         const { html } = await req.json();
 
@@ -13,6 +39,7 @@ export async function POST(req: NextRequest) {
         }
 
         const browserlessUrl = process.env.BROWSERLESS_URL;
+        const browserlessToken = process.env.BROWSERLESS_TOKEN;
 
         if (!browserlessUrl) {
             console.error("BROWSERLESS_URL is not configured");
@@ -22,57 +49,56 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        let browser;
-        try {
-            console.log(`Connecting to Browserless at ${browserlessUrl}...`);
-            browser = await puppeteer.connect({
-                browserWSEndpoint: browserlessUrl,
-            });
-        } catch (connError: any) {
-            console.error("Puppeteer Connection Error (Attempt 1):", connError);
+        const browserWSEndpoint = buildBrowserWSEndpoint(browserlessUrl, browserlessToken);
 
-            // Retry with default token if 401 and no token specified
-            if (connError.message.includes("401") && !browserlessUrl.includes("token=")) {
-                try {
-                    console.log("Retrying with default Browserless token...");
-                    const retryUrl = `${browserlessUrl}?token=6R0W53R1355`;
-                    browser = await puppeteer.connect({
-                        browserWSEndpoint: retryUrl,
-                    });
-                    console.log("Connected successfully with default token!");
-                } catch (retryError: any) {
-                    console.error("Retry failed:", retryError);
-                    return NextResponse.json(
-                        {
-                            error: "Failed to connect to Browserless (Auth Error)",
-                            details: "Service returned 401 Forbidden. Please check if your BROWSERLESS_URL needs a valid '?token=' parameter."
-                        },
-                        { status: 502 }
-                    );
-                }
-            } else {
-                return NextResponse.json(
-                    { error: "Failed to connect to Browserless", details: connError.message },
-                    { status: 502 }
-                );
-            }
+        try {
+            console.log('Connecting to Browserless...');
+            browser = await withTimeout(
+                puppeteer.connect({
+                    browserWSEndpoint,
+                }),
+                15_000,
+                'Browserless connect',
+            );
+        } catch (connError: any) {
+            const message = connError?.message || String(connError);
+            console.error('Puppeteer Connection Error:', message);
+
+            const authHint = message.includes('401') || message.includes('403')
+                ? 'Browserless rejected the connection (auth). Set BROWSERLESS_TOKEN or include ?token= in BROWSERLESS_URL.'
+                : undefined;
+
+            return NextResponse.json(
+                { error: 'Failed to connect to Browserless', details: authHint || message },
+                { status: 502 },
+            );
         }
 
-        const page = await browser.newPage();
-        await page.setContent(html, { waitUntil: "networkidle0" });
+        page = await browser.newPage();
+        page.setDefaultTimeout(30_000);
+        page.setDefaultNavigationTimeout(30_000);
 
-        const pdfBuffer = await page.pdf({
-            format: "A4",
-            printBackground: true,
-            margin: {
-                top: "2cm",
-                right: "2cm",
-                bottom: "2cm",
-                left: "2cm",
-            },
-        });
+        // Avoid networkidle0 which can hang on external assets; rely on DOM readiness.
+        await withTimeout(
+            page.setContent(html, { waitUntil: 'domcontentloaded' }),
+            30_000,
+            'page.setContent',
+        );
 
-        await browser.close();
+        const pdfBuffer = await withTimeout(
+            page.pdf({
+                format: 'A4',
+                printBackground: true,
+                margin: {
+                    top: '2cm',
+                    right: '2cm',
+                    bottom: '2cm',
+                    left: '2cm',
+                },
+            }),
+            60_000,
+            'page.pdf',
+        );
 
         return new NextResponse(pdfBuffer as any, {
             headers: {
@@ -86,5 +112,17 @@ export async function POST(req: NextRequest) {
             { error: "Failed to generate PDF", details: error.message },
             { status: 500 }
         );
+    } finally {
+        try {
+            if (page) await page.close();
+        } catch {
+            // ignore
+        }
+
+        try {
+            if (browser) await browser.close();
+        } catch {
+            // ignore
+        }
     }
 }
