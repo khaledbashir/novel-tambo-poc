@@ -109,7 +109,9 @@ export const createMarkdownComponents = (): Record<
     }, [deferredContent, match]);
 
     if (match && looksLikeCode(content)) {
-      // Check for SOW Proposal JSON
+      // DISABLED: SOWProposalBridge - FullSOWDocument already has Insert to Editor button
+      // Keeping JSON code blocks as regular code blocks now
+      /*
       if (match[1] === "json" || match[1] === "js") {
         try {
           const parsed = JSON.parse(content);
@@ -117,8 +119,6 @@ export const createMarkdownComponents = (): Record<
             return (
               <div className="my-4">
                 <SOWProposalBridge data={parsed} />
-                {/* Still show the code block but collapsed or as an option if needed, 
-                    but for now, we replace it for a cleaner UI if it's strictly a proposal */}
                 <details className="mt-2">
                   <summary className="text-xs text-muted-foreground cursor-pointer hover:underline">
                     View raw JSON
@@ -137,7 +137,7 @@ export const createMarkdownComponents = (): Record<
           // Fallback to regular code block if parsing fails
         }
       }
-
+      */ // END DISABLED SOWProposalBridge block
       return (
         <div className="relative border border-border rounded-md bg-muted max-w-[80ch] text-sm my-4">
           <CodeHeader language={match[1]} code={content} />
