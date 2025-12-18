@@ -341,10 +341,10 @@ const MessageContent = React.forwardRef<HTMLDivElement, MessageContentProps>(
             {message.isCancelled && (
               <span className="text-muted-foreground text-xs">cancelled</span>
             )}
-            {/* SOW Detection Footer for Assistant Messages */}
-            {message.role === "assistant" && typeof safeContent === "string" && safeContent.length > 200 && (
+            {/* SOW Detection Footer - DISABLED: Using SOWProposalBridge instead for JSON detection */}
+            {/* {message.role === "assistant" && typeof safeContent === "string" && safeContent.length > 200 && (
               <SOWMessageFooter messageContent={safeContent} />
-            )}
+            )} */}
           </div>
         )}
       </div>
