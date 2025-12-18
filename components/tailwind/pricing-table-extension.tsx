@@ -6,6 +6,13 @@ const PricingTableNodeView = (props: NodeViewProps) => {
     // Extract attributes from the node
     const { rows, discount, budgetTarget, budgetNotes, deliverables, scopeOverview, assumptions } = props.node.attrs;
 
+    // Debug logging
+    console.log('[PricingTableNodeView] Rendering with attrs:', {
+        rowCount: Array.isArray(rows) ? rows.length : 'not an array',
+        discount,
+        rows: rows,
+    });
+
     // Handler to sync data changes back to the Tiptap node
     const handleDataChange = (data: SOWPricingProps) => {
         // Update the node attributes
@@ -13,7 +20,11 @@ const PricingTableNodeView = (props: NodeViewProps) => {
     };
 
     return (
-        <NodeViewWrapper className="sow-pricing-wrapper my-4">
+        <NodeViewWrapper
+            className="sow-pricing-wrapper my-4"
+            contentEditable={false}
+            style={{ display: 'block', minHeight: '100px' }}
+        >
             <SOWPricingTableBase
                 // Pass props individually or spread them
                 rows={rows}
