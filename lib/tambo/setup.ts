@@ -8,6 +8,7 @@ import { z } from "zod";
 import { SOWPricingTable, sowPricingSchema } from "@/components/pricing/sow-pricing-table";
 import { FullSOWDocument, fullSOWSchema } from "@/components/sow/full-sow-document";
 import { BriefUpload, briefUploadSchema } from "@/components/sow/brief-upload";
+// SOW_GUIDELINES removed - was causing component generation issues
 
 /**
  * Tambo Components Registration
@@ -17,21 +18,21 @@ export const tamboComponents: TamboComponent[] = [
   {
     name: "FullSOWDocument",
     description:
-      "Complete multi-scope Statement of Work document with interactive pricing tables. Use this for generating COMPLETE SOWs from client requirements. Each scope includes: title, description, interactive pricing table with role dropdowns (92 roles from rate card), hours, rates, deliverables (bullet list), and assumptions (bullet list). Supports drag-and-drop row reordering, real-time GST calculations (10%), discount application, and budget tracking. Account Management roles MUST be placed at the bottom of each scope. Use when client requests a full SOW with multiple scopes (e.g., 'HubSpot integration and 2 landing pages').",
+      "Complete multi-scope Statement of Work document with interactive pricing tables. Use for generating SOWs from client requirements. Each scope includes: title, description, pricing table with roles (92 from rate card), hours, rates, deliverables, and assumptions. Supports drag-and-drop, GST (10%), discount, and budget tracking. Account Management roles at the bottom.",
     component: FullSOWDocument,
     propsSchema: fullSOWSchema,
   },
   {
     name: "SOWPricingTable",
     description:
-      "Single-scope interactive SOW pricing table with roles, hours, rates, discounts, GST calculations, budget tracking, and drag-and-drop reordering. Use for simple, single-scope pricing. For multi-scope SOWs, use FullSOWDocument instead. MUST include deliverables, scope overview, and assumptions. Account Management roles MUST be placed at the bottom.",
+      "Single-scope interactive pricing table with roles, hours, rates, discounts, GST calculations, and budget tracking. Use for simple single-scope pricing. For multi-scope SOWs, use FullSOWDocument instead. Account Management roles at the bottom.",
     component: SOWPricingTable,
     propsSchema: sowPricingSchema,
   },
   {
     name: "BriefUpload",
     description:
-      "Displays metadata and preview for an uploaded and parsed client brief PDF. Use after successfully ingesting a PDF brief with the ingest_client_brief tool. Shows file name, page count, word count, and brief preview.",
+      "Displays metadata and preview for an uploaded and parsed client brief PDF. Use after successfully ingesting a PDF brief with the ingest_client_brief tool.",
     component: BriefUpload,
     propsSchema: briefUploadSchema,
   },
@@ -229,9 +230,9 @@ export function getTamboConfig() {
   }
 
   return {
-    apiKey: apiKey || "",
+    apiKey: apiKey || "tambo_h3+0/8KsuYnv6rysb5B2t8xQZ4Ey3ucZ8Ia3JMMwUhKXBNYahmdHNJ8Nl08JKGeQW/7gS09OP04+Y8VI8wMEc/PGXlZUR67XnTzgDNTDq1c=",
     tamboUrl,
-    projectId: projectId || "",
+    projectId: projectId || "p_OKGBSNDp.60d984",
     components: tamboComponents,
     tools: tamboTools,
     contextHelpers: tamboContextHelpers,
