@@ -95,97 +95,62 @@ export function insertSOWToEditor(editor: Editor, sowData: SOWData) {
             const gst = afterDiscount * 0.1;
             const total = afterDiscount + gst;
 
-            // Try to insert interactive pricingTable node
-            // Using a different approach - insert via setNode
-            const pricingTableNode = {
-                type: 'pricingTable',
-                attrs: {
-                    rows: pricingRows,
-                    discount: discountPct,
-                    budgetNotes: '',
-                    deliverables: [],
-                    scopeOverview: '',
-                    assumptions: []
-                }
-            };
+            // Use static HTML table (React NodeView has Portal integration issues with Novel)
+            // TODO: Investigate Novel/Tiptap React Portal issue in future
+            let tableHtml = `
+                <table style="width: 100%; border-collapse: collapse; margin: 1em 0; border: 1px solid #e5e7eb;">
+                    <thead>
+                        <tr style="background-color: #f3f4f6; border-bottom: 2px solid #e5e7eb;">
+                            <th style="padding: 12px; text-align: left; font-weight: 600;">Role</th>
+                            <th style="padding: 12px; text-align: left; font-weight: 600; min-width: 200px;">Description</th>
+                            <th style="padding: 12px; text-align: center; font-weight: 600;">Hours</th>
+                            <th style="padding: 12px; text-align: center; font-weight: 600;">Rate/Hr</th>
+                            <th style="padding: 12px; text-align: right; font-weight: 600;">Cost (AUD)</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
 
-            console.log('[insert-sow] Attempting to insert pricingTable node:', pricingTableNode);
+            pricingRows.forEach(row => {
+                const cost = row.hours * row.rate;
+                tableHtml += `
+                        <tr style="border-bottom: 1px solid #e5e7eb;">
+                            <td style="padding: 12px;">${row.role || '-'}</td>
+                            <td style="padding: 12px;">${row.description || '-'}</td>
+                            <td style="padding: 12px; text-align: center;">${row.hours}</td>
+                            <td style="padding: 12px; text-align: center;">$${row.rate.toFixed(2)}</td>
+                            <td style="padding: 12px; text-align: right; font-weight: 500;">$${cost.toLocaleString('en-AU', { minimumFractionDigits: 2 })} +GST</td>
+                        </tr>`;
+            });
 
-            // Try inserting the node
-            try {
-                const result = editor.chain().focus().insertContent(pricingTableNode).run();
-                console.log('[insert-sow] pricingTable node insert result:', result);
+            // Summary rows
+            tableHtml += `
+                        <tr>
+                            <td colspan="4" style="padding: 12px; text-align: right; font-weight: 600;">Subtotal (ex. GST):</td>
+                            <td style="padding: 12px; text-align: right; font-weight: 600;">$${subtotal.toLocaleString('en-AU', { minimumFractionDigits: 2 })} +GST</td>
+                        </tr>`;
 
-                // Check if the node was actually inserted by looking at the content
-                const doc = editor.state.doc;
-                let hasTable = false;
-                doc.descendants((node) => {
-                    if (node.type.name === 'pricingTable') {
-                        hasTable = true;
-                        return false;
-                    }
-                    return true;
-                });
-
-                if (!hasTable) {
-                    console.warn('[insert-sow] pricingTable node not found in doc, inserting static HTML fallback');
-                    // Insert static HTML as fallback
-                    let tableHtml = `
-                        <table style="width: 100%; border-collapse: collapse; margin: 1em 0; border: 1px solid #e5e7eb;">
-                            <thead>
-                                <tr style="background-color: #f3f4f6; border-bottom: 2px solid #e5e7eb;">
-                                    <th style="padding: 12px; text-align: left; font-weight: 600;">Role</th>
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; min-width: 200px;">Description</th>
-                                    <th style="padding: 12px; text-align: center; font-weight: 600;">Hours</th>
-                                    <th style="padding: 12px; text-align: center; font-weight: 600;">Rate/Hr</th>
-                                    <th style="padding: 12px; text-align: right; font-weight: 600;">Cost (AUD)</th>
-                                </tr>
-                            </thead>
-                            <tbody>`;
-
-                    pricingRows.forEach(row => {
-                        const cost = row.hours * row.rate;
-                        tableHtml += `
-                                <tr style="border-bottom: 1px solid #e5e7eb;">
-                                    <td style="padding: 12px;">${row.role || '-'}</td>
-                                    <td style="padding: 12px;">${row.description || '-'}</td>
-                                    <td style="padding: 12px; text-align: center;">${row.hours}</td>
-                                    <td style="padding: 12px; text-align: center;">$${row.rate.toFixed(2)}</td>
-                                    <td style="padding: 12px; text-align: right; font-weight: 500;">$${cost.toLocaleString('en-AU', { minimumFractionDigits: 2 })} +GST</td>
-                                </tr>`;
-                    });
-
-                    tableHtml += `
-                                <tr>
-                                    <td colspan="4" style="padding: 12px; text-align: right; font-weight: 600;">Subtotal (ex. GST):</td>
-                                    <td style="padding: 12px; text-align: right; font-weight: 600;">$${subtotal.toLocaleString('en-AU', { minimumFractionDigits: 2 })} +GST</td>
-                                </tr>`;
-
-                    if (discountPct > 0) {
-                        tableHtml += `
-                                <tr style="color: #dc2626;">
-                                    <td colspan="4" style="padding: 12px; text-align: right;">Discount (${discountPct}%):</td>
-                                    <td style="padding: 12px; text-align: right;">-$${discountAmount.toLocaleString('en-AU', { minimumFractionDigits: 2 })}</td>
-                                </tr>`;
-                    }
-
-                    tableHtml += `
-                                <tr>
-                                    <td colspan="4" style="padding: 12px; text-align: right; font-weight: 600;">GST (10%):</td>
-                                    <td style="padding: 12px; text-align: right; font-weight: 600;">+$${gst.toLocaleString('en-AU', { minimumFractionDigits: 2 })}</td>
-                                </tr>
-                                <tr style="background-color: #f3f4f6; border-top: 2px solid #e5e7eb;">
-                                    <td colspan="4" style="padding: 12px; text-align: right; font-weight: 700; font-size: 1.1em;">Total (AUD inc. GST):</td>
-                                    <td style="padding: 12px; text-align: right; font-weight: 700; font-size: 1.1em; color: #059669;">$${total.toLocaleString('en-AU', { minimumFractionDigits: 2 })}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    `;
-                    editor.chain().focus().insertContent(tableHtml).run();
-                }
-            } catch (error) {
-                console.error('[insert-sow] Failed to insert pricingTable node:', error);
+            if (discountPct > 0) {
+                tableHtml += `
+                        <tr style="color: #dc2626;">
+                            <td colspan="4" style="padding: 12px; text-align: right;">Discount (${discountPct}%):</td>
+                            <td style="padding: 12px; text-align: right;">-$${discountAmount.toLocaleString('en-AU', { minimumFractionDigits: 2 })}</td>
+                        </tr>`;
             }
+
+            tableHtml += `
+                        <tr>
+                            <td colspan="4" style="padding: 12px; text-align: right; font-weight: 600;">GST (10%):</td>
+                            <td style="padding: 12px; text-align: right; font-weight: 600;">+$${gst.toLocaleString('en-AU', { minimumFractionDigits: 2 })}</td>
+                        </tr>
+                        <tr style="background-color: #f3f4f6; border-top: 2px solid #e5e7eb;">
+                            <td colspan="4" style="padding: 12px; text-align: right; font-weight: 700; font-size: 1.1em;">Total (AUD inc. GST):</td>
+                            <td style="padding: 12px; text-align: right; font-weight: 700; font-size: 1.1em; color: #059669;">$${total.toLocaleString('en-AU', { minimumFractionDigits: 2 })}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            `;
+
+            editor.chain().focus().insertContent(tableHtml).run();
 
             // Assumptions (Standard HTML List)
             if (scope.assumptions && scope.assumptions.length > 0) {
