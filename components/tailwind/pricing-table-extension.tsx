@@ -1,44 +1,62 @@
 import { mergeAttributes, Node } from '@tiptap/core';
 import { ReactNodeViewRenderer, NodeViewProps, NodeViewWrapper } from '@tiptap/react';
 import { SOWPricingTableBase, SOWPricingProps } from '@/components/pricing/sow-pricing-table-simple';
+import React from 'react';
 
 const PricingTableNodeView = (props: NodeViewProps) => {
     // Extract attributes from the node
     const { rows, discount, budgetTarget, budgetNotes, deliverables, scopeOverview, assumptions } = props.node.attrs;
 
-    // Debug logging
-    console.log('[PricingTableNodeView] Rendering with attrs:', {
-        rowCount: Array.isArray(rows) ? rows.length : 'not an array',
+    // Ensure rows is always an array
+    const rowsArray = Array.isArray(rows) ? rows : [];
+
+    // Debug logging - expanded
+    console.log('[PricingTableNodeView] Rendering:', {
+        rowCount: rowsArray.length,
         discount,
-        rows: rows,
+        rowsType: typeof rows,
+        isArray: Array.isArray(rows),
+        firstRow: rowsArray[0],
     });
 
     // Handler to sync data changes back to the Tiptap node
     const handleDataChange = (data: SOWPricingProps) => {
-        // Update the node attributes
         props.updateAttributes(data);
     };
 
     return (
         <NodeViewWrapper
+            as="div"
             className="sow-pricing-wrapper my-4"
             contentEditable={false}
-            style={{ display: 'block', minHeight: '100px' }}
+            data-pricing-table="true"
+            style={{
+                display: 'block',
+                minHeight: '200px',
+                border: '3px solid #20e28f',
+                padding: '8px',
+                borderRadius: '8px',
+                backgroundColor: 'rgba(32, 226, 143, 0.05)',
+            }}
         >
-            <SOWPricingTableBase
-                // Pass props individually or spread them
-                rows={rows}
-                discount={discount}
-                budgetTarget={budgetTarget}
-                budgetNotes={budgetNotes}
-                deliverables={deliverables}
-                scopeOverview={scopeOverview}
-                assumptions={assumptions}
-                // Important: handle data changes
-                onDataChange={handleDataChange}
-                // Flag to adjust UI for editor context (e.g. hide duplicated fields)
-                isInEditor={true}
-            />
+            {rowsArray.length === 0 ? (
+                <div style={{ padding: '16px', background: '#fef3c7', borderRadius: '4px' }}>
+                    <p style={{ fontWeight: 'bold', color: '#92400e' }}>⚠️ Pricing Table - No Rows Data</p>
+                    <p style={{ fontSize: '12px', color: '#78350f' }}>Raw rows value: {JSON.stringify(rows)}</p>
+                </div>
+            ) : (
+                <SOWPricingTableBase
+                    rows={rowsArray}
+                    discount={discount || 0}
+                    budgetTarget={budgetTarget}
+                    budgetNotes={budgetNotes || ''}
+                    deliverables={Array.isArray(deliverables) ? deliverables : []}
+                    scopeOverview={scopeOverview || ''}
+                    assumptions={Array.isArray(assumptions) ? assumptions : []}
+                    onDataChange={handleDataChange}
+                    isInEditor={true}
+                />
+            )}
         </NodeViewWrapper>
     );
 };
