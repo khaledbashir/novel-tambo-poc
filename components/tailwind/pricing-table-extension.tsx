@@ -26,19 +26,27 @@ const PricingTableNodeView = (props: NodeViewProps) => {
 
     return (
         <NodeViewWrapper
-            as="div"
-            className="sow-pricing-wrapper my-4"
+            as="section"
+            className="sow-pricing-wrapper not-prose my-4"
             contentEditable={false}
             data-pricing-table="true"
+            data-row-count={rowsArray.length}
             style={{
                 display: 'block',
                 minHeight: '200px',
                 border: '3px solid #20e28f',
                 padding: '8px',
                 borderRadius: '8px',
-                backgroundColor: 'rgba(32, 226, 143, 0.05)',
+                backgroundColor: 'rgba(32, 226, 143, 0.1)',
+                position: 'relative',
             }}
         >
+            <div style={{ padding: '8px', background: '#ecfdf5', borderRadius: '4px', marginBottom: '8px' }}>
+                <strong>🔧 DEBUG: Pricing Table Node</strong>
+                <span style={{ marginLeft: '8px', fontSize: '12px' }}>
+                    Rows: {rowsArray.length} | Node Type: {props.node.type.name}
+                </span>
+            </div>
             {rowsArray.length === 0 ? (
                 <div style={{ padding: '16px', background: '#fef3c7', borderRadius: '4px' }}>
                     <p style={{ fontWeight: 'bold', color: '#92400e' }}>⚠️ Pricing Table - No Rows Data</p>
