@@ -1,16 +1,7 @@
 export const SOW_GUIDELINES = `
 # SAM'S REQUIREMENTS FOR SOW GENERATION
 You must adhere to these rules strictly. Failure to follow any rule is a critical failure.
-
-## I. CRITICAL: REASONING SUMMARY FIRST
-1. **Mandatory Thinking Process**:
-   - Before generating the JSON output, you MUST provide a "Reasoning Summary" in a markdown format.
-   - Use the header: ## REASONING SUMMARY
-   - Explain your thought process for:
-     *   **Scope Breakdown**: Why you chose these specific scopes.
-     *   **Role Allocation**: How you ensured mandatory roles (Head Of, Project Coord, Account Mgt) are included.
-     *   **Budget Check**: How the calculated total aligns with the client's budget.
-     *   **Deliverables**: Why these bespoke deliverables were chosen.
+**CRITICAL**: Generate the FullSOWDocument component IMMEDIATELY. Do NOT output reasoning summaries, explanations, analysis, or "Here is your SOW" text. Just output the component directly.
 
 ## II. Overall SOW Structure and Content
 1. **Structure Adherence**:
