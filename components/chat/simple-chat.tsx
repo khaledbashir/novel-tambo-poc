@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import { ScrollableMessageContainer } from "@/components/tambo/scrollable-message-container";
+import { ScrollableMessageContainer } from "@/components/chat/scrollable-message-container";
 import { Streamdown } from "streamdown";
 import { markdownComponents } from "@/components/tambo/markdown-components";
 
@@ -13,27 +13,27 @@ type ChatMessage = {
   text: string;
 };
 
-function useChatHistory(key = "chat-history") {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem(key);
-      if (raw) setMessages(JSON.parse(raw));
-    } catch {}
-  }, [key]);
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(key, JSON.stringify(messages));
-    } catch {}
-  }, [key, messages]);
-  return { messages, setMessages } as const;
+async function loadHistory(contextKey: string): Promise<ChatMessage[]> {
+  const resp = await fetch(
+    `/api/chat/history?contextKey=${encodeURIComponent(contextKey)}`,
+  );
+  if (!resp.ok) return [];
+  const data = await resp.json();
+  const rows = Array.isArray(data?.messages) ? data.messages : [];
+  return rows
+    .filter((m: any) => m?.role === "user" || m?.role === "assistant")
+    .map((m: any) => ({
+      id: String(m.id),
+      role: m.role,
+      text: String(m.content_text ?? ""),
+    }));
 }
 
 async function streamFromGenerate(prompt: string, onDelta: (delta: string) => void) {
-  const resp = await fetch("/api/generate", {
+  const resp = await fetch("/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt, option: "zap", command: "none" }),
+    body: JSON.stringify({ contextKey: "simple-chat", message: prompt }),
   });
   if (!resp.body) {
     const txt = await resp.text();
@@ -50,10 +50,23 @@ async function streamFromGenerate(prompt: string, onDelta: (delta: string) => vo
 }
 
 export function SimpleChat({ className }: { className?: string }) {
-  const { messages, setMessages } = useChatHistory();
+  const contextKey = "simple-chat";
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
   const assistRef = useRef<string>("");
+
+  useEffect(() => {
+    let mounted = true;
+    loadHistory(contextKey)
+      .then((m) => {
+        if (mounted) setMessages(m);
+      })
+      .catch(() => {});
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const canSend = input.trim().length > 0 && !isSending;
 
@@ -130,7 +143,7 @@ export function SimpleChat({ className }: { className?: string }) {
   return (
     <div className={cn("flex h-full w-full flex-col", className)}>
       <div className="flex-1 min-h-0">
-        <ScrollableMessageContainer className="p-4 bg-background/50">
+        <ScrollableMessageContainer className="p-4 bg-background/50" autoscrollDeps={messages}>
           <div className="flex flex-col gap-2">{rendered}</div>
         </ScrollableMessageContainer>
       </div>

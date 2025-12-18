@@ -3,11 +3,15 @@
  * Run with: npx tsx check-anythingllm-status.ts
  */
 
-const ANYTHING_LLM_URL = "https://ahmad-anything-llm.840tjq.easypanel.host/api";
-const ANYTHING_LLM_API_KEY = "0G0WTZ3-6ZX4D20-H35VBRG-9059WPA";
+const ANYTHING_LLM_URL = process.env.ANYTHING_LLM_URL;
+const ANYTHING_LLM_API_KEY = process.env.ANYTHING_LLM_API_KEY;
 const WORKSPACE_SLUG = "novel";
 
 async function checkWorkspaceStatus() {
+    if (!ANYTHING_LLM_URL || !ANYTHING_LLM_API_KEY) {
+        console.error("❌ Missing ANYTHING_LLM_URL or ANYTHING_LLM_API_KEY env vars");
+        process.exit(1);
+    }
     console.log("🔍 Checking AnythingLLM Workspace Status...\n");
 
     try {

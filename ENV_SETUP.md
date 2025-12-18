@@ -43,11 +43,11 @@ KV_REST_API_TOKEN=your_kv_token_here
 
 ```bash
 # Z.AI Configuration for Novel Editor
-ZAI_API_KEY=08479f01709a43f0af5d7a7490e3bb55.QUKmWD8Zv2iq9OvB
+ZAI_API_KEY=your_zai_api_key_here
 ZAI_API_URL=https://api.z.ai/api/coding/paas/v4
 
 # Tambo AI Chat
-NEXT_PUBLIC_TAMBO_API_KEY=tambo_CIffRJ3kK0MWzSIo2naAhzGAnJfVHgwQFKtf4C79wj8tpPelsZul/wL0rzOCiHaciw0oB0bsb4cVgNNOfN1opzEf5dAbHhYbSp9CleeJois=
+NEXT_PUBLIC_TAMBO_API_KEY=your_tambo_api_key_here
 NEXT_PUBLIC_TAMBO_URL=https://api.tambo.co
 ```
 

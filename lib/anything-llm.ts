@@ -1,6 +1,13 @@
 import { z } from "zod";
 
-const ANYTHING_LLM_URL = process.env.ANYTHING_LLM_URL;
+function normalizeAnythingLLMBaseUrl(raw?: string): string | undefined {
+    if (!raw) return undefined;
+    const trimmed = raw.replace(/\/$/, "");
+    // AnythingLLM developer API is typically mounted under /api.
+    return trimmed.endsWith("/api") ? trimmed : `${trimmed}/api`;
+}
+
+const ANYTHING_LLM_URL = normalizeAnythingLLMBaseUrl(process.env.ANYTHING_LLM_URL);
 const ANYTHING_LLM_API_KEY = process.env.ANYTHING_LLM_API_KEY;
 
 if (!ANYTHING_LLM_URL || !ANYTHING_LLM_API_KEY) {
@@ -253,4 +260,47 @@ export const anythingLLM = {
             return { success: false, error: error.message };
         }
     },
+
+    /**
+     * Perform a raw vector search (lower-level RAG access).
+     */
+    async vectorSearch(
+        workspaceSlug: string,
+        queryText: string,
+        topK: number = 6,
+    ): Promise<AnythingLLMResponse> {
+        try {
+            if (!ANYTHING_LLM_URL || !ANYTHING_LLM_API_KEY) {
+                throw new Error("AnythingLLM URL or API key not configured");
+            }
+
+            const url = `${ANYTHING_LLM_URL}/v1/workspace/${workspaceSlug}/vector-search`;
+
+            const response = await fetch(url, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${ANYTHING_LLM_API_KEY}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ query: queryText, topK }),
+                signal: AbortSignal.timeout(60000),
+            });
+
+            if (!response.ok) {
+                let errorMessage = `Vector search failed with status ${response.status}`;
+                try {
+                    const error = await response.json();
+                    errorMessage = error.message || errorMessage;
+                } catch {}
+                throw new Error(errorMessage);
+            }
+
+            const data = await response.json();
+            return { success: true, data };
+        } catch (error: any) {
+            console.error("AnythingLLM Vector Search Error:", error);
+            return { success: false, error: error.message };
+        }
+    },
 };
+
