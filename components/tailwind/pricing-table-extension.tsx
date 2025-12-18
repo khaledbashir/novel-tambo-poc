@@ -56,6 +56,26 @@ export const PricingTableExtension = Node.create({
         return {
             rows: {
                 default: [],
+                // Parse JSON string when loading from HTML
+                parseHTML: element => {
+                    const data = element.getAttribute('data-rows');
+                    if (data) {
+                        try {
+                            return JSON.parse(data);
+                        } catch (e) {
+                            console.warn('[PricingTable] Failed to parse rows:', e);
+                            return [];
+                        }
+                    }
+                    return [];
+                },
+                // Render as JSON string in HTML
+                renderHTML: attributes => {
+                    if (!attributes.rows || !Array.isArray(attributes.rows)) {
+                        return { 'data-rows': '[]' };
+                    }
+                    return { 'data-rows': JSON.stringify(attributes.rows) };
+                },
             },
             discount: {
                 default: 0,
@@ -68,12 +88,32 @@ export const PricingTableExtension = Node.create({
             },
             deliverables: {
                 default: [],
+                parseHTML: element => {
+                    const data = element.getAttribute('data-deliverables');
+                    if (data) {
+                        try { return JSON.parse(data); } catch { return []; }
+                    }
+                    return [];
+                },
+                renderHTML: attributes => {
+                    return { 'data-deliverables': JSON.stringify(attributes.deliverables || []) };
+                },
             },
             scopeOverview: {
                 default: '',
             },
             assumptions: {
                 default: [],
+                parseHTML: element => {
+                    const data = element.getAttribute('data-assumptions');
+                    if (data) {
+                        try { return JSON.parse(data); } catch { return []; }
+                    }
+                    return [];
+                },
+                renderHTML: attributes => {
+                    return { 'data-assumptions': JSON.stringify(attributes.assumptions || []) };
+                },
             },
         };
     },
