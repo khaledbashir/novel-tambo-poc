@@ -138,19 +138,23 @@ const FullSOWDocumentBase: React.FC<FullSOWProps | (z.infer<typeof aiSOWSchema> 
         setDiscount(initialDiscount);
     }, [initialDiscount]);
 
-    // Notify parent of data changes
+    // Notify parent of data changes (Debounced to prevent 500 errors and loops)
     React.useEffect(() => {
-        if (onDataChange) {
-            onDataChange({
-                clientName,
-                projectTitle,
-                scopes,
-                projectOverview,
-                objectives: initialObjectives,
-                budgetNotes,
-                discount,
-            });
-        }
+        const handler = setTimeout(() => {
+            if (onDataChange) {
+                onDataChange({
+                    clientName,
+                    projectTitle,
+                    scopes,
+                    projectOverview,
+                    objectives: initialObjectives,
+                    budgetNotes,
+                    discount,
+                });
+            }
+        }, 1000); // 1s debounce
+
+        return () => clearTimeout(handler);
     }, [scopes, discount, clientName, projectTitle, projectOverview, initialObjectives, budgetNotes, onDataChange]);
 
     // Available roles from rate card
@@ -1015,7 +1019,7 @@ const FullSOWDocumentBase: React.FC<FullSOWProps | (z.infer<typeof aiSOWSchema> 
     };
 
     return (
-        <div className="sow-print-container w-full max-w-7xl mx-auto p-8 bg-card rounded-lg border border-border shadow-lg space-y-6">
+        <div className="sow-print-container w-full max-w-7xl mx-auto p-8 bg-card rounded-lg border border-border shadow-lg space-y-6 flex flex-col min-h-[500px]">
             {/* Header - Centered Logo */}
             <div className="flex flex-col items-center border-b border-border pb-8 mb-8">
                 <img
@@ -1584,7 +1588,7 @@ const FullSOWDocumentBase: React.FC<FullSOWProps | (z.infer<typeof aiSOWSchema> 
 
             {/* Actions Footer */}
             {!isInEditor && (
-                <div className="border-t border-border pt-8 space-y-4">
+                <div className="border-t border-border pt-8 space-y-4 mt-auto">
                     {/* Insert Button - Minimal & Clean */}
                     <div className="flex flex-col gap-1">
                         <button
