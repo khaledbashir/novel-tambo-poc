@@ -5,8 +5,8 @@ import {
   currentPageContextHelper,
 } from "@tambo-ai/react";
 import { z } from "zod";
-import { SOWPricingTable, sowPricingSchema } from "@/components/pricing/sow-pricing-table";
-import { FullSOWDocument, fullSOWSchema } from "@/components/sow/full-sow-document";
+import { SOWPricingTable, aiSOWPricingSchema } from "@/components/pricing/sow-pricing-table";
+import { FullSOWDocument, aiSOWSchema } from "@/components/sow/full-sow-document";
 import { BriefUpload, briefUploadSchema } from "@/components/sow/brief-upload";
 // SOW_GUIDELINES removed - was causing component generation issues
 
@@ -20,14 +20,14 @@ export const tamboComponents: TamboComponent[] = [
     description:
       "Complete multi-scope Statement of Work document with interactive pricing tables. Use for generating SOWs from client requirements. Each scope includes: title, description, pricing table with roles (92 from rate card), hours, rates, deliverables, and assumptions. Supports drag-and-drop, GST (10%), discount, and budget tracking. Account Management roles at the bottom.",
     component: FullSOWDocument,
-    propsSchema: fullSOWSchema,
+    propsSchema: aiSOWSchema,
   },
   {
     name: "SOWPricingTable",
     description:
       "Single-scope interactive pricing table with roles, hours, rates, discounts, GST calculations, and budget tracking. Use for simple single-scope pricing. For multi-scope SOWs, use FullSOWDocument instead. Account Management roles at the bottom.",
     component: SOWPricingTable,
-    propsSchema: sowPricingSchema,
+    propsSchema: aiSOWPricingSchema,
   },
   {
     name: "BriefUpload",

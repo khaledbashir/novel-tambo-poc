@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
     Trash2,
     Plus,
@@ -14,6 +14,7 @@ import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { notifications } from "@/lib/utils";
+import { withInteractable } from "@tambo-ai/react";
 
 // Types
 interface RoleRow {
@@ -61,32 +62,77 @@ export const fullSOWSchema = z.object({
     discount: z.union([z.number(), z.string(), z.null(), z.undefined()]).transform((val) => Number(val) || 0),
 });
 
+// AI-Specific Schema (Cleaner for LLM generation)
+// Removes transforms and makes IDs optional (we gen them)
+export const aiSOWSchema = z.object({
+    clientName: z.string(),
+    projectTitle: z.string(),
+    projectOverview: z.string().optional(),
+    objectives: z.array(z.string()).optional(),
+    budgetNotes: z.string().optional(),
+    discount: z.number().optional().default(0),
+    scopes: z.array(
+        z.object({
+            title: z.string(),
+            description: z.string(),
+            deliverables: z.array(z.string()),
+            assumptions: z.array(z.string()),
+            roles: z.array(
+                z.object({
+                    task: z.string(),
+                    role: z.string(), // AI must pick from known roles
+                    hours: z.number(),
+                    rate: z.number(),
+                })
+            ),
+        })
+    ),
+});
+
 export type FullSOWProps = z.infer<typeof fullSOWSchema> & {
     onDataChange?: (data: z.infer<typeof fullSOWSchema>) => void;
     isInEditor?: boolean;
 };
 
-const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
-    clientName,
-    projectTitle,
-    scopes: initialScopes = [],
-    projectOverview = "",
-    objectives: initialObjectives = [],
-    budgetNotes = "",
-    discount: initialDiscount = 0,
-    onDataChange,
-    isInEditor = false,
-}) => {
-    const [scopes, setScopes] = useState<Scope[]>(initialScopes || []);
-    const [discount, setDiscount] = useState(initialDiscount);
+// Helper: Generate ID
+const genId = (prefix: string) => `${prefix}-${Math.random().toString(36).substr(2, 9)}`;
+
+const FullSOWDocumentBase: React.FC<FullSOWProps | (z.infer<typeof aiSOWSchema> & { onDataChange?: any; isInEditor?: boolean })> = (props) => {
+    // Normalize props (handle AI input which might lack IDs)
+    const normalizedScopes: Scope[] = useMemo(() => (props.scopes || []).map((s: any) => ({
+        ...s,
+        id: s.id || genId('scope'),
+        roles: (s.roles || []).map((r: any) => ({
+            ...r,
+            id: r.id || genId('role'),
+            // Ensure numbers
+            hours: Number(r.hours) || 0,
+            rate: Number(r.rate) || 0
+        }))
+    })), [props.scopes]);
+
+    const {
+        clientName,
+        projectTitle,
+        projectOverview = "",
+        objectives: initialObjectives = [],
+        budgetNotes = "",
+        discount: initialDiscount = 0,
+        onDataChange,
+        isInEditor = false,
+    } = props;
+
+    const [scopes, setScopes] = useState<Scope[]>(normalizedScopes);
+    const [discount, setDiscount] = useState(Number(initialDiscount) || 0);
     const [hideGrandTotal, setHideGrandTotal] = useState(false);
 
     // Sync state with props when they change (critical for streaming/updates)
-    React.useEffect(() => {
-        if (initialScopes) {
-            setScopes(initialScopes);
+    // Sync state with props when they change (critical for streaming/updates)
+    useEffect(() => {
+        if (normalizedScopes && normalizedScopes.length > 0) {
+            setScopes(normalizedScopes);
         }
-    }, [initialScopes]);
+    }, [normalizedScopes]);
 
     React.useEffect(() => {
         setDiscount(initialDiscount);
@@ -1689,7 +1735,11 @@ const FullSOWDocumentBase: React.FC<FullSOWProps> = ({
     );
 };
 
-// Export directly without Interactable wrapper to prevent infinite loops
-export const FullSOWDocument = FullSOWDocumentBase;
+// Export with Interactable wrapper to enable AI updates
+export const FullSOWDocument = withInteractable(FullSOWDocumentBase, {
+    componentName: 'FullSOWDocument',
+    description: 'Complete multi-scope Statement of Work document with interactive pricing tables. Use for generating SOWs from client requirements.',
+    propsSchema: aiSOWSchema,
+});
 
 export default FullSOWDocument;

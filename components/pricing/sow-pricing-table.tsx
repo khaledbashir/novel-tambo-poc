@@ -37,7 +37,28 @@ export type SOWPricingProps = z.infer<typeof sowPricingSchema> & {
     isInEditor?: boolean;
 };
 
-export const SOWPricingTableBase: React.FC<SOWPricingProps> = ({
+// AI-Specific Schema (Cleaner for LLM generation)
+export const aiSOWPricingSchema = z.object({
+    rows: z.array(
+        z.object({
+            role: z.string(),
+            description: z.string(),
+            hours: z.number(),
+            rate: z.number(),
+        })
+    ),
+    discount: z.number().optional().default(0),
+    budgetTarget: z.number().optional(),
+    budgetNotes: z.string().optional(),
+    deliverables: z.array(z.string()).optional(),
+    scopeOverview: z.string().optional(),
+    assumptions: z.array(z.string()).optional(),
+});
+
+// Helper: Generate ID
+const genId = () => `row-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+
+export const SOWPricingTableBase: React.FC<SOWPricingProps | (z.infer<typeof aiSOWPricingSchema> & { onDataChange?: any; isInEditor?: boolean })> = ({
     rows: initialRows = [],
     discount: initialDiscount = 0,
     budgetTarget,
@@ -48,11 +69,19 @@ export const SOWPricingTableBase: React.FC<SOWPricingProps> = ({
     onDataChange,
     isInEditor = false,
 }) => {
+    // Normalization logic for AI input (missing IDs)
+    const normalizedRows: PricingRow[] = (initialRows || []).map((r: any) => ({
+        ...r,
+        id: r.id || genId(),
+        hours: Number(r.hours) || 0,
+        rate: Number(r.rate) || 0
+    }));
+
     // PROTECTED INITIALIZATION: Ensure rows is always an array
-    const [rows, setRows] = useState<PricingRow[]>(Array.isArray(initialRows) && initialRows.length > 0 ? initialRows : [
-        { id: 'row-1', role: '', description: '', hours: 0, rate: 0 }
+    const [rows, setRows] = useState<PricingRow[]>(Array.isArray(normalizedRows) && normalizedRows.length > 0 ? normalizedRows : [
+        { id: genId(), role: '', description: '', hours: 0, rate: 0 }
     ]);
-    const [discount, setDiscount] = useState(initialDiscount);
+    const [discount, setDiscount] = useState(Number(initialDiscount) || 0);
     const [budgetNotes] = useState(initialBudgetNotes);
     const [draggedRow, setDraggedRow] = useState<string | null>(null);
 
