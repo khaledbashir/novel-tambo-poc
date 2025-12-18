@@ -95,62 +95,22 @@ export function insertSOWToEditor(editor: Editor, sowData: SOWData) {
             const gst = afterDiscount * 0.1;
             const total = afterDiscount + gst;
 
-            // Use static HTML table (React NodeView has Portal integration issues with Novel)
-            // TODO: Investigate Novel/Tiptap React Portal issue in future
-            let tableHtml = `
-                <table style="width: 100%; border-collapse: collapse; margin: 1em 0; border: 1px solid #e5e7eb;">
-                    <thead>
-                        <tr style="background-color: #f3f4f6; border-bottom: 2px solid #e5e7eb;">
-                            <th style="padding: 12px; text-align: left; font-weight: 600;">Role</th>
-                            <th style="padding: 12px; text-align: left; font-weight: 600; min-width: 200px;">Description</th>
-                            <th style="padding: 12px; text-align: center; font-weight: 600;">Hours</th>
-                            <th style="padding: 12px; text-align: center; font-weight: 600;">Rate/Hr</th>
-                            <th style="padding: 12px; text-align: right; font-weight: 600;">Cost (AUD)</th>
-                        </tr>
-                    </thead>
-                    <tbody>`;
-
-            pricingRows.forEach(row => {
-                const cost = row.hours * row.rate;
-                tableHtml += `
-                        <tr style="border-bottom: 1px solid #e5e7eb;">
-                            <td style="padding: 12px;">${row.role || '-'}</td>
-                            <td style="padding: 12px;">${row.description || '-'}</td>
-                            <td style="padding: 12px; text-align: center;">${row.hours}</td>
-                            <td style="padding: 12px; text-align: center;">$${row.rate.toFixed(2)}</td>
-                            <td style="padding: 12px; text-align: right; font-weight: 500;">$${cost.toLocaleString('en-AU', { minimumFractionDigits: 2 })} +GST</td>
-                        </tr>`;
-            });
-
-            // Summary rows
-            tableHtml += `
-                        <tr>
-                            <td colspan="4" style="padding: 12px; text-align: right; font-weight: 600;">Subtotal (ex. GST):</td>
-                            <td style="padding: 12px; text-align: right; font-weight: 600;">$${subtotal.toLocaleString('en-AU', { minimumFractionDigits: 2 })} +GST</td>
-                        </tr>`;
-
-            if (discountPct > 0) {
-                tableHtml += `
-                        <tr style="color: #dc2626;">
-                            <td colspan="4" style="padding: 12px; text-align: right;">Discount (${discountPct}%):</td>
-                            <td style="padding: 12px; text-align: right;">-$${discountAmount.toLocaleString('en-AU', { minimumFractionDigits: 2 })}</td>
-                        </tr>`;
-            }
-
-            tableHtml += `
-                        <tr>
-                            <td colspan="4" style="padding: 12px; text-align: right; font-weight: 600;">GST (10%):</td>
-                            <td style="padding: 12px; text-align: right; font-weight: 600;">+$${gst.toLocaleString('en-AU', { minimumFractionDigits: 2 })}</td>
-                        </tr>
-                        <tr style="background-color: #f3f4f6; border-top: 2px solid #e5e7eb;">
-                            <td colspan="4" style="padding: 12px; text-align: right; font-weight: 700; font-size: 1.1em;">Total (AUD inc. GST):</td>
-                            <td style="padding: 12px; text-align: right; font-weight: 700; font-size: 1.1em; color: #059669;">$${total.toLocaleString('en-AU', { minimumFractionDigits: 2 })}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            `;
-
-            editor.chain().focus().insertContent(tableHtml).run();
+            // Insert as custom interactive node (renders via PricingTableExtension NodeView)
+            editor
+                .chain()
+                .focus()
+                .insertContent({
+                    type: 'pricingTable',
+                    attrs: {
+                        rows: pricingRows,
+                        discount: discountPct,
+                        budgetNotes: sowData.budgetNotes || '',
+                        deliverables: scope.deliverables || [],
+                        scopeOverview: scope.description || '',
+                        assumptions: scope.assumptions || [],
+                    },
+                })
+                .run();
 
             // Assumptions (Standard HTML List)
             if (scope.assumptions && scope.assumptions.length > 0) {

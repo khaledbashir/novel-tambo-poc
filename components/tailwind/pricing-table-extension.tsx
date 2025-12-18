@@ -1,91 +1,88 @@
 'use client';
 
+import React from 'react';
 import { mergeAttributes, Node } from '@tiptap/core';
 import { ReactNodeViewRenderer, NodeViewProps, NodeViewWrapper } from '@tiptap/react';
 
-// Simplified inline render - not using external component
-const PricingTableNodeView = (props: NodeViewProps) => {
-    const { rows, discount } = props.node.attrs;
-    const rowsArray = Array.isArray(rows) ? rows : [];
+import { SOWPricingTableBase } from '@/components/pricing/sow-pricing-table';
 
-    // Calculate totals
-    const subtotal = rowsArray.reduce((sum, row: any) => sum + ((row.hours || 0) * (row.rate || 0)), 0);
-    const discountAmount = subtotal * ((discount || 0) / 100);
-    const afterDiscount = subtotal - discountAmount;
-    const gst = afterDiscount * 0.1;
-    const total = afterDiscount + gst;
+type PricingTableAttrs = {
+    rows: Array<{ id: string; role: string; description: string; hours: number; rate: number }>;
+    discount: number;
+    budgetTarget: number | null;
+    budgetNotes: string;
+    deliverables: string[];
+    scopeOverview: string;
+    assumptions: string[];
+};
+
+const PricingTableNodeView = (props: NodeViewProps) => {
+    const attrs = props.node.attrs as PricingTableAttrs;
+    const rows = Array.isArray(attrs.rows) ? attrs.rows : [];
+    const discount = Number(attrs.discount) || 0;
+
+    const currentSnapshot = React.useMemo(
+        () =>
+            JSON.stringify({
+                rows,
+                discount,
+                budgetTarget: attrs.budgetTarget ?? null,
+                budgetNotes: attrs.budgetNotes ?? '',
+                deliverables: Array.isArray(attrs.deliverables) ? attrs.deliverables : [],
+                scopeOverview: attrs.scopeOverview ?? '',
+                assumptions: Array.isArray(attrs.assumptions) ? attrs.assumptions : [],
+            }),
+        [
+            rows,
+            discount,
+            attrs.budgetTarget,
+            attrs.budgetNotes,
+            attrs.deliverables,
+            attrs.scopeOverview,
+            attrs.assumptions,
+        ],
+    );
+
+    const lastAppliedSnapshotRef = React.useRef<string>(currentSnapshot);
+
+    React.useEffect(() => {
+        lastAppliedSnapshotRef.current = currentSnapshot;
+    }, [currentSnapshot]);
+
+    const handleDataChange = React.useCallback(
+        (data: any) => {
+            const nextAttrs: PricingTableAttrs = {
+                rows: Array.isArray(data.rows) ? data.rows : [],
+                discount: Number(data.discount) || 0,
+                budgetTarget: data.budgetTarget ?? null,
+                budgetNotes: data.budgetNotes ?? '',
+                deliverables: Array.isArray(data.deliverables) ? data.deliverables : [],
+                scopeOverview: data.scopeOverview ?? '',
+                assumptions: Array.isArray(data.assumptions) ? data.assumptions : [],
+            };
+
+            const nextSnapshot = JSON.stringify(nextAttrs);
+            if (nextSnapshot === lastAppliedSnapshotRef.current) return;
+
+            lastAppliedSnapshotRef.current = nextSnapshot;
+            props.updateAttributes(nextAttrs);
+        },
+        [props],
+    );
 
     return (
         <NodeViewWrapper className="not-prose my-4 w-full">
-            <div className="w-full overflow-hidden rounded-lg border-2 border-sg-green/30 bg-sg-green/5">
-                <div className="flex items-center justify-between bg-sg-green/10 px-4 py-3 border-b border-border">
-                    <div className="text-sm font-semibold text-foreground">
-                        Pricing Table
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                        {rowsArray.length} role{rowsArray.length !== 1 ? "s" : ""}
-                    </div>
-                </div>
-
-                <div className="overflow-x-auto">
-                    <table className="w-full text-xs">
-                        <thead>
-                            <tr className="bg-muted border-b">
-                                <th className="px-3 py-2 text-left font-semibold">Role</th>
-                                <th className="px-3 py-2 text-left font-semibold">Description</th>
-                                <th className="px-3 py-2 text-center font-semibold">Hours</th>
-                                <th className="px-3 py-2 text-center font-semibold">Rate</th>
-                                <th className="px-3 py-2 text-right font-semibold">Cost</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {rowsArray.map((row: any, idx: number) => (
-                                <tr key={row.id || idx} className="border-b last:border-0">
-                                    <td className="px-3 py-2 text-foreground font-medium max-w-[240px] truncate">
-                                        {row.role || "-"}
-                                    </td>
-                                    <td className="px-3 py-2 text-muted-foreground max-w-[360px] truncate">
-                                        {row.description || "-"}
-                                    </td>
-                                    <td className="px-3 py-2 text-center text-muted-foreground">
-                                        {row.hours ?? 0}
-                                    </td>
-                                    <td className="px-3 py-2 text-center text-muted-foreground">
-                                        ${(row.rate || 0).toFixed(2)}
-                                    </td>
-                                    <td className="px-3 py-2 text-right font-semibold text-foreground">
-                                        ${((row.hours || 0) * (row.rate || 0)).toFixed(2)}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                        <tfoot className="bg-muted/50">
-                            {discount > 0 && (
-                                <tr>
-                                    <td colSpan={4} className="px-3 py-2 text-right text-muted-foreground">
-                                        Discount ({discount}%):
-                                    </td>
-                                    <td className="px-3 py-2 text-right text-muted-foreground">
-                                        -${discountAmount.toFixed(2)}
-                                    </td>
-                                </tr>
-                            )}
-                            <tr className="border-t">
-                                <td colSpan={4} className="px-3 py-2 text-right font-semibold">Subtotal:</td>
-                                <td className="px-3 py-2 text-right font-semibold">${afterDiscount.toFixed(2)}</td>
-                            </tr>
-                            <tr>
-                                <td colSpan={4} className="px-3 py-2 text-right text-muted-foreground">GST (10%):</td>
-                                <td className="px-3 py-2 text-right text-muted-foreground">+${gst.toFixed(2)}</td>
-                            </tr>
-                            <tr className="border-t-2 border-border">
-                                <td colSpan={4} className="px-3 py-2 text-right font-bold">Total (AUD):</td>
-                                <td className="px-3 py-2 text-right font-bold text-sg-green">${total.toFixed(2)}</td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-            </div>
+            <SOWPricingTableBase
+                rows={rows}
+                discount={discount}
+                budgetTarget={attrs.budgetTarget ?? undefined}
+                budgetNotes={attrs.budgetNotes ?? ''}
+                deliverables={Array.isArray(attrs.deliverables) ? attrs.deliverables : []}
+                scopeOverview={attrs.scopeOverview ?? ''}
+                assumptions={Array.isArray(attrs.assumptions) ? attrs.assumptions : []}
+                isInEditor={true}
+                onDataChange={handleDataChange}
+            />
         </NodeViewWrapper>
     );
 };
